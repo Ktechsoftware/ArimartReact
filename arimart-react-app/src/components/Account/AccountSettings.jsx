@@ -15,20 +15,22 @@ import {
   User
 } from "lucide-react";
 import LogoutModal from "../Auth/LogoutModal";
+import { Link, useNavigate } from "react-router-dom";
 
 const settings = [
-  { label: "My Orders", icon: <Package size={20} />, to: "#" },
-  { label: "My Wallet", icon: <Wallet size={20} />, to: "#" },
-  { label: "Wishlist", icon: <Heart size={20} />, to: "#" },
+  { label: "My Orders", icon: <Package size={20} />, to: "/orders" },
+  { label: "My Wallet", icon: <Wallet size={20} />, to: "/home/wallet" },
+  { label: "Wishlist", icon: <Heart size={20} />, to: "/wishlist" },
   { label: "Followed Shop", icon: <Store size={20} />, to: "#" },
   { label: "Delivery Address", icon: <MapPin size={20} />, to: "#" },
-  { label: "Share & Earn", icon: <Share2 size={20} />, to: "#" },
+  { label: "Share & Earn", icon: <Share2 size={20} />, to: "/home/referandearn" },
   { label: "Promocodes & Gift Cards", icon: <Gift size={20} />, to: "#" },
   { label: "Rate Us", icon: <Star size={20} />, to: "#" },
   { label: "Logout", icon: <LogOut size={20} />, to: "#", isDestructive: true },
 ];
 
 const AccountSettings = () => {
+  const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   return (
     <motion.div 
@@ -38,6 +40,7 @@ const AccountSettings = () => {
       className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 text-gray-800 dark:text-white"
     >
       {/* Profile Header */}
+      <Link to="/account/editprofile">
       <motion.div 
         whileHover={{ scale: 1.02 }}
         className="flex items-center justify-between mb-6 p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-sm"
@@ -64,7 +67,7 @@ const AccountSettings = () => {
         </div>
         <ChevronRight className="text-gray-400" />
       </motion.div>
-
+</Link>
       {/* Settings List */}
       <motion.div 
         initial={{ y: 20, opacity: 0 }}
@@ -79,7 +82,9 @@ const AccountSettings = () => {
     whileTap={{ scale: 0.98 }}
     onClick={() => {
       if (item.label === "Logout") setShowModal(true);
-      else console.log("Navigate to:", item.to);
+      else {
+        navigate(item.to);
+      }
     }}
     className={`flex items-center justify-between p-4 cursor-pointer bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-all ${
       item.isDestructive

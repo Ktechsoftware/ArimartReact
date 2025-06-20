@@ -69,15 +69,15 @@ export default function ProductCarousel() {
   };
 
   const handleDragEnd = (event, info) => {
-  if (info.offset.x > 50) {
-    prevSlide();
-  } else if (info.offset.x < -50) {
-    nextSlide();
-  }
-};
+    if (info.offset.x > 50) {
+      prevSlide();
+    } else if (info.offset.x < -50) {
+      nextSlide();
+    }
+  };
 
   return (
-    <div className="relative overflow-hidden py-4 px-2">
+    <div className="relative overflow-hidden py-4 px-3 sm:px-6 md:px-8">
       <div className="flex justify-between items-center mb-4 px-2">
         <h2 className="text-lg font-bold text-gray-800 dark:text-white">Today's Hot Deals 🔥</h2>
         <button className="flex items-center text-blue-500 dark:text-blue-400 text-sm">
@@ -86,7 +86,7 @@ export default function ProductCarousel() {
       </div>
 
       <motion.div 
-        className="relative h-64"
+        className="relative h-64 sm:h-72 md:h-80"
         drag="x"
         dragConstraints={{ left: 0, right: 0 }}
         onDragEnd={handleDragEnd}
@@ -96,7 +96,7 @@ export default function ProductCarousel() {
         {products.map((product, index) => (
           <motion.div
             key={product.id}
-            className={`absolute inset-0 ${product.bg} p-4 rounded-xl shadow-sm mx-2 flex flex-col`}
+            className={`absolute inset-0 ${product.bg} p-4 sm:p-5 rounded-xl shadow-sm mx-2 flex flex-col`}
             animate={{
               x: `${(index - currentIndex) * 100}%`,
               opacity: index === currentIndex ? 1 : 0.7,
@@ -105,11 +105,11 @@ export default function ProductCarousel() {
             transition={{ type: 'spring', stiffness: 300 }}
           >
             <div className="flex justify-between items-start mb-2">
-              <span className="text-xs bg-orange-500 text-white px-2 py-1 rounded-full">
+              <span className="text-xs sm:text-sm bg-orange-500 text-white px-2 py-1 rounded-full">
                 ★ {product.rating}
               </span>
               {index === currentIndex && (
-                <span className="text-xs bg-red-500 text-white px-2 py-1 rounded-full">
+                <span className="text-xs sm:text-sm bg-red-500 text-white px-2 py-1 rounded-full">
                   HOT
                 </span>
               )}
@@ -119,13 +119,13 @@ export default function ProductCarousel() {
               <img 
                 src={product.img} 
                 alt={product.name} 
-                className="h-32 object-contain"
+                className="h-28 sm:h-32 md:h-36 object-contain"
               />
             </div>
 
             <div className="text-center mt-auto">
-              <h3 className="font-medium text-gray-800 dark:text-white text-sm">{product.name}</h3>
-              <p className="text-md font-bold text-green-600 dark:text-green-400 mt-1">
+              <h3 className="font-medium text-gray-800 dark:text-white text-sm sm:text-base">{product.name}</h3>
+              <p className="text-md sm:text-lg font-bold text-green-600 dark:text-green-400 mt-1">
                 {product.price}
               </p>
             </div>
@@ -147,7 +147,7 @@ export default function ProductCarousel() {
             <button
               key={i}
               onClick={() => setCurrentIndex(i)}
-              className={`w-2 h-2 rounded-full transition-colors ${
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${
                 i === currentIndex 
                   ? 'bg-orange-500 w-4' 
                   : 'bg-gray-300 dark:bg-gray-600'

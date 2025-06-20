@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingCart, Search, SlidersHorizontal, ArrowLeft } from "lucide-react";
+import FilterSheet from "./FilterSheet";
 
 const categories = ["Frozen", "Fresh", "Drink & Water", "Meat", "Vegetable"];
 
@@ -51,7 +52,7 @@ const products = [
 
 export default function DailyFoods() {
   const [activeTab, setActiveTab] = useState("Fresh");
-
+   const [showFilter, setShowFilter] = useState(false);
   return (
     <div className="bg-white dark:bg-gray-900 min-h-screen p-4 text-gray-900 dark:text-white">
       <motion.div 
@@ -107,6 +108,7 @@ export default function DailyFoods() {
           className="bg-transparent outline-none flex-1 text-sm"
         />
         <motion.button 
+        onClick={() => setShowFilter(true)}
           whileHover={{ rotate: 15 }}
           whileTap={{ scale: 0.9 }}
         >
@@ -114,37 +116,39 @@ export default function DailyFoods() {
         </motion.button>
       </motion.div>
 
-      <div className="grid grid-cols-2 gap-4">
-        {products.map((product, idx) => (
-          <motion.div
-            key={idx}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1 + idx * 0.05 }}
-            whileHover={{ y: -5 }}
-            className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl shadow-sm hover:shadow-md transition-all"
-          >
-            <img
-              src={product.img}
-              alt={product.name}
-              className="w-20 h-20 mx-auto object-contain mb-3"
-            />
-            <div className="text-center">
-              <p className="font-semibold text-sm">{product.name}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{product.desc}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{product.weight}</p>
-              <p className="font-semibold text-green-600 dark:text-green-400 mt-2">{product.price}</p>
-              <motion.button 
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="mt-3 bg-green-500 hover:bg-green-600 text-white text-sm w-full py-2 rounded-lg flex items-center justify-center"
-              >
-                <span>+</span>
-              </motion.button>
-            </div>
-          </motion.div>
-        ))}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+  {products.map((product, idx) => (
+    <motion.div
+      key={idx}
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: 0.1 + idx * 0.05 }}
+      whileHover={{ y: -5 }}
+      className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl shadow-sm hover:shadow-md transition-all"
+    >
+      <img
+        src={product.img}
+        alt={product.name}
+        className="w-20 h-20 mx-auto object-contain mb-3"
+      />
+      <div className="text-center">
+        <p className="font-semibold text-sm">{product.name}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{product.desc}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{product.weight}</p>
+        <p className="font-semibold text-green-600 dark:text-green-400 mt-2">{product.price}</p>
+        <motion.button 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="mt-3 bg-green-500 hover:bg-green-600 text-white text-sm w-full py-2 rounded-lg flex items-center justify-center"
+        >
+          <span>+</span>
+        </motion.button>
       </div>
+    </motion.div>
+  ))}
+</div>
+
+      <FilterSheet isOpen={showFilter} onClose={() => setShowFilter(false)} />
     </div>
   );
 }

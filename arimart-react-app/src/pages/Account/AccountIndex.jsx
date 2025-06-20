@@ -5,7 +5,7 @@ import Header from '../../components/Header'
 function AccountIndex() {
   return (
     <div className='mb-20'>
-        <Header title="Profile" />
+        <Header title="Account" />
         <AccountSettings/>
     </div>
   )

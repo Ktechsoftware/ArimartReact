@@ -24,7 +24,7 @@ export default function Wallet() {
             />
           </motion.div>
           <div>
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">mywallet.grocery</p>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">mywallet.arimart</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">Personal Wallet</p>
           </div>
         </div>
@@ -47,7 +47,7 @@ export default function Wallet() {
           className="text-4xl font-bold tracking-tight text-green-800 mt-1"
           whileHover={{ scale: 1.01 }}
         >
-          ₹30,421.43
+          ₹540.43
         </motion.h2>
         <p className="text-xs text-right text-gray-600 mt-2 dark:text-white/80">Updated just now</p>
       </motion.div>
@@ -121,7 +121,7 @@ export default function Wallet() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-blue-500 dark:text-blue-400">₹29,901.43</span>
+            <span className="text-lg font-bold text-blue-500 dark:text-blue-400">₹20.43</span>
             <ChevronRight className="text-gray-400" size={18} />
           </div>
         </motion.div>

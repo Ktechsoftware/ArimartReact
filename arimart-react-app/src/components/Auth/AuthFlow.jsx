@@ -183,7 +183,7 @@ const handleStepChange = (nextStep) => {
               onClick={() => handleStepChange(2)}
               disabled={!isValid}
               className={`w-full py-3 px-4 rounded-lg font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all ${isValid
-                  ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 dark:bg-blue-700 dark:hover:bg-blue-800 cursor-pointer'
+                  ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500 dark:bg-green-700 dark:hover:bg-green-800 cursor-pointer'
                   : 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed'
                 }`}
             >

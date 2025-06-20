@@ -11,16 +11,17 @@ import {
   X,
   ChevronRight
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const menuItems = [
-  { label: "Home", icon: <Home /> },
-  { label: "Notification Options", icon: <Bell /> },
-  { label: "About Us", icon: <Info /> },
-  { label: "Privacy Policy", icon: <Lock /> },
-  { label: "FAQs", icon: <HelpCircle /> },
-  { label: "Send Feedback", icon: <MessageSquare /> },
-  { label: "Contact Us", icon: <Contact /> },
-  { label: "Invite Friends", icon: <UserPlus /> },
+  { label: "Home", icon: <Home />,link : '/home'},
+  { label: "Notification Options", icon: <Bell />,link : '/notification' },
+  { label: "About Us", icon: <Info />, link: '/about' },
+  { label: "Privacy Policy", icon: <Lock />, link: '/privacy'  },
+  { label: "FAQs", icon: <HelpCircle />, link: '/faq'  },
+  { label: "Send Feedback", icon: <MessageSquare />, link: '/sendfeedback'  },
+  { label: "Contact Us", icon: <Contact />, link: '/contactus'  },
+  { label: "Invite Friends", icon: <UserPlus />, link: '/about'  },
 ];
 
 export default function SidebarMenu({ open, onClose }) {
@@ -81,15 +82,15 @@ export default function SidebarMenu({ open, onClose }) {
                   whileTap={{ scale: 0.98 }}
                   className="flex items-center justify-between bg-red-50 text-red-500 dark:bg-red-900/20 dark:text-red-400 p-3 rounded-lg cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 transition"
                 >
-                  <div className="flex items-center gap-3">
+                  <Link to={item.link} className="flex items-center gap-3">
                     <motion.div 
                       whileHover={{ rotate: 10 }}
-                      className="p-2 rounded-md bg-red-100 dark:bg-red-900/30"
+                      className="p-2 rounded-md dark:text-red-200 bg-red-100 dark:bg-red-900/30"
                     >
                       {item.icon}
                     </motion.div>
-                    <span className="font-medium">{item.label}</span>
-                  </div>
+                    <span className="font-medium dark:text-red-200">{item.label}</span>
+                  </Link>
                   <motion.div whileHover={{ x: 2 }}>
                     <ChevronRight className="w-5 h-5 text-gray-400" />
                   </motion.div>
