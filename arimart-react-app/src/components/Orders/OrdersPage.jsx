@@ -44,7 +44,7 @@ export default function OrdersPage() {
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen bg-white dark:bg-gray-900 p-4 text-gray-800 dark:text-white"
+      className="max-w-6xl mx-auto min-h-screen bg-white dark:bg-gray-900 p-4 text-gray-800 dark:text-white"
     >
       {/* Tabs */}
       <div className="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">

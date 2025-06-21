@@ -13,7 +13,7 @@ const categories = [
 
 const CategoryCard = () => {
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white p-6">
+    <div className="min-h-screen max-w-6xl mx-auto bg-white dark:bg-gray-900 text-gray-900 dark:text-white p-6">
       {/* Promo Banner */}
       <div className="bg-orange-100 dark:bg-orange-900 p-4 rounded-lg mb-6 shadow flex items-center justify-between">
         <div>

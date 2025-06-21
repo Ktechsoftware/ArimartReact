@@ -79,7 +79,7 @@ export default function ProductCarousel() {
   return (
     <div className="relative overflow-hidden py-4 px-3 sm:px-6 md:px-8">
       <div className="flex justify-between items-center mb-4 px-2">
-        <h2 className="text-lg font-bold text-gray-800 dark:text-white">Today's Hot Deals 🔥</h2>
+        <h2 className="text-xl md:text-3xl font-bold text-gray-800 dark:text-white">Today's Hot Deals 🔥</h2>
         <button className="flex items-center text-blue-500 dark:text-blue-400 text-sm">
           View All <ChevronRight className="ml-1 w-3 h-3" />
         </button>

@@ -65,7 +65,7 @@ export default function EmptyCart() {
         whileTap={{ scale: 0.95 }}
       >
         <Link
-          to="/products"
+          to="/explore"
           className="flex items-center justify-center gap-2 px-6 py-3 bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 text-white rounded-lg shadow-md transition-colors"
         >
           <span>Browse Products</span>

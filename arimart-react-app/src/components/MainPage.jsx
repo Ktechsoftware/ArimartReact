@@ -42,7 +42,7 @@ export default function MainPage() {
                         icon={<Gift className="w-6 h-6" />} 
                         label="Rewards" 
                         color="bg-gradient-to-r from-purple-500 to-purple-400"
-                        tolink="/home/rewards"
+                        tolink="/promocodes"
                     />
                     <ActionCard 
                         icon={<Wallet className="w-6 h-6" />} 
@@ -84,6 +84,7 @@ function ActionCard({ icon, label, color ,tolink}) {
 
 function PriceCard({ price, delay }) {
   return (
+   <Link to={`/topstore/${price}`}>
     <motion.div
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -95,5 +96,6 @@ function PriceCard({ price, delay }) {
       <p className="text-blue-600 dark:text-blue-400 font-bold">₹{price}</p>
       <p className="text-xs text-gray-500 dark:text-gray-300 mt-1">Store</p>
     </motion.div>
+    </Link>
   );
 }

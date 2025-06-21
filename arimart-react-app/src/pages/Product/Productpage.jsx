@@ -4,8 +4,8 @@ import ProductDetails from '../../components/Products/ProductDetails'
 
 function Productpage() {
   return (
-    <div>
-        <Header title={"Product Details"} />
+    <div className='mb-20'>
+        <Header title={"Product Details"} setbaricon={false} setcarticon={false} />
         <ProductDetails/>
     </div>
   )

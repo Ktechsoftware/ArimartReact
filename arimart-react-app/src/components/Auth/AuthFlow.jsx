@@ -118,14 +118,15 @@ const handleStepChange = (nextStep) => {
   <div className="relative z-10 w-full max-w-md bg-white/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-xl overflow-hidden p-8">
   
         <img src={logo} alt="Onboarding" className="w-full object-cover rounded-lg mb-6" />
-        <h2 className="text-2xl dark:text-white text-black font-bold mb-6 text-center">
-          {step === 1 && "Verify Mobile Number"}
+        <h2 className="text-xl dark:text-white text-black font-bold mb-2 text-center">
+          {step === 1 && "Enter your mobile number"}
           {step === 2 && "Enter OTP"}
           {step === 3 && "Create Account"}
         </h2>
 
         {step === 1 && (
           <>
+          <p className="text-sm p-1 mb-2 text-gray-600 dark:text-gray-200">We will send you a 4-digit confirmation code to verify phone number.</p>
             <label htmlFor="mobile" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Mobile Number
             </label>
@@ -173,9 +174,9 @@ const handleStepChange = (nextStep) => {
             )}
 
             {isValid && (
-              <div className="mt-4 p-3 mb-2 bg-green-50 dark:bg-green-900/30 rounded-lg border border-green-200 dark:border-green-800">
+              <div className="mt-4 p-2 mb-2 bg-green-50 dark:bg-green-900/30 rounded-lg border border-green-200 dark:border-green-800">
                 <p className="text-green-700 dark:text-green-300 text-sm mt-1">
-                  We'll send an OTP to +91 {mobile}
+                  We'll send an code to +91 {mobile}
                 </p>
               </div>
             )}
@@ -187,7 +188,7 @@ const handleStepChange = (nextStep) => {
                   : 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed'
                 }`}
             >
-              {isValid ? "Send OTP" : "Next"}
+              {isValid ? "Get the code" : "Next"}
             </button>
           </>
         )}
@@ -196,14 +197,14 @@ const handleStepChange = (nextStep) => {
           <div className="space-y-4 max-w-xs mx-auto sm:max-w-md">
             <div className="text-center">
               <p className="text-gray-600 dark:text-gray-300 mb-1">
-                OTP sent to <span className="font-semibold text-gray-800 dark:text-white">+91 {mobile}</span>
+                Code sent to <span className="font-semibold text-gray-800 dark:text-white">+91 {mobile}</span>
               </p>
               <button
                 onClick={handleResendOTP}
                 disabled={countdown > 0}
                 className={`text-sm ${countdown > 0 ? 'text-gray-400' : 'text-blue-600 dark:text-blue-400 hover:underline'}`}
               >
-                {countdown > 0 ? `Resend OTP in ${countdown}s` : 'Resend OTP'}
+                {countdown > 0 ? `Resend code in ${countdown}s` : 'Resend OTP'}
               </button>
             </div>
 
@@ -242,7 +243,7 @@ const handleStepChange = (nextStep) => {
                   : 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed'
                 }`}
             >
-              Verify OTP
+              Verify Code
             </button>
 
             <p className="text-xs text-gray-500 dark:text-gray-400 text-center">

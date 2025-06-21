@@ -44,7 +44,7 @@ const OnboardingScreen = () => {
   }, [currentIndex, showAppName]);
 
   const handleGetStarted = () => {
-    navigate('/auth');
+    navigate('/onboard');
   };
 
   const handleDotClick = (index) => {

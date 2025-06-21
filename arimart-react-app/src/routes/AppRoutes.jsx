@@ -23,12 +23,15 @@ import AboutScreen from '../pages/Aboutus/AboutScreen';
 import Contactusscreen from '../pages/Aboutus/Contactusscreen';
 import NotificationScreen from '../pages/Notification/NotificationScreen';
 import Foryoupagescreeen from '../pages/Foryouscreen/Foryoupagescreeen';
+import PromocodeScreen from '../pages/Promocode/PromocodeScreen';
+import Onboarding from '../components/Onboarding/Onboarding';
+import TopProductStore from '../pages/TopStores/TopProductStore';
 
 export default function AppRoutes() {
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
-  const hideBottomNavRoutes = ['/', '/auth', '/cart', '/checkout', '/account/editprofile', '/home/wallet', '/home/referandearn', '/wishlist', '/about', '/contactus', '/notification'];
-  const hideBottomNavRoutesWithPrefix = ['/product', '/orders'];
+  const hideBottomNavRoutes = ['/','/onboard', '/auth', '/cart', '/checkout', '/account/editprofile', '/home/wallet', '/home/referandearn', '/wishlist', '/about', '/contactus', '/notification','/promocodes'];
+  const hideBottomNavRoutesWithPrefix = ['/product', '/orders','/topstore'];
 
   const shouldHideBottomNav =
     hideBottomNavRoutes.includes(location.pathname) ||
@@ -62,9 +65,11 @@ export default function AppRoutes() {
         >
           <Routes>
             <Route path="/" element={<OnboardingScreen />} />
+            <Route path="/onboard" element={<Onboarding />} />
             <Route path="/auth" element={<AuthFlow />} />
             <Route path="/about" element={<AboutScreen />} />
             <Route path="/contactus" element={<Contactusscreen />} />
+            <Route path="/topstore/:price" element={<TopProductStore />} />
             <Route path="/notification" element={<NotificationScreen />} />
             <Route path="/home" element={<Home />} />
             <Route path="/foryou" element={<Foryoupagescreeen />} />
@@ -75,6 +80,7 @@ export default function AppRoutes() {
             <Route path="/explore" element={<ExploreIndex />} />
             <Route path="/cart" element={<Cartpage />} />
             <Route path="/wishlist" element={<WishlistScreen />} />
+            <Route path="/promocodes" element={<PromocodeScreen />} />
             <Route path="/checkout" element={<CheckoutScreen />} />
             <Route path="/orders" element={<OrderScreen />} />
             <Route path="/orders/tracking" element={<OrderTrack />} />

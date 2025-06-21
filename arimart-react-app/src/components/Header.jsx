@@ -13,7 +13,7 @@ export default function Header({ title, setbaricon = true, setcarticon = true })
 
   return (
     <>
-      <header className="sticky top-2 m-2 rounded-3xl z-50 border dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 shadow-lg backdrop-blur-md">
+      <header className="sticky max-w-6xl mx-auto top-2 m-2 rounded-3xl z-50 border dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 shadow-lg backdrop-blur-md">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="">
             {setbaricon ? (
@@ -33,32 +33,15 @@ export default function Header({ title, setbaricon = true, setcarticon = true })
             )}
           </div>
 
-          <h1 className="text-xl ml-10 font-bold text-black dark:text-white">
-            {title ? title : <img src={logo} className="mx-auto w-40" alt="Logo" />}
-          </h1>
+      <div className="relative">
+  <h1 className="text-xl font-bold text-gray-900 dark:text-white inline-block">
+    {title ? title : <img src={logo} className="mx-auto w-40" alt="Logo" />}
+  </h1>
+  <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-transparent"></div>
+</div>
 
           <div className="flex items-center gap-4">
             {/* Dark/Light Mode Toggle */}
-            <motion.button
-              onClick={toggleDarkMode}
-              whileTap={{ scale: 0.9 }}
-              className="w-12 h-6 rounded-full bg-gray-200 dark:bg-gray-700 relative p-1 flex items-center transition-colors"
-            >
-              <motion.div
-                animate={{
-                  x: darkMode ? 24 : 0,
-                  backgroundColor: darkMode ? "#4B5563" : "#F59E0B",
-                }}
-                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                className="w-4 h-4 rounded-full absolute flex items-center justify-center"
-              >
-                {darkMode ? (
-                  <Moon className="w-3 h-3 text-white" />
-                ) : (
-                  <Sun className="w-3 h-3 text-white" />
-                )}
-              </motion.div>
-            </motion.button>
 
             {setcarticon && (
               <Link to="/cart" className="relative">

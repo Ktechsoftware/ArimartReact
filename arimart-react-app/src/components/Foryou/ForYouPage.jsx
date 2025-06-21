@@ -46,7 +46,7 @@ const ForYouPage = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="p-4 bg-white dark:bg-gray-900 min-h-screen text-gray-800 dark:text-gray-100"
+      className="max-w-6xl mx-auto  p-4 bg-white dark:bg-gray-900 min-h-screen text-gray-800 dark:text-gray-100"
     >
       {/* Personalized Banner */}
       <motion.div

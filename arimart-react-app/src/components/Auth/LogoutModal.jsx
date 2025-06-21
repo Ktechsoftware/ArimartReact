@@ -1,16 +1,23 @@
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import logoutbg from '../../assets/images/logoutbg.png';
+import LoaderSpinner from "../LoaderSpinner";
 
 export default function LogoutModal({ isOpen, onClose }) {
   const navigate = useNavigate();
+   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogout = () => {
+    setIsLoading(true);
     Object.keys(Cookies.get()).forEach((cookieName) =>
       Cookies.remove(cookieName)
     );
-    navigate("/home");
+    setTimeout(() => {
+    navigate("/onboard");
+    setIsLoading(false);
+  }, 1000);
   };
 
   // Prevent body scroll when modal is open
@@ -27,6 +34,7 @@ export default function LogoutModal({ isOpen, onClose }) {
 
   return (
     <AnimatePresence>
+      {isLoading && <LoaderSpinner />}
       {isOpen && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -43,9 +51,9 @@ export default function LogoutModal({ isOpen, onClose }) {
           >
             <div className="flex flex-col items-center mb-5">
               <motion.img
-                src="https://cdn-icons-png.flaticon.com/512/1828/1828479.png"
+                src={logoutbg}
                 alt="Logout"
-                className="w-20 h-20 mb-4"
+                className="w-64 mb-4"
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.2 }}
