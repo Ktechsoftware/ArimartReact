@@ -17,11 +17,10 @@ const menuItems = [
   { label: "Home", icon: <Home />,link : '/home'},
   { label: "Notification Options", icon: <Bell />,link : '/notification' },
   { label: "About Us", icon: <Info />, link: '/about' },
-  { label: "Privacy Policy", icon: <Lock />, link: '/privacy'  },
+  { label: "Privacy Policy", icon: <Lock />, link: '/privacypolicy'  },
   { label: "FAQs", icon: <HelpCircle />, link: '/faq'  },
-  { label: "Send Feedback", icon: <MessageSquare />, link: '/sendfeedback'  },
   { label: "Contact Us", icon: <Contact />, link: '/contactus'  },
-  { label: "Invite Friends", icon: <UserPlus />, link: '/about'  },
+  { label: "Invite Friends", icon: <UserPlus />, link: '/home/referandearn'  },
 ];
 
 export default function SidebarMenu({ open, onClose }) {

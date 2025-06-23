@@ -9,8 +9,6 @@ function Home() {
   return (
     <div className='mb-20'>
     <Header/>
-    {/* <RotatingCategoryCarousel/> */}
-    {/* <MainPage/> */}
     <GroceryHome/>
     </div>
   )

@@ -5,11 +5,15 @@
 :root {
   --foreground-rgb: 17 24 39;
   --background-rgb: 255, 255, 255;
+  --toast-bg: #fff;
+  --toast-text: #333;
 }
 
 .dark {
   --foreground-rgb: 255, 255, 255;
   --background-rgb: 17 24 39;
+  --toast-bg: #1f2937;
+  --toast-text: #fff;
 }
 
 body {
@@ -23,6 +27,6 @@ body {
 }
 
 .scrollbar-hide {
-  -ms-overflow-style: none; 
-  scrollbar-width: none;  
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

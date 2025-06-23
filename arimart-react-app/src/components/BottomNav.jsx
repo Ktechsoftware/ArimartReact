@@ -63,7 +63,7 @@ export default function BottomNav() {
                   className={
                     isActive
                       ? "text-green-500 dark:text-green-400"
-                      : "text-gray-500 dark:text-gray-400"
+                      : "text-gray-500 dark:text-gray-100"
                   }
                   fill={isActive ? "currentColor" : "none"}
                 />
@@ -73,7 +73,7 @@ export default function BottomNav() {
                 className={`text-xs mt-1 ${
                   isActive
                     ? "text-green-500 dark:text-green-400 font-medium"
-                    : "text-gray-500 dark:text-gray-400"
+                    : "text-gray-500 dark:text-gray-100"
                 }`}
                 animate={{
                   opacity: isActive ? 1 : 0.8,

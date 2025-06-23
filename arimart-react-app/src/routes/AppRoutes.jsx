@@ -1,5 +1,5 @@
 // AppRoutes.jsx
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import OnboardingScreen from '../components/OnboardingScreen';
@@ -11,7 +11,6 @@ import AccountIndex from '../pages/Account/AccountIndex';
 import ExploreIndex from '../pages/Explore/ExploreIndex';
 import Cartpage from '../pages/Cart/cartpage';
 import Productpage from '../pages/Product/Productpage';
-import ReferAndEarn from '../components/Widgets/ReferAndEarn';
 import Refferearn from '../pages/Home/Refferearn';
 import Walletpage from '../pages/Home/Walletpage';
 import CheckoutScreen from '../pages/Orders/CheckoutScreen';
@@ -26,11 +25,40 @@ import Foryoupagescreeen from '../pages/Foryouscreen/Foryoupagescreeen';
 import PromocodeScreen from '../pages/Promocode/PromocodeScreen';
 import Onboarding from '../components/Onboarding/Onboarding';
 import TopProductStore from '../pages/TopStores/TopProductStore';
+import { useSelector, useDispatch } from 'react-redux';
+import { checkAuth } from '../Store/authSlice';
+import { Toaster, toast } from 'react-hot-toast';
+import PrivacyPolicyScreen from '../pages/Privacypolicy/PrivacyPolicyScreen';
+import Faqscreen from '../pages/GroceryFAQ/Faqscreen';
+// import ResponsiveLayout from '../layouts/ResponsiveLayout';
 
 export default function AppRoutes() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const hideBottomNavRoutes = ['/','/onboard', '/auth', '/cart', '/checkout', '/account/editprofile', '/home/wallet', '/home/referandearn', '/wishlist', '/about', '/contactus', '/notification','/promocodes'];
+
+   const dispatch = useDispatch();
+  const { isAuthenticated } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    dispatch(checkAuth());
+
+    const publicRoutes = ['/', '/auth', '/onboard'];
+
+    if (
+      isAuthenticated &&
+      publicRoutes.includes(location.pathname)
+    ) {
+      toast('You are already logged in!', {
+        icon: '👋',
+        duration: 2000,
+        position: 'top-center',
+      });
+      navigate('/home', { replace: true });
+    }
+  }, [location.pathname, isAuthenticated]);
+
+  const hideBottomNavRoutes = ['/','/onboard', '/auth', '/faq','/privacypolicy','/cart', '/checkout', '/account/editprofile', '/home/wallet', '/home/referandearn', '/wishlist', '/about', '/contactus', '/notification','/promocodes'];
   const hideBottomNavRoutesWithPrefix = ['/product', '/orders','/topstore'];
 
   const shouldHideBottomNav =
@@ -45,7 +73,6 @@ export default function AppRoutes() {
 
   return (
     <div className="relative">
-      {/* Loading Indicator (Slider) */}
       {isLoading && (
         <motion.div
           initial={{ width: 0 }}
@@ -63,12 +90,15 @@ export default function AppRoutes() {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -10 }}
         >
+          {/* <ResponsiveLayout> */}
           <Routes>
             <Route path="/" element={<OnboardingScreen />} />
             <Route path="/onboard" element={<Onboarding />} />
             <Route path="/auth" element={<AuthFlow />} />
             <Route path="/about" element={<AboutScreen />} />
             <Route path="/contactus" element={<Contactusscreen />} />
+            <Route path="/faq" element={<Faqscreen />} />
+            <Route path="/privacypolicy" element={<PrivacyPolicyScreen />} />
             <Route path="/topstore/:price" element={<TopProductStore />} />
             <Route path="/notification" element={<NotificationScreen />} />
             <Route path="/home" element={<Home />} />
@@ -87,6 +117,7 @@ export default function AppRoutes() {
             <Route path="/product/:category/:id" element={<Productpage />} />
             <Route path="/categories" element={<Categoryindex />} />
           </Routes>
+        {/* </ResponsiveLayout> */}
         </motion.div>
       </AnimatePresence>
       {!shouldHideBottomNav && <BottomNav />}

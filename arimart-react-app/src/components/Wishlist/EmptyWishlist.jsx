@@ -37,7 +37,7 @@ export default function EmptyWishlist() {
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/explore")}
           className="bg-black text-white px-6 py-2 rounded-full font-medium shadow hover:bg-gray-800 transition"
         >
           Explore

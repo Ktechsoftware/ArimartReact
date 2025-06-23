@@ -17,6 +17,8 @@ import {
 import LogoutModal from "../Auth/LogoutModal";
 import { Link, useNavigate } from "react-router-dom";
 import { useTheme } from "../../context/ThemeContext";
+import FeedbackModal from "./FeedbackModal";
+import DeliveryAddressModal from "./DeliveryAddressModal";
 
 const settings = [
   { label: "Theme", icon: <SunMoon size={20} />, to: "#", isTheme: true },
@@ -32,10 +34,13 @@ const settings = [
 ];
 
 const AccountSettings = () => {
-   const navigate = useNavigate();
+  const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [themeSelectorOpen, setThemeSelectorOpen] = useState(false);
   const { darkMode, toggleDarkMode } = useTheme();
+  const [isRateus, setIsRateus] = useState(false);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [currentAddress, setCurrentAddress] = useState(null);
 
   return (
     <motion.div
@@ -87,20 +92,22 @@ const AccountSettings = () => {
             whileTap={{ scale: 0.98 }}
             onClick={() => {
               if (item.label === "Logout") setShowModal(true);
+              else if (item.label === "Rate Us") setIsRateus(true);
+              else if (item.label === "Delivery Address") setShowAddressModal(true);
               else if (item.isTheme) setThemeSelectorOpen(true);
               else navigate(item.to);
             }}
 
             className={`flex items-center justify-between p-4 cursor-pointer bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-all ${item.isDestructive
-                ? 'hover:bg-red-50 dark:hover:bg-red-900/20'
-                : 'hover:bg-gray-50 dark:hover:bg-gray-700'
+              ? 'hover:bg-red-50 dark:hover:bg-red-900/20'
+              : 'hover:bg-gray-50 dark:hover:bg-gray-700'
               }`}
           >
             <div className="flex items-center gap-3">
               <motion.div
                 className={`p-2 rounded-lg ${item.isDestructive
-                    ? 'bg-red-100 dark:bg-red-900/50 text-red-500'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                  ? 'bg-red-100 dark:bg-red-900/50 text-red-500'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
                   }`}
                 whileHover={{ rotate: 10 }}
               >
@@ -154,11 +161,10 @@ const AccountSettings = () => {
                     }
                     setThemeSelectorOpen(false);
                   }}
-                  className={`w-full px-4 py-2 rounded-lg text-sm font-medium ${
-                    (darkMode && opt === "dark") || (!darkMode && opt === "light")
-                      ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
-                      : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white"
-                  }`}
+                  className={`w-full px-4 py-2 rounded-lg text-sm font-medium ${(darkMode && opt === "dark") || (!darkMode && opt === "light")
+                    ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
+                    : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white"
+                    }`}
                 >
                   {opt === "system" && "System Default"}
                   {opt === "light" && "Light Mode"}
@@ -178,6 +184,12 @@ const AccountSettings = () => {
 
 
       <LogoutModal isOpen={showModal} onClose={() => setShowModal(false)} />
+      <FeedbackModal isOpen={isRateus} onClose={() => setIsRateus(false)} />
+      <DeliveryAddressModal      
+        isOpen={showAddressModal}
+        onClose={() => setShowAddressModal(false)}
+        currentAddress={currentAddress}
+      />
     </motion.div>
   );
 };

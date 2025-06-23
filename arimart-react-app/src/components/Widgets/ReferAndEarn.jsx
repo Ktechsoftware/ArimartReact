@@ -1,16 +1,23 @@
 import { motion } from "framer-motion";
 import { Share2, Copy, PlayCircle, ChevronRight } from "lucide-react";
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 export default function ReferAndEarn() {
   const referralCode = "1575YOG81";
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(referralCode);
+  const handleCopy = async () => {
+  try {
+    await navigator.clipboard.writeText(referralCode);
     setCopied(true);
+    toast.success("Referral code copied!"); // Fixed typo in "Referral"
     setTimeout(() => setCopied(false), 2000);
-  };
+  } catch (err) {
+    toast.error("Failed to copy referral code");
+    console.error("Failed to copy: ", err);
+  }
+};
 
   const steps = [
     {
@@ -32,7 +39,7 @@ export default function ReferAndEarn() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-black dark:via-gray-900 dark:to-gray-800 p-6"
+      className="max-w-6xl mx-auto min-h-screen p-6"
     >
       {/* Header */}
       <motion.div
@@ -54,9 +61,9 @@ export default function ReferAndEarn() {
         initial={{ scale: 0.95 }}
         animate={{ scale: 1 }}
         transition={{ type: "spring", stiffness: 300 }}
-        className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 text-center shadow-lg mb-8 relative overflow-hidden"
+        className="max-w-md mx-auto bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 text-center shadow-lg mb-8 relative overflow-hidden"
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/10 dark:via-green-400/10 to-transparent opacity-30" />
+        <div className="inset-0 bg-gradient-to-r from-transparent via-green-500/10 dark:via-green-400/10 to-transparent opacity-30" />
         
         <p className="text-gray-500 dark:text-gray-400 text-sm mb-3">
           Your Referral Code
@@ -71,14 +78,15 @@ export default function ReferAndEarn() {
         
         <div className="flex justify-center gap-4">
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleCopy}
-            className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm px-6 py-3 rounded-xl flex items-center gap-2 font-medium"
-          >
-            <Copy size={18} />
-            {copied ? "Copied!" : "Copy Code"}
-          </motion.button>
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={handleCopy}
+      className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm px-6 py-3 rounded-xl flex items-center gap-2 font-medium"
+      disabled={copied}
+    >
+      <Copy size={18} />
+      {copied ? 'Copied!' : 'Copy Code'}
+    </motion.button>
           
           <motion.button
             whileHover={{ scale: 1.05 }}

@@ -7,7 +7,7 @@ export default function Wallet() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="bg-gray-50 dark:bg-gray-900 min-h-screen p-4"
+      className="max-w-6xl mx-auto min-h-screen p-4"
     >
       {/* Wallet Header */}
       <motion.div

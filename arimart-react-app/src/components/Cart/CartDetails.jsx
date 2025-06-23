@@ -2,6 +2,7 @@ import { Trash2, Plus, Minus } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import PromoCodeInput from './PromoCodeInput';
 
 const items = [
   {
@@ -139,20 +140,7 @@ export default function CartDetails() {
           animate={{ opacity: 1 }}
           className="relative mt-6 space-y-3"
         >
-          <div className="flex">
-            <input
-              type="text"
-              placeholder="Enter Promo Code"
-              className="flex-1 p-3 rounded-l-lg bg-gray-100 dark:bg-gray-700 text-sm border-none focus:ring-2 focus:ring-green-400"
-            />
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="bg-black dark:bg-white text-white dark:text-black px-4 py-3 rounded-r-lg text-sm font-medium"
-            >
-              Apply
-            </motion.button>
-          </div>
+          <PromoCodeInput/>
 
           <div className="space-y-2 pt-2">
             <div className="flex justify-between">

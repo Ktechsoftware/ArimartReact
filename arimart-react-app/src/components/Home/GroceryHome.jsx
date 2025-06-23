@@ -3,11 +3,13 @@ import MainPage from "../MainPage";
 import HotDealsCarousel from "./HotDealsCarousel";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import FilterSheet from "../Explore/FilterSheet";
 import ProductCard from "../Products/ProductCard";
 import SearchItems from "../Explore/SearchItems";
 import Categories from "../category/Categories";
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
 
 const categories = [
   { label: "Vegetable", color: "bg-purple-100", icon: "🥦" },
@@ -36,6 +38,14 @@ const offers = [
 
 export default function GroceryHome() {
   const [showFilter, setShowFilter] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setTimeout(() => {
+      setLoading(false);
+    }, 2000);
+  }, []);
+
   return (
     <div className="max-w-6xl mx-auto p-4 bg-white dark:bg-gray-900 min-h-screen text-gray-900 dark:text-white">
       {/* Header */}
@@ -102,22 +112,32 @@ export default function GroceryHome() {
       </motion.div>
 
     <SearchItems/>
-<Categories/>
-      {/* Promo Banner */}
-      <div className="bg-green-100 p-4 rounded-xl flex items-center justify-between mb-6">
-        <div>
-          <p className="font-semibold text-gray-800">Get Fresh Grocery</p>
-          <p className="text-sm">in your Door</p>
-          <span className="text-orange-600 font-semibold text-sm mt-1 block">
-            49% Discount
-          </span>
-        </div>
-        <img
-          src="https://via.placeholder.com/100x100?text=Grocery+Guy"
-          alt="promo"
-          className="w-20 h-20 object-cover rounded-lg"
-        />
-      </div>
+    <Categories/>
+    {loading ? (
+  <div className="bg-gray-100 p-4 rounded-xl flex items-center justify-between mb-6 animate-pulse">
+    <div className="flex-1 space-y-2">
+      <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+      <div className="h-3 bg-gray-300 rounded w-1/2"></div>
+      <div className="h-4 bg-orange-300 rounded w-1/3"></div>
+    </div>
+    <div className="w-20 h-20 bg-gray-300 rounded-lg ml-4"></div>
+  </div>
+) : (
+      <div className="bg-gradient-to-br from-green-50 to-green-200 dark:from-green-900 dark:to-green-600 p-4 rounded-xl flex items-center justify-between mb-6">
+  <div>
+    <p className="font-semibold text-gray-800 dark:text-gray-200">Get Fresh Grocery</p>
+    <p className="text-sm dark:text-gray-300">in your Door</p>
+    <span className="text-orange-600 dark:text-orange-400 font-semibold text-sm mt-1 block">
+      49% Discount
+    </span>
+  </div>
+  <img
+    src="https://via.placeholder.com/100x100?text=Grocery+Guy"
+    alt="promo"
+    className="w-20 h-20 object-cover rounded-lg"
+  />
+</div>
+       )}
       <MainPage />
       <HotDealsCarousel />
       <div className="relative overflow-hidden py-4 px-3 sm:px-6 md:px-8">

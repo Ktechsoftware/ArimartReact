@@ -12,7 +12,7 @@ const promoData = [
     expiry: "03 Jan 2025",
     qrValue: "FreeCoffee24",
     icon: <Coffee className="w-5 h-5" />,
-    color: "bg-green-100 dark:bg-green-900/50",
+    color: "bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/70 dark:to-green-600/70",
   },
   {
     category: "Entertainments",
@@ -22,7 +22,7 @@ const promoData = [
     expiry: "17 Dec 2025",
     qrValue: "HSMsfm125W",
     icon: <Film className="w-5 h-5" />,
-    color: "bg-red-100 dark:bg-red-900/50",
+    color: "bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/70 dark:to-red-600/70",
   },
   {
     category: "Pharmacies",
@@ -32,7 +32,7 @@ const promoData = [
     expiry: "12 Feb 2025",
     qrValue: "HealthPlus10",
     icon: <Pill className="w-5 h-5" />,
-    color: "bg-blue-100 dark:bg-blue-900/50",
+    color: "bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/70 dark:to-blue-600/70",
   },
 ];
 
@@ -43,7 +43,7 @@ const giftCards = [
     code: "AMZN-XK5F-9P2R",
     expiry: "15 Aug 2025",
     icon: <Zap className="w-5 h-5" />,
-    color: "bg-yellow-100 dark:bg-yellow-900/50",
+    color: "bg-gradient-to-br from-yellow-50 via-yellow-100 to-amber-100 dark:from-yellow-600/70 dark:via-yellow-800/70 dark:to-amber-600/70",
   },
   {
     brand: "Uber Eats",
@@ -51,7 +51,7 @@ const giftCards = [
     code: "UBER-EATS-2024",
     expiry: "30 Nov 2025",
     icon: <Gift className="w-5 h-5" />,
-    color: "bg-purple-100 dark:bg-purple-900/50",
+    color: "bg-gradient-to-br from-purple-50 via-purple-100 to-violet-100 dark:from-purple-600/70 dark:via-purple-800/70 dark:to-violet-600/70",
   },
 ];
 
@@ -98,14 +98,13 @@ const PromoCard = ({ promo }) => (
             className="text-gray-800 dark:text-gray-200"
           />
         </div>
-        <div className="flex items-center gap-1 mt-2 text-xs text-gray-500 dark:text-gray-400">
+        <div className="flex items-center gap-1 mt-2 text-xs text-gray-500 dark:text-gray-200">
           <Clock className="w-3 h-3" />
           <span>Exp: {promo.expiry}</span>
         </div>
       </div>
     </div>
     
-    {/* Ticket perforation effect */}
     <div className="absolute -bottom-3 left-0 right-0 flex justify-between px-4">
       {[...Array(12)].map((_, i) => (
         <div key={i} className="w-1 h-1 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
@@ -151,7 +150,7 @@ const GiftCard = ({ card }) => (
       </div>
     </div>
     
-    <div className="flex items-center gap-1 mt-3 text-xs text-gray-500 dark:text-gray-400">
+    <div className="flex items-center gap-1 mt-3 text-xs text-gray-500 dark:text-gray-300">
       <Clock className="w-3 h-3" />
       <span>Exp: {card.expiry}</span>
     </div>
@@ -160,49 +159,49 @@ const GiftCard = ({ card }) => (
 
 const PromoCodes = () => {
   return (
-    <div className="max-w-md mx-auto p-4 text-gray-800 dark:text-gray-100">
-      <motion.div 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex justify-between items-center mb-6"
+  <div className="max-w-6xl mx-auto p-4 text-gray-800 dark:text-gray-100">
+    <motion.div 
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex justify-between items-center mb-6"
+    >
+      <h2 className="text-xl font-bold">My Vouchers</h2>
+      <motion.button 
+        whileTap={{ scale: 0.9 }}
+        className="w-8 h-8 rounded-full bg-blue-600 dark:bg-blue-500 text-white flex items-center justify-center shadow-md hover:shadow-lg transition-shadow"
       >
-        <h2 className="text-xl font-bold">My Vouchers</h2>
-        <motion.button 
-          whileTap={{ scale: 0.9 }}
-          className="w-8 h-8 rounded-full bg-blue-600 dark:bg-blue-500 text-white flex items-center justify-center shadow-md hover:shadow-lg transition-shadow"
-        >
-          <Plus className="w-5 h-5" />
-        </motion.button>
-      </motion.div>
+        <Plus className="w-5 h-5" />
+      </motion.button>
+    </motion.div>
 
-      <motion.section
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.1 }}
-      >
+    <motion.section
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.1 }}
+      className="grid grid-cols-1 lg:grid-cols-2 gap-4"
+    >
+      <div> 
         <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3 flex items-center gap-2">
           <Gift className="w-4 h-4" /> Gift Cards
         </h3>
         {giftCards.map((card, index) => (
           <GiftCard key={`gift-${index}`} card={card} />
         ))}
-      </motion.section>
+      </div>
 
-      {promoData.map((promo, index) => (
-        <motion.section 
-          key={`promo-${index}`}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 + (index * 0.1) }}
-        >
-          <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 mt-6 mb-3 flex items-center gap-2">
-            {promo.icon} {promo.category}
-          </h3>
-          <PromoCard promo={promo} />
-        </motion.section>
-      ))}
-    </div>
-  );
+      <div>
+        {promoData.map((promo, index) => (
+          <div key={`promo-${index}`}>
+            <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 mt-6 mb-3 flex items-center gap-2">
+              {promo.icon} {promo.category}
+            </h3>
+            <PromoCard promo={promo} />
+          </div>
+        ))}
+      </div>
+    </motion.section>
+  </div>
+);
 };
 
 export default PromoCodes;

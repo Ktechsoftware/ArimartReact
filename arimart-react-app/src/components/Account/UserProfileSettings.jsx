@@ -62,13 +62,11 @@ export default function UserProfileSettings() {
       return;
     }
 
-    // If validation passes
     handleClosePanel();
   };
 
   return (
     <div className="max-w-md mx-auto px-4 pb-24 bg-white dark:bg-gray-900 min-h-screen relative">
-      {/* Profile Section */}
       <div className="flex flex-col items-center mb-6 relative pt-8">
         <motion.div 
           className="relative w-24 h-24 mb-2"
@@ -91,7 +89,6 @@ export default function UserProfileSettings() {
         <p className="text-sm text-gray-500 dark:text-gray-400">{formData.email}</p>
       </div>
 
-      {/* Personal Info Section */}
       <div className="mb-4">
         <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
           Personal Information
@@ -113,7 +110,6 @@ export default function UserProfileSettings() {
         />
       </div>
 
-      {/* Address Section */}
       <div className="mb-6">
         <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Address</h3>
         <SettingItem 
@@ -123,7 +119,6 @@ export default function UserProfileSettings() {
         />
       </div>
 
-      {/* Fixed Update Button */}
       <motion.div 
   className="fixed md:static bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white/90 to-transparent dark:from-gray-900/90 z-10 md:z-0"
   initial={{ y: 20, opacity: 0 }}
@@ -139,7 +134,6 @@ export default function UserProfileSettings() {
         </motion.button>
       </motion.div>
 
-      {/* Edit Panels */}
       <AnimatePresence>
         {activeEditPanel && (
           <motion.div
