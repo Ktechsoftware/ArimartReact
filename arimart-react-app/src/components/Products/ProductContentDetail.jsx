@@ -1,26 +1,47 @@
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { Star } from "lucide-react";
 import DProductCard from "./DProductcards";
-
-const product = {
-  name: "Fresh Banana Robusta, 1kg",
-  image: "https://images-eu.ssl-images-amazon.com/images/I/51ebZJ+DR4L.AC_SL240_.jpg",
-  price: 78,
-  originalPrice: 140,
-  rating: 4.0,
-  reviews: 30689,
-  sold: 2000,
-  description:
-    "It is a semi-tall variety, grown mostly in Tamil Nadu and parts of Karnataka. Fruit is very sweet with good aroma.",
-};
-
-
+import axios from "axios";
 
 export default function ProductContentDetail() {
+  const { id } = useParams();
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    axios
+      .get(`https://fakestoreapi.com/products/${id}`)
+      .then((res) => {
+        const fakeProduct = res.data;
+
+        // Convert fake API product structure to your expected format
+        setProduct({
+          name: fakeProduct.title,
+          image: fakeProduct.image,
+          price: Math.round(fakeProduct.price),
+          originalPrice: Math.round(fakeProduct.price * 1.5),
+          rating: fakeProduct.rating?.rate || 4.0,
+          reviews: fakeProduct.rating?.count || 1000,
+          sold: Math.floor(Math.random() * 5000) + 1000,
+          description: fakeProduct.description,
+        });
+        setLoading(false);
+      });
+  }, [id]);
+
+  if (loading || !product) {
+    return (
+      <div className="p-6 text-center text-gray-500 dark:text-gray-400">
+        Loading product details...
+      </div>
+    );
+  }
+
   return (
     <div className="hidden md:block bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 p-6">
-      {/* Product Header Section */}
+      {/* ... Keep your existing UI unchanged ... */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Image */}
         <div className="flex justify-center">
           <img
             src={product.image}
@@ -28,12 +49,8 @@ export default function ProductContentDetail() {
             className="rounded-lg w-60 h-60 object-cover"
           />
         </div>
-
-        {/* Main Info */}
         <div className="md:col-span-2 space-y-3">
           <h1 className="text-xl font-semibold">{product.name}</h1>
-
-          {/* Rating and Sold */}
           <div className="flex items-center gap-2 text-sm">
             <div className="flex items-center text-yellow-500">
               <Star size={16} fill="currentColor" />
@@ -44,7 +61,6 @@ export default function ProductContentDetail() {
             </span>
           </div>
 
-          {/* Pricing */}
           <div className="space-y-1">
             <div className="text-2xl font-bold text-lime-600">
               ₹{product.price}
@@ -58,12 +74,10 @@ export default function ProductContentDetail() {
             <p className="text-sm text-gray-500">Inclusive of all taxes</p>
           </div>
 
-          {/* Cashback */}
           <div className="text-sm text-orange-600 bg-orange-50 dark:bg-orange-900/10 border border-orange-300 dark:border-orange-500 px-3 py-2 rounded-md">
             Cashback: Get 5% back with Amazon Pay ICICI Bank credit card for Prime members.
           </div>
 
-          {/* Features */}
           <div className="grid grid-cols-2 gap-3 text-sm mt-2 text-gray-700 dark:text-gray-300">
             <span>✔ Free Delivery</span>
             <span>✔ Secure Transaction</span>
@@ -96,39 +110,12 @@ export default function ProductContentDetail() {
         </p>
       </div>
 
-      {/* Promise Section */}
-      {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10 bg-white dark:bg-gray-800 border rounded-md p-6">
-        {[
-          {
-            title: "Clean and Hygienic",
-            desc: "We use clean and well-maintained facilities for cutting, packing, and storing fruits and vegetables.",
-            icon: "🧼",
-          },
-          {
-            title: "Guaranteed Weight",
-            desc: "Net weight of product will be equal to or greater than mentioned.",
-            icon: "⚖️",
-          },
-          {
-            title: "Food Safety",
-            desc: "Our vendors follow all the food safety norms as per FSSAI guidelines.",
-            icon: "🍽️",
-          },
-        ].map((item, index) => (
-          <div key={index} className="text-center border p-4 rounded-md shadow-sm dark:border-gray-700">
-            <div className="text-3xl mb-2">{item.icon}</div>
-            <h3 className="text-md font-semibold">{item.title}</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {item.desc}
-            </p>
-          </div>
-        ))}
-      </div> */}
+      {/* Image Badges */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10 bg-white dark:bg-gray-800 border rounded-md p-6 justify-center items-center">
         <img src="https://m.media-amazon.com/images/S/aplus-media-library-service-media/f4258821-4583-407e-9882-650d32b364af.__CR0,0,300,300_PT0_SX300_V1___.jpg" alt="Verified"/>
         <img src="https://m.media-amazon.com/images/S/aplus-media-library-service-media/94c5ccbd-5093-4b45-a9dd-55fb709761fd.__CR0,0,300,300_PT0_SX300_V1___.jpg" alt="Verified"/>
         <img src="https://m.media-amazon.com/images/S/aplus-media-library-service-media/b5c01efa-26a5-4350-bfa5-bd697b45c5f3.__CR0,0,300,300_PT0_SX300_V1___.jpg" alt="Verified"/>
-        </div>
+      </div>
 
       {/* Ingredients */}
       <div className="mt-8">
@@ -141,6 +128,7 @@ export default function ProductContentDetail() {
         While we try to ensure product information is correct, on occasion manufacturers may alter ingredients.
       </div>
 
+      {/* Related Products */}
       <h4 className="mt-6 text-xl font-semibold text-gray-700 dark:text-gray-300">Products related to this item</h4>
       <DProductCard product={product} />
     </div>

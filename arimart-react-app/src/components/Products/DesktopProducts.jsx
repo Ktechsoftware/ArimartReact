@@ -1,7 +1,7 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeftIcon, ChevronRightIcon, Star, Plus } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import DiscountBadge from '../ui/DiscountBadge';
 import DProductCard from './DProductcards';
 
@@ -12,7 +12,7 @@ const productCategories = [
         products: [
             {
                 id: 1,
-                name: "Fresh Broccoli",
+                title: "Fresh Broccoli",
                 image: "https://m.media-amazon.com/images/G/31/img24/DEC/nav/FV.png",
                 quantity: "500 g",
                 rating: 4.6,
@@ -23,7 +23,7 @@ const productCategories = [
             },
             {
                 id: 2,
-                name: "Organic Carrot",
+                title: "Organic Carrot",
                 image: "https://via.placeholder.com/150x150?text=Carrot",
                 quantity: "1 kg",
                 rating: 4.4,
@@ -34,7 +34,7 @@ const productCategories = [
             },
             {
                 id: 3,
-                name: "Green Capsicum",
+                title: "Green Capsicum",
                 image: "https://via.placeholder.com/150x150?text=Capsicum",
                 quantity: "500 g",
                 rating: 4.2,
@@ -51,7 +51,7 @@ const productCategories = [
         products: [
             {
                 id: 4,
-                name: "Red Apples (Premium)",
+                title: "Red Apples (Premium)",
                 image: "https://images-eu.ssl-images-amazon.com/images/I/51ebZJ+DR4L.AC_SL240_.jpg",
                 quantity: "4 pcs (approx. 800 g)",
                 rating: 4.7,
@@ -62,7 +62,7 @@ const productCategories = [
             },
             {
                 id: 5,
-                name: "Seedless Black Grapes",
+                title: "Seedless Black Grapes",
                 image: "https://via.placeholder.com/150x150?text=Grapes",
                 quantity: "500 g",
                 rating: 4.3,
@@ -73,7 +73,7 @@ const productCategories = [
             },
             {
                 id: 6,
-                name: "Banana (Robusta)",
+                title: "Banana (Robusta)",
                 image: "https://via.placeholder.com/150x150?text=Banana",
                 quantity: "6 pcs",
                 rating: 4.5,
@@ -90,6 +90,78 @@ const productCategories = [
 
 const DesktopProducts = () => {
     const carouselRefs = useRef(productCategories.map(() => React.createRef()));
+    const location = useLocation();
+    const [searchResults, setSearchResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const searchParams = new URLSearchParams(location.search);
+        const query = searchParams.get('query');
+
+        if (query) {
+            fetchSearchResults(query);
+        } else {
+            setIsSearching(false);
+        }
+    }, [location.search]);
+
+    const fetchSearchResults = async (query) => {
+        try {
+            setIsSearching(true);
+            setLoading(true);
+            setError(null);
+
+            // Replace with your actual API call
+            const response = await fetch(
+                `https://fakestoreapi.com/products`
+            );
+
+            if (!response.ok) throw new Error('Failed to fetch results');
+
+            const data = await response.json();
+            console.log("Search results:", data);
+            setSearchResults(data|| []);
+            console.log("Search results set:", data.data || []);
+        } catch (err) {
+            setError(err.message);
+            console.error("Search error:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (isSearching) {
+        return (
+            <div className="hidden md:block py-8 px-4 bg-white dark:bg-gray-900 transition-colors duration-300">
+                <h1 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white">
+                    Search Results for "{new URLSearchParams(location.search).get('query')}"
+                </h1>
+
+                {loading ? (
+                    <div className="grid place-items-center h-64">
+                        <p className="text-gray-600 dark:text-gray-300">Loading results...</p>
+                    </div>
+                ) : error ? (
+                    <div className="text-red-500">{error}</div>
+                ) : searchResults.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                        {searchResults.map(product => (
+                            <DProductCard key={product.id} product={product} />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-12">
+                        <p className="text-gray-500 dark:text-gray-400">
+                            No products found for your search.
+                        </p>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
 
     const scroll = (direction, categoryIndex) => {
         const container = carouselRefs.current[categoryIndex].current;

@@ -15,27 +15,27 @@ const DProductCard = ({ product }) => {
       whileHover={{ y: -5 }}
       className="w-48 bg-white dark:bg-gray-900 rounded-md shadow-sm border border-gray-200 dark:border-gray-700 p-3 text-sm flex-shrink-0 relative"
     >
-      <DiscountBadge price={product.price} originalPrice={product.originalPrice} />
+      <DiscountBadge price={product.price || 200} originalPrice={product.originalPrice || 400} />
 
       <Link
-        to={`/category/${market}/${subcategory}/${product.id}`}
+        to={`/category/${market || product.category}/${subcategory || product.title}/${product.id}`}
         className="h-32 w-full bg-gray-100 rounded-md overflow-hidden mb-2 relative block"
       >
         <img
           src={product.image}
-          alt={product.name}
+          alt={product.title}
           className="w-full h-full object-cover"
         />
       </Link>
 
       <p className="font-medium text-gray-800 dark:text-white line-clamp-2 leading-snug mb-1">
-        {product.name}
+        {product.title}
       </p>
 
-      <p className="text-xs text-gray-500 mb-1">{product.quantity}</p>
+      <p className="text-xs text-gray-500 mb-1">{product.category }</p>
 
       <div className="flex items-center space-x-1 text-xs mb-1">
-        <span className="text-gray-800 dark:text-gray-200">{product.rating}</span>
+        <span className="text-gray-800 dark:text-gray-200">{product.rating.rate}</span>
         <div className="flex items-center text-orange-400">
           {[...Array(5)].map((_, i) => (
             <Star
@@ -44,7 +44,7 @@ const DProductCard = ({ product }) => {
             />
           ))}
         </div>
-        <span className="text-blue-600 ml-1">{product.ratingCount}</span>
+        <span className="text-blue-600 ml-1">{product.rating.count}</span>
       </div>
 
       <div className="flex items-baseline gap-2 mb-1">
