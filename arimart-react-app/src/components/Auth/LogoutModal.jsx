@@ -7,17 +7,24 @@ import LoaderSpinner from "../LoaderSpinner";
 
 export default function LogoutModal({ isOpen, onClose }) {
   const navigate = useNavigate();
-   const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogout = () => {
     setIsLoading(true);
-    Object.keys(Cookies.get()).forEach((cookieName) =>
-      Cookies.remove(cookieName)
-    );
+
+    // Remove all cookies explicitly with default path
+    Object.keys(Cookies.get()).forEach((cookieName) => {
+      Cookies.remove(cookieName, { path: '/' });
+    });
+
+    // Optional: clear localStorage/sessionStorage if used
+    localStorage.clear();
+    sessionStorage.clear();
+
     setTimeout(() => {
-    navigate("/onboard");
-    setIsLoading(false);
-  }, 1000);
+      navigate("/onboard");
+      setIsLoading(false);
+    }, 1000);
   };
 
   // Prevent body scroll when modal is open

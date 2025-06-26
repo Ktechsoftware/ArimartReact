@@ -130,7 +130,7 @@ export default function ProductDetails({ cartIconRef }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen pb-24"
+        className="md:hidden block bg-white dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen pb-24"
       >
         <div className="max-w-6xl mx-auto md:mt-10 lg:flex lg:items-start lg:gap-8 px-2 lg:px-6">
           {/* Sticky Wrapper for Image on Large Screens */}

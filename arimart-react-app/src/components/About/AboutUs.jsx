@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingCart, Users, Leaf, Layers, MessageCircle, ArrowRight } from "lucide-react";
 import { useState } from "react";
+import BlogPage from "../Blogs/BlogPage";
 
 export default function AboutUs() {
   const [activeTab, setActiveTab] = useState("app");
@@ -19,7 +20,7 @@ export default function AboutUs() {
         >
           About Arimart
         </motion.h1>
-        <p className="max-w-2xl mx-auto text-gray-600 dark:text-gray-300">
+        <p className="max-w-6xl mx-auto text-gray-600 dark:text-gray-300">
           Revolutionizing shopping and agriculture through technology and community
         </p>
       </motion.div>
@@ -49,7 +50,7 @@ export default function AboutUs() {
       </motion.div>
 
       {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 pb-20">
+      <div className="max-w-7xl mx-auto px-4 pb-20">
         <AnimatePresence mode="wait">
           {activeTab === "app" ? (
             <motion.div
@@ -197,6 +198,8 @@ export default function AboutUs() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        <BlogPage/>
 
         {/* Social Links */}
         <motion.div

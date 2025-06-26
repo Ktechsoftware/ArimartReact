@@ -1,13 +1,23 @@
+import { useLocation } from "react-router-dom";
+import DesktopFooter from "../components/Footer/DesktopFooter";
+import DesktopHeader from "../components/Header/DekstopHeader";
+
 export default function WebLayout({ children }) {
+  const location = useLocation();
+
+  // Add all routes you want to hide header/footer for
+  const hideHeaderFooterRoutes = ["/auth", "/onboard", "/login", "/about","/contactus"];
+
+  // If path matches any in the list
+  const shouldHideHeaderFooter = hideHeaderFooterRoutes.some(route =>
+    location.pathname.startsWith(route)
+  );
+
   return (
     <>
-      <header className="bg-white shadow-md px-8 py-4 sticky top-0 z-50">
-        <h1 className="text-xl font-bold">Desktop Header</h1>
-      </header>
-      <main className="max-w-screen-lg mx-auto pt-4">{children}</main>
-      <footer className="bg-gray-100 text-center py-6 mt-10">
-        Desktop Footer
-      </footer>
+      {!shouldHideHeaderFooter && <DesktopHeader />}
+      <main className={`${!shouldHideHeaderFooter ? 'pt-0' : ''} mx-auto`}>{children}</main>
+      {!shouldHideHeaderFooter && <DesktopFooter />}
     </>
   );
 }

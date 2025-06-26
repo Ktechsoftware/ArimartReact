@@ -1,16 +1,16 @@
-import React, { useRef } from 'react';
-import Header from '../../components/Header';
-import ProductDetails from '../../components/Products/ProductDetails';
+import React from 'react'
+import ProductDetails from '../../components/Products/ProductDetails'
+import Header from '../../components/Header/Header'
+import ProductContentDetail from '../../components/Products/ProductContentDetail'
 
 function Productpage() {
-  const cartIconRef = useRef(); // Declare here
-
   return (
     <div className='mb-20'>
-      <Header title={"Product Details"} setbaricon={false} cartIconRef={cartIconRef} />
-      <ProductDetails cartIconRef={cartIconRef} />
+        <Header title={"Product Details"} setbaricon={false} />
+        <ProductDetails/>
+        <ProductContentDetail/>
     </div>
-  );
+  )
 }
 
-export default Productpage;
+export default Productpage

@@ -1,10 +1,10 @@
 import { Menu, ShoppingCart, ArrowLeft, Sun, Moon } from "lucide-react";
 import { useRef, useState } from "react";
-import SidebarMenu from "./SidebarMenu";
-import logo from '../assets/images/logo.png';
+import SidebarMenu from "../sidebar/SidebarMenu";
+import logo from '../../assets/images/logo.png';
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useTheme } from "../context/ThemeContext";
+import { useTheme } from "../../context/ThemeContext";
 
 export default function Header({ title, setbaricon = true, setcarticon = true, cartIconRef }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -13,7 +13,7 @@ export default function Header({ title, setbaricon = true, setcarticon = true, c
 
   return (
     <>
-      <header className="sticky top-2 m-2 rounded-3xl z-50 border dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 shadow-lg backdrop-blur-md">
+      <header className="md:hidden sticky top-0 z-50 border dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 shadow-lg backdrop-blur-md">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="">
             {setbaricon ? (
@@ -35,14 +35,12 @@ export default function Header({ title, setbaricon = true, setcarticon = true, c
 
           <div className="relative">
             <h1 className="text-xl font-bold text-gray-900 dark:text-white inline-block">
-              {title ? title : <img src={logo} className="mx-auto w-40" alt="Logo" />}
+              {title ? title : <img src={logo} className="mx-auto w-32" alt="Logo" />}
             </h1>
             <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-transparent"></div>
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Dark/Light Mode Toggle */}
-
             {setcarticon && (
               <Link to="/cart" className="relative">
                 <motion.div ref={cartIconRef} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>

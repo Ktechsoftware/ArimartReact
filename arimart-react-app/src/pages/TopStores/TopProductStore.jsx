@@ -1,5 +1,5 @@
 import React from 'react'
-import Header from '../../components/Header'
+import Header from '../../components/Header/Header'
 import TopProducts from '../../components/Explore/TopProducts'
 import { useParams } from 'react-router-dom';
 

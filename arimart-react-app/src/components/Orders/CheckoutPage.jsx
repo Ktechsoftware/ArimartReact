@@ -229,7 +229,7 @@ export default function CheckoutPage() {
         </div>
       </motion.div>
 
-      <div className="fixed bottom-0 left-0 right-0 flex justify-center p-4 bg-gradient-to-t from-white/90 to-transparent dark:from-gray-900/90 z-10">
+      <div className="sticky bottom-0 left-0 right-0 flex justify-center p-4 bg-gradient-to-t from-white/90 to-transparent dark:from-gray-900/90 z-10">
     <motion.button
     onClick={() => setShowModal(true)}
       whileHover={{ scale: 1.02 }}

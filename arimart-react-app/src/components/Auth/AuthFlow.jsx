@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from 'react-router-dom';
 import logo from '../../assets/images/logo.png';
 import LoaderSpinner from "../LoaderSpinner";
 import Cookies from 'js-cookie';
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function AuthFlow() {
   const [step, setStep] = useState(1);
@@ -20,7 +21,7 @@ export default function AuthFlow() {
   };
 
   const handleChange = (e) => {
-    const value = e.target.value.replace(/\D/g, ''); 
+    const value = e.target.value.replace(/\D/g, '');
     setMobile(value);
     setIsValid(validateIndianMobile(value));
   };
@@ -52,52 +53,52 @@ export default function AuthFlow() {
     console.log('Resending OTP to:', mobile);
   };
   const handleOTPPaste = (e) => {
-  e.preventDefault();
-  const pasteData = e.clipboardData.getData('text/plain').replace(/\D/g, '');
-  if (pasteData.length === 4) {
-    const newOtp = [...otp];
-    for (let i = 0; i < 4; i++) {
-      if (pasteData[i]) {
-        newOtp[i] = pasteData[i];
+    e.preventDefault();
+    const pasteData = e.clipboardData.getData('text/plain').replace(/\D/g, '');
+    if (pasteData.length === 4) {
+      const newOtp = [...otp];
+      for (let i = 0; i < 4; i++) {
+        if (pasteData[i]) {
+          newOtp[i] = pasteData[i];
+        }
       }
+      setOtp(newOtp);
+      document.getElementById('otp-input-5').focus();
     }
-    setOtp(newOtp);
-    document.getElementById('otp-input-5').focus();
-  }
-};
+  };
 
-const handleStepChange = (nextStep) => {
+  const handleStepChange = (nextStep) => {
     setIsLoading(true);
     setTimeout(() => {
       setStep(nextStep);
       setIsLoading(false);
-    }, 1000); 
+    }, 1000);
   };
 
- const handleContinue = () => {
-  setIsLoading(true);
+  const handleContinue = () => {
+    setIsLoading(true);
 
-  const userId = `user_${Math.random().toString(36).substr(2, 9)}`;
-  const userData = {
-    fullName: form.fullName,
-    email: form.email,
-    userId: userId,
-    type: "user",
-    username: mobile,
-    referral: form.referral || null,
+    const userId = `user_${Math.random().toString(36).substr(2, 9)}`;
+    const userData = {
+      fullName: form.fullName,
+      email: form.email,
+      userId: userId,
+      type: "user",
+      username: mobile,
+      referral: form.referral || null,
+    };
+
+    Cookies.set('userLoginDataArimart', JSON.stringify(userData), {
+      expires: 7,
+      secure: true,
+      sameSite: 'strict'
+    });
+
+    setTimeout(() => {
+      navigate("/home");
+      setIsLoading(false);
+    }, 1000);
   };
-
-  Cookies.set('userLoginDataArimart', JSON.stringify(userData), {
-    expires: 7,
-    secure: true,
-    sameSite: 'strict'
-  });
-
-  setTimeout(() => {
-    navigate("/home");
-    setIsLoading(false);
-  }, 1000);
-};
 
   useEffect(() => {
     if (step === 2 && countdown > 0) {
@@ -106,257 +107,388 @@ const handleStepChange = (nextStep) => {
     }
   }, [step, countdown]);
 
+  const bagRef = useRef(null);
+  const [bagTilt, setBagTilt] = useState({ x: 0, y: 0 });
+  const [bagHover, setBagHover] = useState(false);
+
+  // Handle mouse movement for 3D tilt effect
+  const handleMouseMove = (e) => {
+    if (!bagRef.current) return;
+    const rect = bagRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    setBagTilt({
+      x: (y - centerY) / 25,
+      y: (centerX - x) / 25
+    });
+  };
+
+  // Reset tilt when mouse leaves
+  const handleMouseLeave = () => {
+    setBagTilt({ x: 0, y: 0 });
+    setBagHover(false);
+  };
+
   return (
-   <div className="min-h-screen flex items-center justify-center px-4 relative">
-  <div 
-    className="absolute inset-0 bg-[url('https://img.freepik.com/free-vector/watercolor-world-vegetarian-day-background_52683-91758.jpg')] 
-               bg-cover bg-center bg-no-repeat backdrop-blur-sm"
-  >
-    <div className="absolute inset-0 bg-black/20 dark:bg-black/40"></div>
-  </div>
-  {isLoading && <LoaderSpinner />}
-  <div className="relative z-10 w-full max-w-md bg-white/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-xl overflow-hidden p-8">
-  
-        <img src={logo} alt="Onboarding" className="w-full object-cover rounded-lg mb-6" />
-        <h2 className="text-xl dark:text-white text-black font-bold mb-2 text-center">
-          {step === 1 && "Enter your mobile number"}
-          {step === 2 && "Enter OTP"}
-          {step === 3 && "Create Account"}
-        </h2>
+    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
+      {/* Animated background */}
+      <button
+        onClick={() => navigate(-1)}
+        className="absolute top-5 left-5 z-50 text-white bg-black/40 hover:bg-black/60 rounded-full p-2 shadow-md backdrop-blur-sm transition"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
 
-        {step === 1 && (
-          <>
-          <p className="text-sm p-1 mb-2 text-gray-600 dark:text-gray-200">We will send you a 4-digit confirmation code to verify phone number.</p>
-            <label htmlFor="mobile" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Mobile Number
-            </label>
+      <motion.div
+        className="absolute inset-0 bg-[url('https://png.pngtree.com/thumb_back/fh260/background/20240327/pngtree-supermarket-aisle-with-empty-shopping-cart-at-grocery-store-retail-business-image_15646095.jpg')] 
+             bg-cover bg-top md:bg-center bg-no-repeat"
+        initial={{ scale: 1.1 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+      >
+        <div className="absolute inset-0 bg-black/20 dark:bg-black/40"></div>
+      </motion.div>
 
-            <div className="relative mb-2">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <span className="text-gray-500 dark:text-gray-400">+91</span>
-              </div>
-              <input
-                type="tel"
-                id="mobile"
-                className={`w-full pl-12 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${isTouched
-                    ? isValid
-                      ? 'border-green-500 focus:ring-green-200 dark:focus:ring-green-800'
-                      : 'border-red-500 focus:ring-red-200 dark:focus:ring-red-800'
-                    : 'border-gray-300 dark:border-gray-600 focus:ring-blue-200 dark:focus:ring-blue-800'
-                  } bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
-                placeholder="9876543210"
-                maxLength="10"
-                value={mobile}
-                onChange={handleChange}
-                onBlur={handleBlur}
-              />
-            </div>
+      {isLoading && <LoaderSpinner />}
 
-            {isTouched && (
-              <p className={`mt-2 mb-1 text-sm flex items-center ${isValid ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                }`}>
-                {isValid ? (
-                  <>
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Valid mobile number
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    {mobile.length > 0 ? 'Invalid mobile number' : 'Mobile number required'}
-                  </>
-                )}
-              </p>
-            )}
+      {/* Shopping Bag Container with 3D effects */}
+      <motion.div
+        ref={bagRef}
+        className="relative z-10 w-full max-w-md"
+        onMouseMove={handleMouseMove}
+        onMouseEnter={() => setBagHover(true)}
+        onMouseLeave={handleMouseLeave}
+        style={{
+          perspective: "1000px",
+          transformStyle: "preserve-3d"
+        }}
+      >
+        {/* Bag Handle with physics-based animation */}
+        <motion.div
+          className="relative mx-auto w-24 h-8 mb-1"
+          transition={{ type: "spring", damping: 10, stiffness: 300 }}
+        >
+          <motion.div
+            className="absolute left-0 w-8 h-10 bg-green-300 dark:bg-green-600 rounded-t-full"
+            style={{
+              transform: `rotateX(${bagTilt.x}deg) rotateY(${bagTilt.y}deg)`,
+              boxShadow: "inset 0 -5px 10px rgba(0,0,0,0.1)"
+            }}
+          />
+          <motion.div
+            className="absolute right-0 w-8 h-10 bg-green-300 dark:bg-green-600 rounded-t-full"
+            style={{
+              transform: `rotateX(${bagTilt.x}deg) rotateY(${bagTilt.y}deg)`,
+              boxShadow: "inset 0 -5px 10px rgba(0,0,0,0.1)"
+            }}
+          />
+        </motion.div>
 
-            {isValid && (
-              <div className="mt-4 p-2 mb-2 bg-green-50 dark:bg-green-900/30 rounded-lg border border-green-200 dark:border-green-800">
-                <p className="text-green-700 dark:text-green-300 text-sm mt-1">
-                  We'll send an code to +91 {mobile}
-                </p>
-              </div>
-            )}
-            <button
-              onClick={() => handleStepChange(2)}
-              disabled={!isValid}
-              className={`w-full py-3 px-4 rounded-lg font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all ${isValid
-                  ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500 dark:bg-green-700 dark:hover:bg-green-800 cursor-pointer'
-                  : 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed'
-                }`}
+        {/* Bag Body with 3D tilt and depth */}
+        <motion.div
+          className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-3xl rounded-t-[1.5rem] border-4 border-green-300 dark:border-green-600 
+          shadow-[0_15px_40px_-10px_rgba(0,0,0,0.3)] px-6 py-8 sm:px-8 sm:py-10"
+          initial={{ y: 50, opacity: 0 }}
+          animate={{
+            y: 0,
+            opacity: 1,
+            transform: `rotateX(${bagTilt.x}deg) rotateY(${bagTilt.y}deg)`
+          }}
+          transition={{ type: "spring", damping: 20, stiffness: 200 }}
+          style={{
+            transformStyle: "preserve-3d",
+            boxShadow: "0 20px 50px -15px rgba(0,0,0,0.3)"
+          }}
+        >
+          {/* Logo with floating animation */}
+          <motion.div
+            className="flex justify-center -mt-14 mb-4"
+            animate={{
+              y: [0, -5, 0],
+              rotate: [0, 2, -2, 0]
+            }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          >
+            <motion.img
+              src={logo}
+              alt="Logo"
+              className="w-24 h-24 object-contain rounded-full border-4 border-green-300 dark:border-green-600 bg-white dark:bg-gray-800 shadow-md"
+              whileHover={{ scale: 1.05 }}
+            />
+          </motion.div>
+
+          {/* Stitching with subtle animation */}
+          <motion.div
+            className="flex justify-center mb-6"
+            animate={{ scaleX: [1, 1.05, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <div className="h-1 w-16 bg-green-300 dark:bg-green-600 rounded-full"></div>
+          </motion.div>
+
+          {/* Form content with staggered animations */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={step}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
             >
-              {isValid ? "Get the code" : "Next"}
-            </button>
-          </>
-        )}
+              <h2 className="text-xl dark:text-white text-black font-bold mb-4 text-center">
+                {step === 1 && "Login or Sign Up"}
+                {step === 2 && "Enter OTP"}
+                {step === 3 && "Create Account"}
+              </h2>
 
-        {step === 2 && (
-          <div className="space-y-4 max-w-xs mx-auto sm:max-w-md">
-            <div className="text-center">
-              <p className="text-gray-600 dark:text-gray-300 mb-1">
-                Code sent to <span className="font-semibold text-gray-800 dark:text-white">+91 {mobile}</span>
-              </p>
-              <button
-                onClick={handleResendOTP}
-                disabled={countdown > 0}
-                className={`text-sm ${countdown > 0 ? 'text-gray-400' : 'text-blue-600 dark:text-blue-400 hover:underline'}`}
-              >
-                {countdown > 0 ? `Resend code in ${countdown}s` : 'Resend OTP'}
-              </button>
-            </div>
+              {step === 1 && (
+                <>
+                  <p className="text-sm p-1 mb-2 text-gray-600 dark:text-gray-200">We will send you a 4-digit confirmation code to verify phone number.</p>
+                  <label htmlFor="mobile" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Mobile Number
+                  </label>
 
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                4-digit verification code
-              </label>
-              <div className="flex justify-between gap-2 sm:gap-3">
-                {[...Array(4)].map((_, i) => (
-                  <input
-                    key={i}
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    maxLength={1}
-                    value={otp[i] || ''}
-                    onChange={(e) => handleOTPChange(e, i)}
-                    onKeyDown={(e) => handleOTPKeyDown(e, i)}
-                    onPaste={handleOTPPaste}
-                    className="flex-1 aspect-square max-w-[50px] sm:max-w-none sm:w-12 h-12 sm:h-14 text-center dark:text-white text-black text-xl sm:text-2xl 
+                  <div className="relative mb-2">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <span className="text-gray-500 dark:text-gray-400">+91</span>
+                    </div>
+                    <input
+                      type="tel"
+                      id="mobile"
+                      className={`w-full pl-12 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${isTouched
+                        ? isValid
+                          ? 'border-green-500 focus:ring-green-200 dark:focus:ring-green-800'
+                          : 'border-red-500 focus:ring-red-200 dark:focus:ring-red-800'
+                        : 'border-gray-300 dark:border-gray-600 focus:ring-blue-200 dark:focus:ring-blue-800'
+                        } bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
+                      placeholder="9876543210"
+                      maxLength="10"
+                      value={mobile}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                    />
+                  </div>
+
+                  {isTouched && (
+                    <p className={`mt-2 mb-1 text-sm flex items-center ${isValid ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                      }`}>
+                      {isValid ? (
+                        <>
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Valid mobile number
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {mobile.length > 0 ? 'Invalid mobile number' : 'Mobile number required'}
+                        </>
+                      )}
+                    </p>
+                  )}
+
+                  {isValid && (
+                    <div className="mt-4 p-2 mb-2 bg-green-50 dark:bg-green-900/30 rounded-lg border border-green-200 dark:border-green-800">
+                      <p className="text-green-700 dark:text-green-300 text-sm mt-1">
+                        We'll send an code to +91 {mobile}
+                      </p>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => handleStepChange(2)}
+                    disabled={!isValid}
+                    className={`w-full py-3 px-4 rounded-lg font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all ${isValid
+                      ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500 dark:bg-green-700 dark:hover:bg-green-800 cursor-pointer'
+                      : 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed'
+                      }`}
+                  >
+                    {isValid ? "Get the code" : "Countinue"}
+                  </button>
+                </>
+              )}
+
+              {step === 2 && (
+                <div className="space-y-4 max-w-xs mx-auto sm:max-w-md">
+                  <div className="text-center">
+                    <p className="text-gray-600 dark:text-gray-300 mb-1">
+                      Code sent to <span className="font-semibold text-gray-800 dark:text-white">+91 {mobile}</span>
+                    </p>
+                    <button
+                      onClick={handleResendOTP}
+                      disabled={countdown > 0}
+                      className={`text-sm ${countdown > 0 ? 'text-gray-400' : 'text-blue-600 dark:text-blue-400 hover:underline'}`}
+                    >
+                      {countdown > 0 ? `Resend code in ${countdown}s` : 'Resend OTP'}
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      4-digit verification code
+                    </label>
+                    <div className="flex justify-between gap-2 sm:gap-3">
+                      {[...Array(4)].map((_, i) => (
+                        <input
+                          key={i}
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          maxLength={1}
+                          value={otp[i] || ''}
+                          onChange={(e) => handleOTPChange(e, i)}
+                          onKeyDown={(e) => handleOTPKeyDown(e, i)}
+                          onPaste={handleOTPPaste}
+                          className="flex-1 aspect-square max-w-[50px] sm:max-w-none sm:w-12 h-12 sm:h-14 text-center dark:text-white text-black text-xl sm:text-2xl 
                  border border-gray-300 dark:border-gray-600 rounded-lg 
                  focus:outline-none focus:ring-2 focus:ring-blue-500 
                  bg-white dark:bg-gray-700"
-                    autoFocus={i === 0}
-                    id={`otp-input-${i}`}
-                  />
-                ))}
-              </div>
-            </div>
+                          autoFocus={i === 0}
+                          id={`otp-input-${i}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
 
-            <button
-              onClick={() => handleStepChange(3)}
-              disabled={otp.length < 4}
-              className={`w-full py-3 rounded-lg font-medium text-white transition-colors ${otp.length === 4
-                  ? 'bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800'
-                  : 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed'
-                }`}
-            >
-              Verify Code
-            </button>
+                  <button
+                    onClick={() => handleStepChange(3)}
+                    disabled={otp.length < 4}
+                    className={`w-full py-3 rounded-lg font-medium text-white transition-colors ${otp.length === 4
+                      ? 'bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800'
+                      : 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed'
+                      }`}
+                  >
+                    Verify Code
+                  </button>
 
-            <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-              {otp.length === 4 ? (
-                <span className="flex items-center justify-center text-green-600 dark:text-green-400">
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Ready to verify
-                </span>
-              ) : (
-                `Enter all 4 digits to continue`
+                  <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                    {otp.length === 4 ? (
+                      <span className="flex items-center justify-center text-green-600 dark:text-green-400">
+                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Ready to verify
+                      </span>
+                    ) : (
+                      `Enter all 4 digits to continue`
+                    )}
+                  </p>
+                </div>
               )}
-            </p>
-          </div>
-        )}
 
-       {step === 3 && (
-  <div className="space-y-4">
-    <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-        Full Name
-        <span className="text-red-500">*</span>
-      </label>
-      <input
-        type="text"
-        className={`w-full px-4 py-3 border rounded-lg dark:text-white text-black focus:outline-none focus:ring-2 transition-all ${
-          form.fullName.length > 0
-            ? form.fullName.length >= 3
-              ? 'border-green-500 focus:ring-green-200 dark:focus:ring-green-800'
-              : 'border-red-500 focus:ring-red-200 dark:focus:ring-red-800'
-            : 'border-gray-300 dark:border-gray-600 focus:ring-blue-200 dark:focus:ring-blue-800'
-        } bg-white dark:bg-gray-700`}
-        placeholder="John Doe"
-        value={form.fullName}
-        onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-      />
-      {form.fullName.length > 0 && form.fullName.length < 3 && (
-        <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
-          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Name must be at least 3 characters
-        </p>
-      )}
-    </div>
+              {step === 3 && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Full Name
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      className={`w-full px-4 py-3 border rounded-lg dark:text-white text-black focus:outline-none focus:ring-2 transition-all ${form.fullName.length > 0
+                        ? form.fullName.length >= 3
+                          ? 'border-green-500 focus:ring-green-200 dark:focus:ring-green-800'
+                          : 'border-red-500 focus:ring-red-200 dark:focus:ring-red-800'
+                        : 'border-gray-300 dark:border-gray-600 focus:ring-blue-200 dark:focus:ring-blue-800'
+                        } bg-white dark:bg-gray-700`}
+                      placeholder="John Doe"
+                      value={form.fullName}
+                      onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+                    />
+                    {form.fullName.length > 0 && form.fullName.length < 3 && (
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
+                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Name must be at least 3 characters
+                      </p>
+                    )}
+                  </div>
 
-    <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-        Email
-        <span className="text-red-500">*</span>
-      </label>
-      <input
-        type="email"
-        className={`w-full px-4 py-3 border dark:text-white text-black rounded-lg focus:outline-none focus:ring-2 transition-all ${
-          form.email.length > 0
-            ? /^\S+@\S+\.\S+$/.test(form.email)
-              ? 'border-green-500 focus:ring-green-200 dark:focus:ring-green-800'
-              : 'border-red-500 focus:ring-red-200 dark:focus:ring-red-800'
-            : 'border-gray-300 dark:border-gray-600 focus:ring-blue-200 dark:focus:ring-blue-800'
-        } bg-white dark:bg-gray-700`}
-        placeholder="example@mail.com"
-        value={form.email}
-        onChange={(e) => setForm({ ...form, email: e.target.value })}
-      />
-      {form.email.length > 0 && !/^\S+@\S+\.\S+$/.test(form.email) && (
-        <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
-          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Please enter a valid email address
-        </p>
-      )}
-    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Email
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      className={`w-full px-4 py-3 border dark:text-white text-black rounded-lg focus:outline-none focus:ring-2 transition-all ${form.email.length > 0
+                        ? /^\S+@\S+\.\S+$/.test(form.email)
+                          ? 'border-green-500 focus:ring-green-200 dark:focus:ring-green-800'
+                          : 'border-red-500 focus:ring-red-200 dark:focus:ring-red-800'
+                        : 'border-gray-300 dark:border-gray-600 focus:ring-blue-200 dark:focus:ring-blue-800'
+                        } bg-white dark:bg-gray-700`}
+                      placeholder="example@mail.com"
+                      value={form.email}
+                      onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    />
+                    {form.email.length > 0 && !/^\S+@\S+\.\S+$/.test(form.email) && (
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
+                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Please enter a valid email address
+                      </p>
+                    )}
+                  </div>
 
-    <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-        Referral Code (optional)
-      </label>
-      <input
-        type="text"
-        className="w-full px-4 py-3 border dark:text-white text-black border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 bg-white dark:bg-gray-700"
-        placeholder="Enter referral code if any"
-        value={form.referral}
-        onChange={(e) => setForm({ ...form, referral: e.target.value })}
-      />
-    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Referral Code (optional)
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-3 border dark:text-white text-black border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 bg-white dark:bg-gray-700"
+                      placeholder="Enter referral code if any"
+                      value={form.referral}
+                      onChange={(e) => setForm({ ...form, referral: e.target.value })}
+                    />
+                  </div>
 
-    <button
-      onClick={handleContinue}
-      disabled={form.fullName.length < 3 || !/^\S+@\S+\.\S+$/.test(form.email)}
-      className={`w-full py-3 px-4 rounded-lg font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all ${
-        form.fullName.length >= 3 && /^\S+@\S+\.\S+$/.test(form.email)
-          ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500 dark:bg-green-700 dark:hover:bg-green-800'
-          : 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed'
-      }`}
-    >
-      Continue
-    </button>
+                  <button
+                    onClick={handleContinue}
+                    disabled={form.fullName.length < 3 || !/^\S+@\S+\.\S+$/.test(form.email)}
+                    className={`w-full py-3 px-4 rounded-lg font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all ${form.fullName.length >= 3 && /^\S+@\S+\.\S+$/.test(form.email)
+                      ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500 dark:bg-green-700 dark:hover:bg-green-800'
+                      : 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed'
+                      }`}
+                  >
+                    Continue
+                  </button>
 
-    {!(form.fullName.length >= 3 && /^\S+@\S+\.\S+$/.test(form.email)) && (
-      <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-        <p className="text-yellow-800 dark:text-yellow-200 text-sm flex items-center">
-          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-          Please complete all required fields correctly to continue
-        </p>
-      </div>
-    )}
-  </div>
-)}
-      </div>
+                  {!(form.fullName.length >= 3 && /^\S+@\S+\.\S+$/.test(form.email)) && (
+                    <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                      <p className="text-yellow-800 dark:text-yellow-200 text-sm flex items-center">
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        Please complete all required fields correctly to continue
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

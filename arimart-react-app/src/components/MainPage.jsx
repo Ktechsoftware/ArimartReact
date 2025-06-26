@@ -11,7 +11,7 @@ export default function MainPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="mb-10"
+            className="md:mb-0 mb-8"
         >
 
             {/* Carousel */}
@@ -31,7 +31,7 @@ export default function MainPage() {
                 className="mt-10 rounded-2xl"
             >
                 {/* Action Buttons */}
-                <div className="flex justify-center gap-4 mb-6">
+                <div className="flex justify-center gap-4 md:mb-0 mb-6">
                     <ActionCard 
                         icon={<UserPlus className="w-6 h-6" />} 
                         label="Share & Earn ₹30" 
@@ -72,7 +72,7 @@ function ActionCard({ icon, label, color ,tolink}) {
     <motion.div 
         whileHover={{ y: -5 }}
         whileTap={{ scale: 0.95 }}
-        className={`flex flex-col items-center justify-center w-24 h-24 ${color} text-white p-4 rounded-xl shadow-lg hover:shadow-xl transition-all`}
+        className={`flex md:hidden flex-col items-center justify-center w-24 h-24 ${color} text-white p-4 rounded-xl shadow-lg hover:shadow-xl transition-all`}
     >
         <Link to={tolink}>
       <div className="mb-2">{icon}</div>
@@ -91,7 +91,7 @@ function PriceCard({ price, delay }) {
         transition={{ delay, type: "spring", stiffness: 300 }}
         whileHover={{ scale: 1.1, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
         whileTap={{ scale: 0.95 }}
-        className="flex flex-col items-center justify-center w-16 h-16 bg-white dark:bg-gray-700 rounded-full shadow-md hover:shadow-lg transition-all"
+        className="md:hidden flex flex-col items-center justify-center w-16 h-16 bg-white dark:bg-gray-700 rounded-full shadow-md hover:shadow-lg transition-all"
     >
       <p className="text-blue-600 dark:text-blue-400 font-bold">₹{price}</p>
       <p className="text-xs text-gray-500 dark:text-gray-300 mt-1">Store</p>

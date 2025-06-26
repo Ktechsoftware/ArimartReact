@@ -1,10 +1,10 @@
 import React from 'react'
-import Header from '../../components/Header'
+import Header from '../../components/Header/Header'
 import CheckoutPage from '../../components/Orders/CheckoutPage'
 
 function CheckoutScreen() {
   return (
-    <div className='mb-20'>
+    <div className=''>
         <Header title="Checkout" setbaricon={false} setcarticon={false} />
         <CheckoutPage/>
     </div>

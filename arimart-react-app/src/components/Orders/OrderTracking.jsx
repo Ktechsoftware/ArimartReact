@@ -166,7 +166,7 @@ export default function OrderTracking() {
         <AnimatePresence>
           {!orderCollected ? (
             <motion.div
-              className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white/90 to-transparent z-10"
+              className="sticky bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white/90 to-transparent z-10"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
@@ -182,7 +182,7 @@ export default function OrderTracking() {
             </motion.div>
           ) : (
             <motion.div
-              className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white/90 to-transparent z-10"
+              className="sticky bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white/90 to-transparent z-10"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >

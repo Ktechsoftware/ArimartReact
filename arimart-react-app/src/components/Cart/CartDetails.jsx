@@ -161,15 +161,16 @@ export default function CartDetails() {
             </div>
           </div>
 
-          <Link to="/checkout" className="fixed bottom-0 left-0 right-0 flex justify-center p-4 bg-gradient-to-t from-white/90 to-transparent dark:from-gray-900/90 z-10">
-    <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      className="w-full max-w-md bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl shadow-lg transition"
-    >
-      Proceed To Payment
-    </motion.button>
-  </Link>
+          <Link to="/checkout" className="sticky bottom-0 left-0 right-0 flex justify-center p-4 bg-gradient-to-t from-white/90 to-transparent dark:from-gray-900/90 z-10">
+  <motion.button
+    whileHover={{ scale: 1.02 }}
+    whileTap={{ scale: 0.98 }}
+    className="w-full max-w-md bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl shadow-lg transition"
+  >
+    Proceed To Payment
+  </motion.button>
+</Link>
+
         </motion.div>
       )}
     </motion.div>

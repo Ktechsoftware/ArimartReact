@@ -1,73 +1,93 @@
-// AppRoutes.jsx
-import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate, matchPath } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import OnboardingScreen from '../components/OnboardingScreen';
-import AuthFlow from '../components/Auth/AuthFlow';
-import Home from '../pages/Home/Home';
-import Categoryindex from '../pages/Category';
-import BottomNav from '../components/BottomNav';
-import AccountIndex from '../pages/Account/AccountIndex';
-import ExploreIndex from '../pages/Explore/ExploreIndex';
-import Cartpage from '../pages/Cart/cartpage';
-import Productpage from '../pages/Product/Productpage';
-import Refferearn from '../pages/Home/Refferearn';
-import Walletpage from '../pages/Home/Walletpage';
-import CheckoutScreen from '../pages/Orders/CheckoutScreen';
-import OrderScreen from '../pages/Orders/OrderScreen';
-import OrderTrack from '../pages/Orders/OrderTrack';
-import WishlistScreen from '../pages/Wishlist/wishlistScreen';
-import EditProfilescreen from '../pages/Account/EditProfilescreen';
-import AboutScreen from '../pages/Aboutus/AboutScreen';
-import Contactusscreen from '../pages/Aboutus/Contactusscreen';
-import NotificationScreen from '../pages/Notification/NotificationScreen';
-import Foryoupagescreeen from '../pages/Foryouscreen/Foryoupagescreeen';
-import PromocodeScreen from '../pages/Promocode/PromocodeScreen';
-import Onboarding from '../components/Onboarding/Onboarding';
-import TopProductStore from '../pages/TopStores/TopProductStore';
 import { useSelector, useDispatch } from 'react-redux';
 import { checkAuth } from '../Store/authSlice';
 import { Toaster, toast } from 'react-hot-toast';
-import PrivacyPolicyScreen from '../pages/Privacypolicy/PrivacyPolicyScreen';
+import { useDeviceType } from '../hooks/useDeviceType';
+import ScrollToTop from '../utils/ScrollToTop';
+import ResponsiveLayout from '../layouts/ResponsiveLayout';
+
+// Pages
+import OnboardingScreen from '../components/OnboardingScreen';
+import Onboarding from '../components/Onboarding/Onboarding';
+import AuthFlow from '../components/Auth/AuthFlow';
+import Home from '../pages/Home/Home';
+import Refferearn from '../pages/Home/Refferearn';
+import Walletpage from '../pages/Home/Walletpage';
+import AboutScreen from '../pages/Aboutus/AboutScreen';
+import Contactusscreen from '../pages/Aboutus/Contactusscreen';
 import Faqscreen from '../pages/GroceryFAQ/Faqscreen';
-// import ResponsiveLayout from '../layouts/ResponsiveLayout';
+import PrivacyPolicyScreen from '../pages/Privacypolicy/PrivacyPolicyScreen';
+import AccountIndex from '../pages/Account/AccountIndex';
+import EditProfilescreen from '../pages/Account/EditProfilescreen';
+import ExploreIndex from '../pages/Explore/ExploreIndex';
+import Cartpage from '../pages/Cart/cartpage';
+import WishlistScreen from '../pages/Wishlist/wishlistScreen';
+import PromocodeScreen from '../pages/Promocode/PromocodeScreen';
+import CheckoutScreen from '../pages/Orders/CheckoutScreen';
+import OrderScreen from '../pages/Orders/OrderScreen';
+import OrderTrack from '../pages/Orders/OrderTrack';
+import Productpage from '../pages/Product/Productpage';
+import Categoryindex from '../pages/Category';
+import CategoryProductscreen from '../pages/CategoryProducts/CategoryProductscreen';
+import Searchitems from '../pages/Searchproduct/Searchitems';
+import NotificationScreen from '../pages/Notification/NotificationScreen';
+import Foryoupagescreeen from '../pages/Foryouscreen/Foryoupagescreeen';
+import TopProductStore from '../pages/TopStores/TopProductStore';
+import Marketplace from '../pages/Mainstore/Marketplace';
+import GroupDealScreen from '../pages/GroupBuy/GroupDealScreen';
+import Termcondition from '../pages/Privacypolicy/termcondition';
 
 export default function AppRoutes() {
   const location = useLocation();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { isAuthenticated } = useSelector((state) => state.auth);
+  const device = useDeviceType();
   const [isLoading, setIsLoading] = useState(false);
 
-   const dispatch = useDispatch();
-  const { isAuthenticated } = useSelector((state) => state.auth);
+  const publicRoutes = [
+    "/", "/home", "/onboard", "/auth", "/about", "/contactus", "/faq", "/privacypolicy",
+    "/product", "/product/:category", "/product/:category/:id",
+    "/search", "/categories", "/topstore/:price", "/explore"
+  ];
 
-  useEffect(() => {
-    dispatch(checkAuth());
+  const hideBottomNavRoutes = [
+    '/', '/onboard', '/auth', '/faq', '/privacypolicy', '/cart', '/checkout',
+    '/account/editprofile', '/home/wallet', '/home/referandearn',
+    '/wishlist', '/about', '/contactus', '/notification', '/promocodes'
+  ];
 
-    const publicRoutes = ['/', '/auth', '/onboard'];
-
-    if (
-      isAuthenticated &&
-      publicRoutes.includes(location.pathname)
-    ) {
-      toast('You are already logged in!', {
-        icon: '👋',
-        duration: 2000,
-        position: 'top-center',
-      });
-      navigate('/home', { replace: true });
-    }
-  }, [location.pathname, isAuthenticated]);
-
-  const hideBottomNavRoutes = ['/','/onboard', '/auth', '/faq','/privacypolicy','/cart', '/checkout', '/account/editprofile', '/home/wallet', '/home/referandearn', '/wishlist', '/about', '/contactus', '/notification','/promocodes'];
-  const hideBottomNavRoutesWithPrefix = ['/product', '/orders','/topstore'];
+  const hideBottomNavRoutesWithPrefix = ['/product', '/orders', '/topstore'];
 
   const shouldHideBottomNav =
     hideBottomNavRoutes.includes(location.pathname) ||
     hideBottomNavRoutesWithPrefix.some(prefix => location.pathname.startsWith(prefix));
 
+  // Unified auth and redirect logic
+  useEffect(() => {
+    dispatch(checkAuth());
+
+    const isPublicRoute = publicRoutes.some(route =>
+      matchPath(route, location.pathname)
+    );
+
+    if (!isPublicRoute && !isAuthenticated) {
+      toast.error("Login Please");
+      navigate("/auth", { replace: true });
+    }
+
+    if (isAuthenticated && ['/', '/auth', '/onboard'].includes(location.pathname)) {
+      navigate('/home', { replace: true });
+    }
+
+  }, [location.pathname, isAuthenticated]);
+
+  // Route loading bar
   useEffect(() => {
     setIsLoading(true);
-    const timer = setTimeout(() => setIsLoading(false), 800); // Adjust timing as needed
+    const timer = setTimeout(() => setIsLoading(false), 800);
     return () => clearTimeout(timer);
   }, [location.key]);
 
@@ -90,37 +110,45 @@ export default function AppRoutes() {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -10 }}
         >
-          {/* <ResponsiveLayout> */}
-          <Routes>
-            <Route path="/" element={<OnboardingScreen />} />
-            <Route path="/onboard" element={<Onboarding />} />
-            <Route path="/auth" element={<AuthFlow />} />
-            <Route path="/about" element={<AboutScreen />} />
-            <Route path="/contactus" element={<Contactusscreen />} />
-            <Route path="/faq" element={<Faqscreen />} />
-            <Route path="/privacypolicy" element={<PrivacyPolicyScreen />} />
-            <Route path="/topstore/:price" element={<TopProductStore />} />
-            <Route path="/notification" element={<NotificationScreen />} />
-            <Route path="/home" element={<Home />} />
-            <Route path="/foryou" element={<Foryoupagescreeen />} />
-            <Route path="/home/referandearn" element={<Refferearn />} />
-            <Route path="/home/wallet" element={<Walletpage />} />
-            <Route path="/account" element={<AccountIndex />} />
-            <Route path="/account/editprofile" element={<EditProfilescreen />} />
-            <Route path="/explore" element={<ExploreIndex />} />
-            <Route path="/cart" element={<Cartpage />} />
-            <Route path="/wishlist" element={<WishlistScreen />} />
-            <Route path="/promocodes" element={<PromocodeScreen />} />
-            <Route path="/checkout" element={<CheckoutScreen />} />
-            <Route path="/orders" element={<OrderScreen />} />
-            <Route path="/orders/tracking" element={<OrderTrack />} />
-            <Route path="/product/:category/:id" element={<Productpage />} />
-            <Route path="/categories" element={<Categoryindex />} />
-          </Routes>
-        {/* </ResponsiveLayout> */}
+          <ResponsiveLayout hideBottomNav={shouldHideBottomNav}>
+            <ScrollToTop />
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/onboard" element={<Onboarding />} />
+              <Route path="/auth" element={<AuthFlow />} />
+              <Route path="/about" element={<AboutScreen />} />
+              <Route path="/contactus" element={<Contactusscreen />} />
+              <Route path="/faq" element={<Faqscreen />} />
+              <Route path="/privacypolicy" element={<PrivacyPolicyScreen />} />
+              <Route path="/topstore/:price" element={<TopProductStore />} />
+              <Route path="/notification" element={<NotificationScreen />} />
+              <Route path="/home" element={<Home />} />
+              <Route path="/foryou" element={<Foryoupagescreeen />} />
+              <Route path="/home/referandearn" element={<Refferearn />} />
+              <Route path="/home/wallet" element={<Walletpage />} />
+              <Route path="/account" element={<AccountIndex />} />
+              <Route path="/account/editprofile" element={<EditProfilescreen />} />
+              <Route path="/explore" element={<ExploreIndex />} />
+              <Route path="/cart" element={<Cartpage />} />
+              <Route path="/wishlist" element={<WishlistScreen />} />
+              <Route path="/promocodes" element={<PromocodeScreen />} />
+              <Route path="/checkout" element={<CheckoutScreen />} />
+              <Route path="/orders" element={<OrderScreen />} />
+              <Route path="/orders/tracking" element={<OrderTrack />} />
+              <Route path="/category">
+                <Route index element={<Categoryindex />} />
+                <Route path=":market" element={<Marketplace />} />
+                <Route path=":market/:subcategory" element={<CategoryProductscreen />} />
+                <Route path=":market/:subcategory/:id" element={<Productpage />} />
+              </Route>
+              <Route path="/search" element={<Searchitems />} />
+              <Route path="/term&condition" element={<Termcondition />} />
+              <Route path="/categories" element={<Categoryindex />} />
+              <Route path="/group-buying" element={<GroupDealScreen />} />
+            </Routes>
+          </ResponsiveLayout>
         </motion.div>
       </AnimatePresence>
-      {!shouldHideBottomNav && <BottomNav />}
     </div>
   );
 }
