@@ -5,7 +5,7 @@ import Header from '../../components/Header/Header'
 const GroupDealScreen = () => {
   return (
     <div>
-       <Header title={"Group buy deals"} setbaricon={false}  setcarticon={false}/>
+       <Header title={"Group buy deals"} setbaricon={false}/>
         <GroupBuyPage/>
     </div>
   )

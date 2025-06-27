@@ -8,7 +8,7 @@ export const TabBar = ({ activeTab, setActiveTab }) => {
   ];
 
   return (
-    <div className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
+    <div className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-[8]">
       <div className="container mx-auto flex">
         {tabs.map((tab) => (
           <button

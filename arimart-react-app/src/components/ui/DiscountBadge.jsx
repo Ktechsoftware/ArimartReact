@@ -4,13 +4,13 @@ export default function DiscountBadge({ price, originalPrice, label }) {
   const discount = Math.round((1 - price / originalPrice) * 100);
 
   return (
-    <div className="absolute top-0 left-[-18px] z-10 w-16 h-16 flex items-start justify-center pointer-events-none">
+    <div className="absolute top-0 left-[-18px] z-[5] w-16 h-16 flex items-start justify-center pointer-events-none">
       {/* Nail */}
-      <div className="absolute top-0 w-1.5 h-1.5 rounded-full bg-gray-500 z-10 shadow-sm" />
+      <div className="absolute top-0 w-1.5 h-1.5 rounded-full bg-gray-500 z-[5] shadow-sm" />
       
       {/* String - swings infinitely */}
       <motion.div
-        className="absolute top-0 w-px h-3 bg-gray-400 z-10"
+        className="absolute top-0 w-px h-3 bg-gray-400 z-8"
         animate={{
           rotate: [-5, 5, -5],
         }}
