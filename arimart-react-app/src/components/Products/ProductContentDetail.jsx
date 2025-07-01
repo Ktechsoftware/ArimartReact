@@ -9,27 +9,6 @@ export default function ProductContentDetail() {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    axios
-      .get(`https://fakestoreapi.com/products/${id}`)
-      .then((res) => {
-        const fakeProduct = res.data;
-
-        // Convert fake API product structure to your expected format
-        setProduct({
-          name: fakeProduct.title,
-          image: fakeProduct.image,
-          price: Math.round(fakeProduct.price),
-          originalPrice: Math.round(fakeProduct.price * 1.5),
-          rating: fakeProduct.rating?.rate || 4.0,
-          reviews: fakeProduct.rating?.count || 1000,
-          sold: Math.floor(Math.random() * 5000) + 1000,
-          description: fakeProduct.description,
-        });
-        setLoading(false);
-      });
-  }, [id]);
-
   if (loading || !product) {
     return (
       <div className="p-6 text-center text-gray-500 dark:text-gray-400">

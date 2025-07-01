@@ -15,27 +15,27 @@ const DProductCard = ({ product }) => {
       whileHover={{ y: -5 }}
       className="w-48 bg-white dark:bg-gray-900 rounded-md shadow-sm border border-gray-200 dark:border-gray-700 p-3 text-sm flex-shrink-0 relative"
     >
-      <DiscountBadge price={product.price || 200} originalPrice={product.originalPrice || 400} />
+      <DiscountBadge price={product.totalprice || 200} originalPrice={product.netprice || 400} />
 
       <Link
-        to={`/category/${market || product.category}/${subcategory || product.title}/${product.id}`}
+        to={`/category/${market || product.categoryName}/${product.subcategoryName || product.productName}/${product.id}`}
         className="h-32 w-full bg-gray-100 rounded-md overflow-hidden mb-2 relative block"
       >
         <img
           src={product.image}
-          alt={product.title}
+          alt={product.productName}
           className="w-full h-full object-cover"
         />
       </Link>
 
       <p className="font-medium text-gray-800 dark:text-white line-clamp-2 leading-snug mb-1">
-        {product.title}
+        {product.productName}
       </p>
 
-      <p className="text-xs text-gray-500 mb-1">{product.category }</p>
+      <p className="text-xs text-gray-500 mb-1">{product.categoryName }</p>
 
       <div className="flex items-center space-x-1 text-xs mb-1">
-        <span className="text-gray-800 dark:text-gray-200">{product.rating.rate}</span>
+        <span className="text-gray-800 dark:text-gray-200">{product.isAvl}</span>
         <div className="flex items-center text-orange-400">
           {[...Array(5)].map((_, i) => (
             <Star
@@ -44,19 +44,19 @@ const DProductCard = ({ product }) => {
             />
           ))}
         </div>
-        <span className="text-blue-600 ml-1">{product.rating.count}</span>
+        <span className="text-blue-600 ml-1">{product.wweight}</span>
       </div>
 
       <div className="flex items-baseline gap-2 mb-1">
         <span className="font-bold text-gray-900 dark:text-white text-base">
-          ₹{product.price}
+          ₹{product.netprice}
         </span>
         <span className="line-through text-xs text-gray-400">
-          ₹{product.originalPrice}
+          ₹{product.totalprice}
         </span>
       </div>
 
-      <p className="text-xs text-gray-600 dark:text-gray-400">{product.delivery}</p>
+      <p className="text-xs text-gray-600 dark:text-gray-400">{ ""}</p>
 
       <motion.button
         whileHover={{ scale: 1.1 }}
