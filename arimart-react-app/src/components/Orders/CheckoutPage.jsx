@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Minus, Plus, MapPin, Wallet2, StickyNote, CreditCard, Smartphone, ChevronDown } from 'lucide-react';
 import OrderConfirmedModal from './OrderConfirmedModal';
+import { useCart } from '../../context/CartContext';
 
 const cartItems = [
   { id: 1, name: 'Bell Pepper Red', desc: '1kg', price: 199, image: '/images/pepper.png' },
@@ -16,7 +17,6 @@ const paymentMethods = [
 ];
 
 export default function CheckoutPage() {
-  const [items, setItems] = useState(cartItems.map(item => ({ ...item, qty: 1 })));
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(paymentMethods[2]);
@@ -28,10 +28,12 @@ export default function CheckoutPage() {
     ));
   };
 
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const delivery = 20;
+  const { items, subtotal, totalItems } = useCart();
+  
+  const shipping = 30;
+  const discount = 10;
   const tax = 10;
-  const total = subtotal + delivery + tax;
+  const total = subtotal + shipping - discount-tax;
 
   return (
     <div className="max-w-6xl mx-auto p-4 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen">
@@ -60,7 +62,7 @@ export default function CheckoutPage() {
         transition={{ delay: 0.2 }}
         className="border border-orange-200 dark:border-gray-700 rounded-xl p-4 mb-6 space-y-4"
       >
-        <p className="font-semibold">Your Order ({items.length})</p>
+        <p className="font-semibold">Your Order ({totalItems})</p>
         {items.map(item => (
           <motion.div 
             key={item.id}
@@ -75,8 +77,8 @@ export default function CheckoutPage() {
             />
             <div className="flex-1">
               <p className="font-semibold">{item.name}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{item.desc}</p>
-              <p className="font-bold mt-1">₹{item.price.toFixed(2)}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{item.categoryName}</p>
+              <p className="font-bold mt-1">₹{item.price}</p>
             </div>
             <motion.div 
               className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full"
@@ -94,7 +96,7 @@ export default function CheckoutPage() {
                 animate={{ scale: 1 }}
                 className="font-medium"
               >
-                {item.qty}
+                {item.quantity}
               </motion.span>
               <motion.button 
                 onClick={() => handleQty(item.id, 1)}
@@ -217,7 +219,7 @@ export default function CheckoutPage() {
         </div>
         <div className="flex justify-between">
           <span>Delivery</span>
-          <span>₹{delivery.toFixed(2)}</span>
+          <span>₹{shipping.toFixed(2)}</span>
         </div>
         <div className="flex justify-between">
           <span>Tax</span>

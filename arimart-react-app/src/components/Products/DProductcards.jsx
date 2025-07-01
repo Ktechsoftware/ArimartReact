@@ -1,21 +1,27 @@
-// components/ProductCard.jsx
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useParams } from 'react-router-dom';
-import { Heart, Plus, Star } from 'lucide-react';
+import { Heart, Plus, Check, Star } from 'lucide-react';
 import DiscountBadge from '../ui/DiscountBadge';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import { addToWishlist } from '../../Store/wishlistSlice';
+import { useCart } from '../../context/CartContext';
 
 const DProductCard = ({ product }) => {
   const { market, subcategory, id } = useParams();
   const dispatch = useDispatch();
   const userData = useSelector((state) => state.auth.userData);
-  console.log("User Data in DProductCard:", userData);
-  const wishlistItems = useSelector((state) => state.wishlist.items); // existing wishlist items
+  const wishlistItems = useSelector((state) => state.wishlist.items);
+  
+  // Cart context
+  const { addToCart, isInCart, getItemQuantity } = useCart();
 
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+
+  const itemInCart = isInCart(product.id);
+  const itemQuantity = getItemQuantity(product.id);
 
   useEffect(() => {
     if (wishlistItems.some((item) => item.pdid === product.id)) {
@@ -32,6 +38,17 @@ const DProductCard = ({ product }) => {
     setIsWishlisted(true);
   };
 
+  const handleAddToCart = async () => {
+    setIsAddingToCart(true);
+    try {
+      await addToCart(product, 1);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -46,12 +63,14 @@ const DProductCard = ({ product }) => {
         className="absolute top-2 right-2 z-[5] w-7 h-7 rounded-full bg-white dark:bg-gray-800 shadow-md flex items-center justify-center hover:scale-105 transition"
       >
         <Heart
-          className={`w-4 h-4 ${isWishlisted ? "fill-red-500 stroke-red-500" : "stroke-gray-500"
-            }`}
+          className={`w-4 h-4 ${isWishlisted ? "fill-red-500 stroke-red-500" : "stroke-gray-500"}`}
         />
       </button>
 
-      <DiscountBadge price={product.totalprice || 200} originalPrice={product.netprice || 400} />
+      <DiscountBadge 
+        price={product.totalprice || 200} 
+        originalPrice={product.netprice || 400} 
+      />
 
       <Link
         to={`/category/${market || product.categoryName}/${product.subcategoryName || product.productName}/${product.id}`}
@@ -94,12 +113,32 @@ const DProductCard = ({ product }) => {
 
       <p className="text-xs text-gray-600 dark:text-gray-400">{""}</p>
 
+      {/* Add to Cart Button with different states */}
       <motion.button
-        whileHover={{ scale: 1.1 }}
+        whileHover={{ scale: itemInCart ? 1 : 1.1 }}
         whileTap={{ scale: 0.9 }}
-        className="absolute bottom-3 right-3 w-8 h-8 bg-orange-500 hover:bg-orange-600 rounded-full flex items-center justify-center shadow-md transition-all duration-200"
+        onClick={handleAddToCart}
+        disabled={isAddingToCart}
+        className={`absolute bottom-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-200 ${
+          itemInCart 
+            ? 'bg-green-500 hover:bg-green-600' 
+            : 'bg-orange-500 hover:bg-orange-600'
+        } ${isAddingToCart ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
-        <Plus className="text-white w-4 h-4" />
+        {isAddingToCart ? (
+          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+        ) : itemInCart ? (
+          <div className="flex flex-col items-center">
+            <Check className="text-white w-4 h-4" />
+            {itemQuantity > 1 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                {itemQuantity}
+              </span>
+            )}
+          </div>
+        ) : (
+          <Plus className="text-white w-4 h-4" />
+        )}
       </motion.button>
     </motion.div>
   );

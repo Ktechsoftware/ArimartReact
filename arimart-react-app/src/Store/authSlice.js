@@ -3,7 +3,7 @@ import Cookies from 'js-cookie';
 
 const initialState = {
   isAuthenticated: !!Cookies.get('userLoginDataArimart'),
-  userData: Cookies.get('userLoginDataArimart') 
+  userData: Cookies.get('userLoginDataArimart')
     ? JSON.parse(Cookies.get('userLoginDataArimart'))
     : null,
 };
@@ -24,6 +24,7 @@ const authSlice = createSlice({
     },
     logout: (state) => {
       Cookies.remove('userLoginDataArimart');
+      localStorage.removeItem('shopping_cart'); // 💥 Clear cart
       state.isAuthenticated = false;
       state.userData = null;
     },

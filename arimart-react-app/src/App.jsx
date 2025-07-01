@@ -3,11 +3,16 @@ import { ThemeProvider } from './context/ThemeContext'; // Adjust path as needed
 import AppRoutes from './routes/AppRoutes';
 import { Toaster } from 'react-hot-toast';
 import { DealAlertModal } from './components/GroupBuying/DealAlertModal';
+import { CartProvider } from './context/CartContext';
+import { Provider } from 'react-redux';
+import store from './Store';
 
 export default function App() {
   return (
     <>
     <DealAlertModal/>
+    <Provider store={store}>
+      <CartProvider>
       <ThemeProvider>
         <Router>
           <AppRoutes />
@@ -29,6 +34,8 @@ export default function App() {
           className: 'shadow-xl text-sm bg-white text-gray-800 dark:bg-gray-800 dark:text-white',
         }}
       />
+      </CartProvider>
+      </Provider>
     </>
   );
 }

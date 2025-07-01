@@ -1,40 +1,24 @@
-// CartDetails.jsx
+// Updated CartDetails.jsx
 import { Trash2, Plus, Minus } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
 import PromoCodeInput from './PromoCodeInput';
-import {
-  fetchCartByUserId,
-  fetchCartByUserAndGroup,
-  updateItemQuantityLocal,
-  removeItemLocal,
-  updateCartItemQuantity,
-  removeFromCart,
-  clearErrors,
-  setUserId,
-  setGroupId
-} from '../../Store/cartSlice'; // Adjust path as needed
-import EmptyCart from './EmptyCart'; // Adjust path as needed
+import EmptyCart from './EmptyCart';
+import { useCart } from '../../context/CartContext';
 
 export default function CartDetails() {
-  const dispatch = useDispatch();
   const {
     items,
     loading,
     error,
     totalItems,
     subtotal,
-    userId,
-    groupId,
-    addToCartLoading,
-    addToCartError
-  } = useSelector((state) => state.cart);
+    updateQuantity,
+    removeFromCart,
+    syncStatus
+  } = useCart();
 
-  // You can get userId from auth state or props
-  const { user } = useSelector((state) => state.auth); // Assuming you have auth slice
-  
   const [localLoading, setLocalLoading] = useState({});
   
   // Static values for demo - you can make these dynamic
@@ -42,82 +26,32 @@ export default function CartDetails() {
   const discount = 10;
   const total = subtotal + shipping - discount;
 
-  // Set user ID when component mounts or user changes
-  useEffect(() => {
-    if (user?.id) {
-      dispatch(setUserId(user.id));
-    }
-  }, [dispatch, user]);
-
-  // Fetch cart when userId changes
-  useEffect(() => {
-    if (userId) {
-      if (groupId) {
-        dispatch(fetchCartByUserAndGroup({ userId, groupId }));
-      } else {
-        dispatch(fetchCartByUserId(userId));
-      }
-    }
-  }, [dispatch, userId, groupId]);
-
-  // Handle quantity update with optimistic UI updates
-  const updateQuantity = async (item, delta) => {
-    const newQuantity = Math.max(1, (item.Qty || item.quantity || 1) + delta);
-    const itemId = item.Id || item.id;
-    
-    // Optimistic update
-    dispatch(updateItemQuantityLocal({ itemId, quantity: newQuantity }));
+  // Handle quantity update with loading state
+  const handleUpdateQuantity = async (item, delta) => {
+    const newQuantity = Math.max(1, item.quantity + delta);
+    const itemId = item.id;
     
     setLocalLoading(prev => ({ ...prev, [itemId]: true }));
     
     try {
-      // Update on server
-      await dispatch(updateCartItemQuantity({ 
-        cartItemId: itemId, 
-        quantity: newQuantity 
-      })).unwrap();
-    } catch (error) {
-      // Revert optimistic update on error
-      dispatch(updateItemQuantityLocal({ 
-        itemId, 
-        quantity: (item.Qty || item.quantity || 1) 
-      }));
-      console.error('Failed to update quantity:', error);
+      await updateQuantity(itemId, newQuantity);
     } finally {
       setLocalLoading(prev => ({ ...prev, [itemId]: false }));
     }
   };
 
-  // Handle item removal with optimistic UI updates
-  const removeItem = async (item) => {
-    const itemId = item.Id || item.id;
-    
-    // Optimistic update
-    dispatch(removeItemLocal(itemId));
+  // Handle item removal with loading state
+  const handleRemoveItem = async (item) => {
+    const itemId = item.id;
     
     setLocalLoading(prev => ({ ...prev, [itemId]: true }));
     
     try {
-      // Remove from server
-      await dispatch(removeFromCart(itemId)).unwrap();
-    } catch (error) {
-      // You might want to re-fetch cart on error or show error message
-      console.error('Failed to remove item:', error);
-      // Optionally refetch cart
-      if (userId) {
-        dispatch(fetchCartByUserId(userId));
-      }
+      await removeFromCart(itemId);
     } finally {
       setLocalLoading(prev => ({ ...prev, [itemId]: false }));
     }
   };
-
-  // Clear errors when component unmounts
-  useEffect(() => {
-    return () => {
-      dispatch(clearErrors());
-    };
-  }, [dispatch]);
 
   if (loading && items.length === 0) {
     return (
@@ -142,9 +76,9 @@ export default function CartDetails() {
     return (
       <div className="max-w-6xl mx-auto p-4 text-center">
         <div className="text-red-500 dark:text-red-400">
-          <p>Error loading cart: {error.message || error}</p>
+          <p>Error loading cart: {error}</p>
           <button 
-            onClick={() => userId && dispatch(fetchCartByUserId(userId))}
+            onClick={() => window.location.reload()}
             className="mt-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
           >
             Retry
@@ -162,32 +96,31 @@ export default function CartDetails() {
     >
       <AnimatePresence>
         {items.length === 0 ? (
-          <EmptyCart/>
+          <EmptyCart />
         ) : (
-          
           <div className="space-y-4">
             <div className="flex justify-between items-center mb-4">
-        <h2 className="text-md text-gray-800 dark:text-gray-100 font-bold">
-          Your Items {totalItems > 0 && `(${totalItems})`}
-        </h2>
-        {(error || addToCartError) && (
-          <div className="text-red-500 text-sm">
-            {error?.message || addToCartError?.message || 'An error occurred'}
-          </div>
-        )}
-      </div>
+              <h2 className="text-md text-gray-800 dark:text-gray-100 font-bold">
+                Your Items {totalItems > 0 && `(${totalItems})`}
+              </h2>
+              {error && (
+                <div className="text-red-500 text-sm">
+                  {error}
+                </div>
+              )}
+              {syncStatus === 'syncing' && (
+                <div className="text-blue-500 text-sm">
+                  Syncing...
+                </div>
+              )}
+            </div>
+
             {items.map(item => {
-              const itemId = item.Id || item.id;
-              const itemName = item.ProductName || item.name || 'Unknown Product';
-              const itemDescription = item.Description || item.description || '';
-              const itemPrice = item.Price || item.price || 0;
-              const itemQuantity = item.Qty || item.quantity || 1;
-              const itemImage = item.Image || item.image || '/placeholder-image.png';
-              const isItemLoading = localLoading[itemId];
+              const isItemLoading = localLoading[item.id];
 
               return (
                 <motion.div
-                  key={itemId}
+                  key={item.id}
                   layout
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -198,45 +131,47 @@ export default function CartDetails() {
                   }`}
                 >
                   <img 
-                    src={itemImage} 
-                    alt={itemName} 
+                    src={item.image} 
+                    alt={item.name} 
                     className="w-16 h-16 rounded-lg object-cover" 
                     onError={(e) => {
                       e.target.src = '/placeholder-image.png';
                     }}
                   />
                   <div className="flex-1">
-                    <h3 className="font-semibold">{itemName}</h3>
-                    {itemDescription && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{itemDescription}</p>
+                    <h3 className="font-semibold">{item.name}</h3>
+                    {item.categoryName && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {item.categoryName}
+                      </p>
                     )}
-                    <p className="font-bold mt-1">₹{itemPrice.toFixed(2)}</p>
+                    <p className="font-bold mt-1">₹{Number(item.price).toFixed(2)}</p>
                   </div>
                   
-                  {/* Quantity controls and trash button at the bottom */}
+                  {/* Quantity controls and trash button */}
                   <div className="absolute bottom-3 right-3 flex items-center gap-2">
                     <div className="flex items-center gap-2 bg-white dark:bg-gray-700 rounded-full px-2 py-1 shadow-sm">
                       <motion.button
                         whileTap={{ scale: 0.9 }}
-                        onClick={() => updateQuantity(item, -1)}
-                        disabled={isItemLoading || itemQuantity <= 1}
+                        onClick={() => handleUpdateQuantity(item, -1)}
+                        disabled={isItemLoading || item.quantity <= 1}
                         className="text-gray-600 dark:text-gray-300 hover:text-red-500 transition disabled:opacity-50"
                       >
                         <Minus className="w-3 h-3" />
                       </motion.button>
                       
                       <motion.span 
-                        key={`quantity-${itemId}-${itemQuantity}`}
+                        key={`quantity-${item.id}-${item.quantity}`}
                         initial={{ scale: 1.2 }}
                         animate={{ scale: 1 }}
                         className="text-sm font-medium w-5 text-center"
                       >
-                        {isItemLoading ? '...' : itemQuantity}
+                        {isItemLoading ? '...' : item.quantity}
                       </motion.span>
                       
                       <motion.button
                         whileTap={{ scale: 0.9 }}
-                        onClick={() => updateQuantity(item, 1)}
+                        onClick={() => handleUpdateQuantity(item, 1)}
                         disabled={isItemLoading}
                         className="text-gray-600 dark:text-gray-300 hover:text-green-500 transition disabled:opacity-50"
                       >
@@ -247,7 +182,7 @@ export default function CartDetails() {
                     <motion.button
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
-                      onClick={() => removeItem(item)}
+                      onClick={() => handleRemoveItem(item)}
                       disabled={isItemLoading}
                       className="text-red-400 hover:text-red-600 transition disabled:opacity-50"
                     >
@@ -267,7 +202,7 @@ export default function CartDetails() {
           animate={{ opacity: 1 }}
           className="relative mt-6 space-y-3"
         >
-          <PromoCodeInput/>
+          <PromoCodeInput />
 
           <div className="space-y-2 pt-2">
             <div className="flex justify-between">
@@ -292,10 +227,10 @@ export default function CartDetails() {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              disabled={loading || addToCartLoading}
+              disabled={loading}
               className="w-full max-w-md bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-semibold py-3 rounded-xl shadow-lg transition"
             >
-              {loading || addToCartLoading ? 'Processing...' : 'Proceed To Payment'}
+              {loading ? 'Processing...' : 'Proceed To Payment'}
             </motion.button>
           </Link>
         </motion.div>
