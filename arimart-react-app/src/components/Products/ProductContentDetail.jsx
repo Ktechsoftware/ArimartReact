@@ -1,21 +1,57 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { Star } from "lucide-react";
 import DProductCard from "./DProductcards";
-import axios from "axios";
+import { fetchProductById } from "../../Store/productDetailSlice";
+import { addToCartByUser } from "../../Store/cartSlice";
+import toast from "react-hot-toast";
+
 
 export default function ProductContentDetail() {
-  const { id } = useParams();
-  const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
+const { id } = useParams();
+  const dispatch = useDispatch();
+  const navigator = useNavigate();
+  
+  // Safe destructuring with fallback
+  const productDetailState = useSelector((state) => state.productDetail) || {};
+  // console.log("Product Detail State:", productDetailState);
+  
+  const { product = null, loading = false, error = null } = productDetailState;
+  const userData = useSelector((state) => state.auth.userData);
+  console.log("User Data:", userData);
 
-  if (loading || !product) {
-    return (
-      <div className="p-6 text-center text-gray-500 dark:text-gray-400">
-        Loading product details...
-      </div>
-    );
+  useEffect(() => {
+    if (id) dispatch(fetchProductById(id));
+  }, [dispatch, id]);
+
+  if (loading) {
+    return <div className="p-6 text-center text-gray-500 dark:text-gray-400">Loading product details...</div>;
   }
+
+  if (error) {
+    return <div className="p-6 text-center text-red-500 dark:text-red-400">Error: {error}</div>;
+  }
+
+  if (!product) {
+    return <div className="p-6 text-center text-gray-500 dark:text-gray-400">Product not found.</div>;
+  }
+
+const handleAddToCart = () => {
+  if (!userData || !userData.userId) {
+   toast.error("Please login to add items to your cart.");
+    return;
+  }
+
+  dispatch(addToCartByUser({
+    Pid: product.id,
+    Pdid: product.pdId,
+    Qty: 1,
+    Userid: userData.userId,
+    Price: product.price,
+  }));
+};
+
 
   return (
     <div className="hidden md:block bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 p-6">
@@ -29,11 +65,11 @@ export default function ProductContentDetail() {
           />
         </div>
         <div className="md:col-span-2 space-y-3">
-          <h1 className="text-xl font-semibold">{product.name}</h1>
+          <h1 className="text-xl font-semibold">{product.productName}</h1>
           <div className="flex items-center gap-2 text-sm">
             <div className="flex items-center text-yellow-500">
               <Star size={16} fill="currentColor" />
-              <span className="ml-1 font-medium">{product.rating}</span>
+              <span className="ml-1 font-medium">{product.categoryName}</span>
             </div>
             <span className="text-gray-500 dark:text-gray-400">
               ({product.reviews} ratings) • {product.sold} bought this month
@@ -47,7 +83,7 @@ export default function ProductContentDetail() {
                 ₹{product.originalPrice}
               </span>
               <span className="ml-2 text-red-500 font-semibold">
-                -{Math.round((1 - product.price / product.originalPrice) * 100)}%
+                -{Math.round((1 - product.netprice / product.totalprice) * 100)}%
               </span>
             </div>
             <p className="text-sm text-gray-500">Inclusive of all taxes</p>
@@ -75,7 +111,9 @@ export default function ProductContentDetail() {
               FREE delivery today from 2 PM - 4 PM on orders over ₹249.
             </p>
           </div>
-          <button className="mt-4 sm:mt-0 bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-5 py-2 rounded-md shadow">
+          <button 
+          onClick={handleAddToCart}
+          className="mt-4 sm:mt-0 bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-5 py-2 rounded-md shadow">
             Add to Cart
           </button>
         </div>
@@ -85,7 +123,7 @@ export default function ProductContentDetail() {
       <div className="mt-8">
         <h2 className="text-lg font-semibold mb-2">Product Description</h2>
         <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">
-          {product.description}
+          {product.shortdescription || "No description available."}
         </p>
       </div>
 
@@ -104,7 +142,7 @@ export default function ProductContentDetail() {
 
       {/* Legal */}
       <div className="mt-6 text-xs text-gray-500 dark:text-gray-400">
-        While we try to ensure product information is correct, on occasion manufacturers may alter ingredients.
+        {product.longdesc || "No information available."}
       </div>
 
       {/* Related Products */}

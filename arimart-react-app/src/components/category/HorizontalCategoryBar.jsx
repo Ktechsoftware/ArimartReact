@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { ChevronRight } from "lucide-react";
 
 import {
@@ -14,6 +14,8 @@ import {
   Soup,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchCategories } from "../../Store/categoriesSlice";
 
 const categories = [
   {
@@ -75,15 +77,23 @@ const categories = [
 
 
 export default function HorizontalCategoryBar() {
+  const dispatch = useDispatch();
+
+  const { categories } = useSelector((state) => state.category);
+
+  useEffect(() => {
+    dispatch(fetchCategories());
+  }, [dispatch]);
+
  return (
     <div className="md:hidden block bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
       <div className="flex overflow-x-auto gap-5 scrollbar-hide">
         {categories.map((cat, index) => (
-          <Link to={cat.link} key={index} className="flex flex-col items-center min-w-[60px]">
+          <Link to={'/category/' + cat.categoryName} key={index} className="flex flex-col items-center min-w-[60px]">
             <div className="w-12 h-12 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-full shadow">
-              {cat.icon}
+              
             </div>
-            <p className="text-xs text-center mt-1 truncate w-16">{cat.label}</p>
+            <p className="text-xs text-center mt-1 truncate w-16">{cat.categoryName}</p>
           </Link>
         ))}
       </div>

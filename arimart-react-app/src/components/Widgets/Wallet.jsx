@@ -1,9 +1,22 @@
 import { motion } from "framer-motion";
 import { ArrowUpRight, ArrowLeftRight, ArrowDown, ChevronRight, Share2 } from "lucide-react";
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchWalletBalance } from '../../Store/walletSlice';
+import { useEffect } from 'react';
+
 
 export default function Wallet() {
+  const userData = useSelector((state) => state.auth.userData);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (userData.userId) {
+      dispatch(fetchWalletBalance(userData.userId));
+    }
+  }, [userData]);
+
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
@@ -28,7 +41,7 @@ export default function Wallet() {
             <p className="text-xs text-gray-500 dark:text-gray-400">Personal Wallet</p>
           </div>
         </div>
-        <motion.button 
+        <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xs px-3 py-1.5 rounded-lg flex items-center gap-1"
@@ -43,17 +56,17 @@ export default function Wallet() {
         className="bg-gradient-to-r from-green-100 to-green-200 dark:from-green-500 dark:to-green-600 p-6 rounded-2xl shadow-lg mb-6"
       >
         <p className="text-sm text-gray-600 dark:text-white/90">Total balance</p>
-        <motion.h2 
+        <motion.h2
           className="text-4xl font-bold tracking-tight text-green-800 mt-1"
           whileHover={{ scale: 1.01 }}
         >
-          ₹540.43
+          ₹{userData.walletBalance || "0.00"}
         </motion.h2>
         <p className="text-xs text-right text-gray-600 mt-2 dark:text-white/80">Updated just now</p>
       </motion.div>
 
       {/* Wallet Actions */}
-      <motion.div 
+      <motion.div
         className="grid grid-cols-3 gap-3 mb-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -85,7 +98,7 @@ export default function Wallet() {
         transition={{ delay: 0.3 }}
       >
         <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3 px-1">My Assets</h3>
-        
+
         {/* Cashback Card */}
         <motion.div
           whileHover={{ scale: 1.02 }}

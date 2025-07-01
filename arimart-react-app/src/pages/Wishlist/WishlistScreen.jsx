@@ -1,12 +1,12 @@
 import React from 'react'
 import Header from '../../components/Header/Header'
-import EmptyWishlist from '../../components/Wishlist/EmptyWishlist'
+import Wishlist from '../../components/Wishlist/Wishlist'
 
 function WishlistScreen() {
   return (
     <div className='mb-20'>
          <Header title="Wishlist" setbaricon={false} setcarticon={false} />
-         <EmptyWishlist/>
+         <Wishlist/>
     </div>
   )
 }

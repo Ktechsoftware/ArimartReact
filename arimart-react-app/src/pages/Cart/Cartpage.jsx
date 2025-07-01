@@ -8,7 +8,6 @@ function Cartpage() {
     <div>
        <Header title={"Cart"} setbaricon={false}  setcarticon={false}/>
         <CartDetails/>
-        <EmptyCart/>
     </div>
   )
 }
