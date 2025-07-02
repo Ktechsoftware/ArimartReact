@@ -9,6 +9,7 @@ import { UserCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { SearchDropdown } from "./SearchDropdown";
 import { useCart } from "../../context/CartContext";
+import CartIcon from "../common/CartIcon";
 
 
 export default function DesktopHeader() {
@@ -178,33 +179,7 @@ export default function DesktopHeader() {
                 </motion.button>
               </Link>
             )}
-
-            <Link to='/cart'>
-        <motion.button
-          className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-md text-sm text-gray-800 dark:text-white relative"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onHoverStart={() => setIsHoveringCart(true)}
-          onHoverEnd={() => setIsHoveringCart(false)}
-        >
-          <ShoppingCart />
-          <span>My Cart</span>
-
-          {/* Animated cart counter */}
-          {totalItems > 0 && (
-            <motion.span
-              className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
-              animate={{ 
-                scale: isHoveringCart ? [1, 1.2, 1] : 1,
-                backgroundColor: loading ? '#6B7280' : '#3B82F6'
-              }}
-              transition={{ duration: 0.3 }}
-            >
-              {loading ? '...' : totalItems}
-            </motion.span>
-          )}
-        </motion.button>
-      </Link>
+            <CartIcon show={true} />
           </div>
         </div>
       </header>

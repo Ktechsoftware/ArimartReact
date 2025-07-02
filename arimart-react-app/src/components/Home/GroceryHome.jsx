@@ -99,7 +99,7 @@ export default function GroceryHome() {
 
         {/* Special Offers */}
         <h2 className="text-xl md:text-3xl font-bold text-base mb-2">Special Offers</h2>
-        <ProductCard/>
+        {/* <ProductCard/> */}
         <DesktopProducts/>
       </div>
       <FilterSheet isOpen={showFilter} onClose={() => setShowFilter(false)} />

@@ -1,8 +1,10 @@
-// Updated CartDetails.jsx
-import { Trash2, Plus, Minus } from 'lucide-react';
+// src/components/cart/CartDetails.jsx - Updated for better integration
+
+import { Trash2, Plus, Minus, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import PromoCodeInput from './PromoCodeInput';
 import EmptyCart from './EmptyCart';
 import { useCart } from '../../context/CartContext';
@@ -10,29 +12,28 @@ import { useCart } from '../../context/CartContext';
 export default function CartDetails() {
   const {
     items,
-    loading,
-    error,
     totalItems,
     subtotal,
     updateQuantity,
     removeFromCart,
-    syncStatus
+    loading,
+    syncStatus,
+    syncCartWithServer
   } = useCart();
 
+  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
   const [localLoading, setLocalLoading] = useState({});
   
-  // Static values for demo - you can make these dynamic
-  const shipping = 30;
-  const discount = 10;
+  // Cart calculations
+  const shipping = subtotal > 500 ? 0 : 30; // Free shipping over ₹500
+  const discount = Math.min(subtotal * 0.05, 50); // 5% discount, max ₹50
   const total = subtotal + shipping - discount;
 
-  // Handle quantity update with loading state
   const handleUpdateQuantity = async (item, delta) => {
     const newQuantity = Math.max(1, item.quantity + delta);
     const itemId = item.id;
-    
+
     setLocalLoading(prev => ({ ...prev, [itemId]: true }));
-    
     try {
       await updateQuantity(itemId, newQuantity);
     } finally {
@@ -40,12 +41,10 @@ export default function CartDetails() {
     }
   };
 
-  // Handle item removal with loading state
   const handleRemoveItem = async (item) => {
     const itemId = item.id;
-    
+
     setLocalLoading(prev => ({ ...prev, [itemId]: true }));
-    
     try {
       await removeFromCart(itemId);
     } finally {
@@ -53,37 +52,17 @@ export default function CartDetails() {
     }
   };
 
+  const handleSyncCart = async () => {
+    if (isAuthenticated) {
+      await syncCartWithServer();
+    }
+  };
+
   if (loading && items.length === 0) {
     return (
-      <div className="max-w-6xl mx-auto p-4 text-center">
-        <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
-          {[1, 2, 3].map(i => (
-            <div key={i} className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl mb-4">
-              <div className="w-16 h-16 bg-gray-200 rounded-lg"></div>
-              <div className="flex-1">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (error && !items.length) {
-    return (
-      <div className="max-w-6xl mx-auto p-4 text-center">
-        <div className="text-red-500 dark:text-red-400">
-          <p>Error loading cart: {error}</p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="mt-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-          >
-            Retry
-          </button>
-        </div>
+      <div className="flex flex-col items-center justify-center p-10 space-y-4">
+        <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-gray-600 dark:text-gray-400">Loading your cart...</p>
       </div>
     );
   }
@@ -99,142 +78,224 @@ export default function CartDetails() {
           <EmptyCart />
         ) : (
           <div className="space-y-4">
+            {/* Header with sync status */}
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-md text-gray-800 dark:text-gray-100 font-bold">
-                Your Items {totalItems > 0 && `(${totalItems})`}
+              <h2 className="text-lg text-gray-800 dark:text-gray-100 font-bold">
+                Your Cart ({totalItems} {totalItems === 1 ? 'item' : 'items'})
               </h2>
-              {error && (
-                <div className="text-red-500 text-sm">
-                  {error}
-                </div>
-              )}
-              {syncStatus === 'syncing' && (
-                <div className="text-blue-500 text-sm">
-                  Syncing...
-                </div>
-              )}
+              
+              <div className="flex items-center space-x-2">
+                {/* Sync Status Indicator */}
+                {isAuthenticated && (
+                  <div className="flex items-center space-x-2">
+                    {syncStatus === 'syncing' && (
+                      <div className="flex items-center text-blue-500 text-sm">
+                        <RefreshCw className="w-4 h-4 animate-spin mr-1" />
+                        Syncing...
+                      </div>
+                    )}
+                    {syncStatus === 'success' && (
+                      <div className="text-green-500 text-sm">✓ Synced</div>
+                    )}
+                    {syncStatus === 'error' && (
+                      <button
+                        onClick={handleSyncCart}
+                        className="text-red-500 hover:text-red-600 text-sm flex items-center"
+                      >
+                        <RefreshCw className="w-4 h-4 mr-1" />
+                        Retry Sync
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
-            {items.map(item => {
-              const isItemLoading = localLoading[item.id];
+            {/* Cart Items */}
+            <div className="space-y-3">
+              {items.map(item => {
+                const isItemLoading = localLoading[item.id];
 
-              return (
-                <motion.div
-                  key={item.id}
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, x: -50 }}
-                  transition={{ type: 'spring', stiffness: 300 }}
-                  className={`flex items-start gap-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl relative ${
-                    isItemLoading ? 'opacity-50' : ''
-                  }`}
-                >
-                  <img 
-                    src={item.image} 
-                    alt={item.name} 
-                    className="w-16 h-16 rounded-lg object-cover" 
-                    onError={(e) => {
-                      e.target.src = '/placeholder-image.png';
-                    }}
-                  />
-                  <div className="flex-1">
-                    <h3 className="font-semibold">{item.name}</h3>
-                    {item.categoryName && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {item.categoryName}
-                      </p>
+                return (
+                  <motion.div
+                    key={item.id}
+                    layout
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: -50 }}
+                    transition={{ type: 'spring', stiffness: 300 }}
+                    className={`flex items-start gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl relative border ${
+                      isItemLoading ? 'opacity-50' : ''
+                    } ${isItemLoading ? 'border-orange-200' : 'border-gray-200 dark:border-gray-700'}`}
+                  >
+                    {/* Loading overlay */}
+                    {isItemLoading && (
+                      <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 rounded-xl flex items-center justify-center z-10">
+                        <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                      </div>
                     )}
-                    <p className="font-bold mt-1">₹{Number(item.price).toFixed(2)}</p>
-                  </div>
-                  
-                  {/* Quantity controls and trash button */}
-                  <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                    <div className="flex items-center gap-2 bg-white dark:bg-gray-700 rounded-full px-2 py-1 shadow-sm">
-                      <motion.button
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleUpdateQuantity(item, -1)}
-                        disabled={isItemLoading || item.quantity <= 1}
-                        className="text-gray-600 dark:text-gray-300 hover:text-red-500 transition disabled:opacity-50"
-                      >
-                        <Minus className="w-3 h-3" />
-                      </motion.button>
-                      
-                      <motion.span 
-                        key={`quantity-${item.id}-${item.quantity}`}
-                        initial={{ scale: 1.2 }}
-                        animate={{ scale: 1 }}
-                        className="text-sm font-medium w-5 text-center"
-                      >
-                        {isItemLoading ? '...' : item.quantity}
-                      </motion.span>
-                      
-                      <motion.button
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleUpdateQuantity(item, 1)}
-                        disabled={isItemLoading}
-                        className="text-gray-600 dark:text-gray-300 hover:text-green-500 transition disabled:opacity-50"
-                      >
-                        <Plus className="w-3 h-3" />
-                      </motion.button>
+
+                    {/* Product Image */}
+                    <div className="relative">
+                      <img 
+                        src={item.image} 
+                        alt={item.name} 
+                        className="w-20 h-20 rounded-lg object-cover border border-gray-200 dark:border-gray-600" 
+                        onError={(e) => { 
+                          e.target.src = '/api/placeholder/80/80'; 
+                        }}
+                      />
                     </div>
-                    
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => handleRemoveItem(item)}
-                      disabled={isItemLoading}
-                      className="text-red-400 hover:text-red-600 transition disabled:opacity-50"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </motion.button>
+
+                    {/* Product Details */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-2 mb-1">
+                        {item.name}
+                      </h3>
+                      
+                      {item.categoryName && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                          {item.categoryName}
+                          {item.subcategoryName && ` • ${item.subcategoryName}`}
+                        </p>
+                      )}
+                      
+                      <div className="flex items-center justify-between">
+                        <p className="font-bold text-lg text-green-600 dark:text-green-400">
+                          ₹{Number(item.price).toFixed(2)}
+                        </p>
+                        
+                        {/* Quantity Controls */}
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2 bg-white dark:bg-gray-700 rounded-full px-3 py-2 shadow-sm border border-gray-200 dark:border-gray-600">
+                            <motion.button
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => handleUpdateQuantity(item, -1)}
+                              disabled={isItemLoading || item.quantity <= 1}
+                              className="text-gray-600 dark:text-gray-300 hover:text-red-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <Minus className="w-4 h-4" />
+                            </motion.button>
+
+                            <motion.span 
+                              key={`quantity-${item.id}-${item.quantity}`}
+                              initial={{ scale: 1.2 }}
+                              animate={{ scale: 1 }}
+                              className="text-sm font-semibold min-w-[2rem] text-center text-gray-900 dark:text-white"
+                            >
+                              {isItemLoading ? '...' : item.quantity}
+                            </motion.span>
+
+                            <motion.button
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => handleUpdateQuantity(item, 1)}
+                              disabled={isItemLoading}
+                              className="text-gray-600 dark:text-gray-300 hover:text-green-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </motion.button>
+                          </div>
+
+                          {/* Remove Button */}
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => handleRemoveItem(item)}
+                            disabled={isItemLoading}
+                            className="text-red-400 hover:text-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </motion.button>
+                        </div>
+                      </div>
+                      
+                      {/* Item subtotal */}
+                      {item.quantity > 1 && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                          ₹{item.price} × {item.quantity} = ₹{(item.price * item.quantity).toFixed(2)}
+                        </p>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* Promo Code Section */}
+            <PromoCodeInput />
+
+            {/* Order Summary */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-xl p-6 space-y-4"
+            >
+              <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-4">
+                Order Summary
+              </h3>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">
+                    Subtotal ({totalItems} {totalItems === 1 ? 'item' : 'items'})
+                  </span>
+                  <span className="font-medium">₹{subtotal.toFixed(2)}</span>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">
+                    Shipping {subtotal > 500 && '(Free over ₹500)'}
+                  </span>
+                  <span className={`font-medium ${shipping === 0 ? 'text-green-500' : ''}`}>
+                    {shipping === 0 ? 'Free' : `₹${shipping.toFixed(2)}`}
+                  </span>
+                </div>
+                
+                {discount > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600 dark:text-gray-400">Discount (5%)</span>
+                    <span className="font-medium text-green-500">-₹{discount.toFixed(2)}</span>
                   </div>
-                </motion.div>
-              );
-            })}
+                )}
+                
+                <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-bold text-gray-900 dark:text-white">Total</span>
+                    <span className="text-xl font-bold text-green-500">₹{total.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Checkout Button */}
+              <Link to="/checkout" className="block mt-6">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-4 rounded-xl shadow-lg transition-all duration-200 flex items-center justify-center space-x-2"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Processing...</span>
+                    </>
+                  ) : (
+                    <span>Proceed to Checkout • ₹{total.toFixed(2)}</span>
+                  )}
+                </motion.button>
+              </Link>
+              
+              {/* Continue Shopping Link */}
+              <Link 
+                to="/products" 
+                className="block text-center text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition mt-3"
+              >
+                ← Continue Shopping
+              </Link>
+            </motion.div>
           </div>
         )}
       </AnimatePresence>
-
-      {items.length > 0 && (
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="relative mt-6 space-y-3"
-        >
-          <PromoCodeInput />
-
-          <div className="space-y-2 pt-2">
-            <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Subtotal</span>
-              <span>₹{subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Discount</span>
-              <span>₹{discount.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Shipping</span>
-              <span>₹{shipping.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between font-bold text-lg pt-2 border-t border-gray-200 dark:border-gray-700">
-              <span>Total</span>
-              <span className="text-green-500">₹{total.toFixed(2)}</span>
-            </div>
-          </div>
-
-          <Link to="/checkout" className="sticky bottom-0 left-0 right-0 flex justify-center p-4 bg-gradient-to-t from-white/90 to-transparent dark:from-gray-900/90 z-10">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              disabled={loading}
-              className="w-full max-w-md bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-semibold py-3 rounded-xl shadow-lg transition"
-            >
-              {loading ? 'Processing...' : 'Proceed To Payment'}
-            </motion.button>
-          </Link>
-        </motion.div>
-      )}
     </motion.div>
   );
 }

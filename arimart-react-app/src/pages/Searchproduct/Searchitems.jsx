@@ -18,7 +18,7 @@ const Searchitems = () => {
         </div>
         <div className="lg:col-span-3 space-y-4">
           <DesktopProducts />
-          <ProductCard />
+          {/* <ProductCard /> */}
         </div>
       </div>
     </div>

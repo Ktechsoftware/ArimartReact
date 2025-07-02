@@ -1,12 +1,19 @@
-// contexts/CartContext.jsx
+// contexts/CartContext.jsx - Updated to work with Redux
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { 
+  fetchCartByUserId, 
+  addToCartByUser, 
+  removeFromCart as removeFromCartRedux,
+  updateCartItemQuantity,
+  clearCart as clearCartRedux
+} from '../Store/cartSlice';
 import toast from 'react-hot-toast';
 
 // Cart Context
 const CartContext = createContext();
 
-// Action types
+// Action types for local state management
 const CART_ACTIONS = {
   LOAD_CART: 'LOAD_CART',
   ADD_ITEM: 'ADD_ITEM',
@@ -26,47 +33,67 @@ const initialState = {
   subtotal: 0,
   loading: false,
   error: null,
-  syncStatus: 'idle', // 'idle', 'syncing', 'success', 'error'
+  syncStatus: 'idle',
   lastSyncTime: null
 };
 
-// Cart reducer
+// Helper function to normalize cart items from different sources
+const normalizeCartItem = (item) => ({
+  id: item.Id || item.id,
+  name: item.ProductName || item.productName || item.name,
+  price: item.Price || item.netprice || item.price,
+  image: item.Image || item.image,
+  categoryName: item.CategoryName || item.categoryName,
+  subcategoryName: item.SubcategoryName || item.subcategoryName,
+  quantity: item.Qty || item.quantity || 1,
+  // Keep original item for API calls
+  originalItem: item
+});
+
+// Helper function to calculate totals
+const calculateTotals = (items) => {
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  return { totalItems, subtotal };
+};
+
+// Cart reducer for local state
 function cartReducer(state, action) {
   switch (action.type) {
-    case CART_ACTIONS.LOAD_CART:
+    case CART_ACTIONS.LOAD_CART: {
+      const normalizedItems = action.payload.items.map(normalizeCartItem);
+      const { totalItems, subtotal } = calculateTotals(normalizedItems);
+      
       return {
         ...state,
-        items: action.payload.items || [],
-        totalItems: action.payload.totalItems || 0,
-        subtotal: action.payload.subtotal || 0
+        items: normalizedItems,
+        totalItems,
+        subtotal
       };
+    }
 
     case CART_ACTIONS.ADD_ITEM: {
-      const existingItemIndex = state.items.findIndex(
-        item => item.id === action.payload.id
-      );
+      const newItem = normalizeCartItem(action.payload);
+      const existingItemIndex = state.items.findIndex(item => item.id === newItem.id);
 
       let newItems;
       if (existingItemIndex >= 0) {
-        // Update existing item quantity
         newItems = state.items.map((item, index) =>
           index === existingItemIndex
-            ? { ...item, quantity: item.quantity + action.payload.quantity }
+            ? { ...item, quantity: item.quantity + newItem.quantity }
             : item
         );
       } else {
-        // Add new item
-        newItems = [...state.items, action.payload];
+        newItems = [...state.items, newItem];
       }
 
-      const newTotalItems = newItems.reduce((sum, item) => sum + item.quantity, 0);
-      const newSubtotal = newItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const { totalItems, subtotal } = calculateTotals(newItems);
 
       return {
         ...state,
         items: newItems,
-        totalItems: newTotalItems,
-        subtotal: newSubtotal
+        totalItems,
+        subtotal
       };
     }
 
@@ -77,27 +104,25 @@ function cartReducer(state, action) {
           : item
       );
 
-      const newTotalItems = newItems.reduce((sum, item) => sum + item.quantity, 0);
-      const newSubtotal = newItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const { totalItems, subtotal } = calculateTotals(newItems);
 
       return {
         ...state,
         items: newItems,
-        totalItems: newTotalItems,
-        subtotal: newSubtotal
+        totalItems,
+        subtotal
       };
     }
 
     case CART_ACTIONS.REMOVE_ITEM: {
       const newItems = state.items.filter(item => item.id !== action.payload.id);
-      const newTotalItems = newItems.reduce((sum, item) => sum + item.quantity, 0);
-      const newSubtotal = newItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const { totalItems, subtotal } = calculateTotals(newItems);
 
       return {
         ...state,
         items: newItems,
-        totalItems: newTotalItems,
-        subtotal: newSubtotal
+        totalItems,
+        subtotal
       };
     }
 
@@ -142,147 +167,8 @@ function cartReducer(state, action) {
   }
 }
 
-// Cart API functions
-const cartAPI = {
-  // Fetch cart from server
-  async fetchCart(userId) {
-    try {
-      const response = await fetch(`/api/cart/${userId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error fetching cart:', error);
-      throw error;
-    }
-  },
-
-  // Add item to cart on server
-  async addToCart(userId, item) {
-    console.log('Adding item to cart on server:', { userId, item });
-    try {
-     const response = await fetch('/api/cart/add/user', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          userId,
-          productId: item.id,
-          quantity: item.quantity,
-          price: item.price
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error adding to cart:', error);
-      throw error;
-    }
-  },
-
-  // Update item quantity on server
-  async updateQuantity(userId, itemId, quantity) {
-    console.log('Updating quantity on server:', { userId, itemId, quantity });
-    try {
-      const response = await fetch('/api/cart/update', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          userId,
-          itemId,
-          quantity
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error updating quantity:', error);
-      throw error;
-    }
-  },
-
-  // Remove item from cart on server
-  async removeFromCart(userId, itemId) {
-    try {
-      const response = await fetch('/api/cart/remove', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          userId,
-          itemId
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error removing from cart:', error);
-      throw error;
-    }
-  },
-
-  // Sync entire cart to server
-  async syncCart(userId, cartItems) {
-    try {
-      const response = await fetch('/api/cart/sync', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          userId,
-          items: cartItems
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error syncing cart:', error);
-      throw error;
-    }
-  }
-};
-
 // LocalStorage utilities
-const LOCAL_STORAGE_KEY = 'shopping_cart';
+const LOCAL_STORAGE_KEY = 'user_cart_925';
 
 const localStorageUtils = {
   getCart: () => {
@@ -320,82 +206,67 @@ const localStorageUtils = {
 // Cart Provider Component
 export function CartProvider({ children }) {
   const [state, dispatch] = useReducer(cartReducer, initialState);
+  const reduxDispatch = useDispatch();
+  
+  // Get Redux cart state
+  const reduxCartState = useSelector((state) => state.cart);
   const userData = useSelector((state) => state.auth.userData);
-  const userId = userData?.userId;
+  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+  const userId = isAuthenticated ? userData?.id : null;
 
-  // ✅ Reset Cart State on Logout
-useEffect(() => {
-  if (!userId) {
-    dispatch({ type: CART_ACTIONS.CLEAR_CART });
-    localStorageUtils.clearCart(); // also remove from storage
-  }
-}, [userId]);
+  // Sync Redux cart data with local state when it changes
+  useEffect(() => {
+    if (reduxCartState.items && reduxCartState.items.length > 0) {
+      dispatch({
+        type: CART_ACTIONS.LOAD_CART,
+        payload: { items: reduxCartState.items }
+      });
+    }
+  }, [reduxCartState.items]);
 
-  // Load cart from localStorage on mount
+  // Load cart from localStorage on mount (for offline capability)
   useEffect(() => {
     const storedCart = localStorageUtils.getCart();
-    if (storedCart.items && storedCart.items.length > 0) {
+    if (storedCart.items && storedCart.items.length > 0 && !userId) {
+      // Only load from localStorage if user is not logged in
       dispatch({
         type: CART_ACTIONS.LOAD_CART,
         payload: storedCart
       });
     }
-  }, []);
+  }, [userId]);
 
   // Save to localStorage whenever cart changes
   useEffect(() => {
-    if (state.items.length > 0 || state.totalItems > 0) {
-      localStorageUtils.setCart(state);
-    }
+    localStorageUtils.setCart(state);
   }, [state.items, state.totalItems, state.subtotal]);
 
-  // Sync with server when user logs in
+  // Clear cart on logout
   useEffect(() => {
-    if (userId && state.items.length > 0) {
-      syncCartWithServer();
-    } else if (userId) {
+    if (!userId && isAuthenticated === false) {
+      dispatch({ type: CART_ACTIONS.CLEAR_CART });
+      localStorageUtils.clearCart();
+    }
+  }, [userId, isAuthenticated]);
+
+  // Fetch cart from server when user logs in
+  useEffect(() => {
+    if (userId) {
       loadCartFromServer();
     }
   }, [userId]);
 
-  // Load cart from server
+  // Load cart from server using Redux action
   const loadCartFromServer = async () => {
     if (!userId) return;
 
     try {
       dispatch({ type: CART_ACTIONS.SET_LOADING, payload: true });
-      const serverCart = await cartAPI.fetchCart(userId);
-      
-      dispatch({
-        type: CART_ACTIONS.LOAD_CART,
-        payload: {
-          items: serverCart.items || [],
-          totalItems: serverCart.totalItems || 0,
-          subtotal: serverCart.subtotal || 0
-        }
-      });
-      
+      await reduxDispatch(fetchCartByUserId(userId)).unwrap();
       dispatch({ type: CART_ACTIONS.SYNC_SUCCESS });
     } catch (error) {
       dispatch({ type: CART_ACTIONS.SET_ERROR, payload: error.message });
       toast.error('Failed to load cart from server');
-    } finally {
-      dispatch({ type: CART_ACTIONS.SET_LOADING, payload: false });
-    }
-  };
-
-  // Sync local cart with server
-  const syncCartWithServer = async () => {
-    if (!userId || state.items.length === 0) return;
-
-    try {
-      dispatch({ type: CART_ACTIONS.SET_LOADING, payload: true });
-      await cartAPI.syncCart(userId, state.items);
-      dispatch({ type: CART_ACTIONS.SYNC_SUCCESS });
-      toast.success('Cart synced successfully');
-    } catch (error) {
-      dispatch({ type: CART_ACTIONS.SYNC_FAILURE, payload: error.message });
-      toast.error('Failed to sync cart');
     } finally {
       dispatch({ type: CART_ACTIONS.SET_LOADING, payload: false });
     }
@@ -413,7 +284,7 @@ useEffect(() => {
       quantity: quantity
     };
 
-    // Add to local state immediately
+    // Add to local state immediately for better UX
     dispatch({
       type: CART_ACTIONS.ADD_ITEM,
       payload: cartItem
@@ -424,11 +295,16 @@ useEffect(() => {
     // Sync with server if user is logged in
     if (userId) {
       try {
-        await cartAPI.addToCart(userId, cartItem);
+        await reduxDispatch(addToCartByUser({
+          userId,
+          productId: product.id,
+          quantity: quantity,
+          price: product.netprice || product.price
+        })).unwrap();
+        
         dispatch({ type: CART_ACTIONS.SYNC_SUCCESS });
       } catch (error) {
         dispatch({ type: CART_ACTIONS.SYNC_FAILURE, payload: error.message });
-        // Don't remove from local cart on API failure
         console.error('Failed to sync with server:', error);
       }
     }
@@ -436,8 +312,9 @@ useEffect(() => {
 
   // Update item quantity
   const updateQuantity = async (itemId, newQuantity) => {
-    const oldQuantity = state.items.find(item => item.id === itemId)?.quantity;
-    
+    const item = state.items.find(item => item.id === itemId);
+    const oldQuantity = item?.quantity;
+
     // Update local state immediately
     dispatch({
       type: CART_ACTIONS.UPDATE_QUANTITY,
@@ -445,9 +322,14 @@ useEffect(() => {
     });
 
     // Sync with server if user is logged in
-    if (userId) {
+    if (userId && item?.originalItem) {
       try {
-        await cartAPI.updateQuantity(userId, itemId, newQuantity);
+        const cartItemId = item.originalItem.Id || item.originalItem.id;
+        await reduxDispatch(updateCartItemQuantity({
+          cartItemId,
+          quantity: newQuantity
+        })).unwrap();
+        
         dispatch({ type: CART_ACTIONS.SYNC_SUCCESS });
       } catch (error) {
         // Revert on failure
@@ -463,8 +345,9 @@ useEffect(() => {
 
   // Remove item from cart
   const removeFromCart = async (itemId) => {
-    const itemToRemove = state.items.find(item => item.id === itemId);
-    
+    const item = state.items.find(item => item.id === itemId);
+    const itemToRemove = { ...item };
+
     // Remove from local state immediately
     dispatch({
       type: CART_ACTIONS.REMOVE_ITEM,
@@ -474,12 +357,13 @@ useEffect(() => {
     toast.success(`${itemToRemove?.name || 'Item'} removed from cart`);
 
     // Sync with server if user is logged in
-    if (userId) {
+    if (userId && item?.originalItem) {
       try {
-        await cartAPI.removeFromCart(userId, itemId);
+        const cartItemId = item.originalItem.Id || item.originalItem.id;
+        await reduxDispatch(removeFromCartRedux(cartItemId)).unwrap();
         dispatch({ type: CART_ACTIONS.SYNC_SUCCESS });
       } catch (error) {
-        // Re-add on failure
+        // Restore on failure
         dispatch({
           type: CART_ACTIONS.ADD_ITEM,
           payload: itemToRemove
@@ -502,7 +386,7 @@ useEffect(() => {
     // Sync with server if user is logged in
     if (userId) {
       try {
-        await cartAPI.syncCart(userId, []);
+        await reduxDispatch(clearCartRedux()).unwrap();
         dispatch({ type: CART_ACTIONS.SYNC_SUCCESS });
       } catch (error) {
         // Restore on failure
@@ -526,9 +410,22 @@ useEffect(() => {
     return state.items.some(item => item.id === itemId);
   };
 
+  // Sync cart with server manually
+  const syncCartWithServer = async () => {
+    if (userId) {
+      await loadCartFromServer();
+    }
+  };
+
   const contextValue = {
-    // State
-    ...state,
+    // State (prioritize local state for real-time updates)
+    items: state.items,
+    totalItems: state.totalItems,
+    subtotal: state.subtotal,
+    loading: state.loading || reduxCartState.loading,
+    error: state.error || reduxCartState.error,
+    syncStatus: state.syncStatus,
+    lastSyncTime: state.lastSyncTime,
     
     // Actions
     addToCart,

@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
-import { useState } from "react";
+import Cookies from 'js-cookie';
+import { useEffect, useState } from 'react';
+
 import {
   Package,
   Wallet,
@@ -12,7 +14,7 @@ import {
   Share2,
   Edit,
   ChevronRight,
-  User, 
+  User,
   SunMoon
 } from "lucide-react";
 import LogoutModal from "../Auth/LogoutModal";
@@ -34,6 +36,13 @@ const settings = [
   { label: "Logout", icon: <LogOut size={20} />, to: "#", isDestructive: true },
 ];
 
+const capitalizeWords = (str) => {
+  return str
+    ?.toLowerCase()
+    .replace(/\b\w/g, char => char.toUpperCase());
+};
+
+
 const AccountSettings = () => {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
@@ -42,6 +51,21 @@ const AccountSettings = () => {
   const [isRateus, setIsRateus] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [currentAddress, setCurrentAddress] = useState(null);
+  const [userData, setUserData] = useState(null);
+
+  useEffect(() => {
+    const userCookie = Cookies.get('userLoginDataArimart');
+    if (userCookie) {
+      try {
+        const parsed = JSON.parse(userCookie);
+        console.log("Parsed user data:", parsed);
+        setUserData(parsed);
+      } catch (err) {
+        console.error("Failed to parse user cookie:", err);
+      }
+    }
+  }, []);
+
 
   return (
     <motion.div
@@ -72,8 +96,14 @@ const AccountSettings = () => {
               </motion.button>
             </motion.div>
             <div>
-              <h1 className="text-xl font-bold">Yogesh</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">+91 9876543210</p>
+              <h1 className="text-xl font-bold">
+                {capitalizeWords(userData?.fullName) || "Guest"}
+              </h1>
+
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                +91 {userData?.userContact || "0000000000"}
+              </p>
+
             </div>
           </div>
           <ChevronRight className="text-gray-400" />
@@ -100,19 +130,17 @@ const AccountSettings = () => {
                 else if (item.isTheme) setThemeSelectorOpen(true);
                 else navigate(item.to);
               }}
-              className={`flex items-center justify-between p-4 cursor-pointer bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-all ${
-                item.isDestructive
-                  ? 'hover:bg-red-50 dark:hover:bg-red-900/20'
-                  : 'hover:bg-gray-50 dark:hover:bg-gray-700'
-              }`}
+              className={`flex items-center justify-between p-4 cursor-pointer bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-all ${item.isDestructive
+                ? 'hover:bg-red-50 dark:hover:bg-red-900/20'
+                : 'hover:bg-gray-50 dark:hover:bg-gray-700'
+                }`}
             >
               <div className="flex items-center gap-3">
                 <motion.div
-                  className={`p-2 rounded-lg ${
-                    item.isDestructive
-                      ? 'bg-red-100 dark:bg-red-900/50 text-red-500'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                  }`}
+                  className={`p-2 rounded-lg ${item.isDestructive
+                    ? 'bg-red-100 dark:bg-red-900/50 text-red-500'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                    }`}
                   whileHover={{ rotate: 10 }}
                 >
                   {item.icon}
@@ -155,25 +183,22 @@ const AccountSettings = () => {
                   else if (item.isTheme) setThemeSelectorOpen(true);
                   else navigate(item.to);
                 }}
-                className={`flex flex-col items-center justify-center p-6 cursor-pointer bg-white dark:bg-gray-800 transition-all ${
-                  item.isDestructive
-                    ? 'hover:bg-red-50 dark:hover:bg-red-900/10'
-                    : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                }`}
+                className={`flex flex-col items-center justify-center p-6 cursor-pointer bg-white dark:bg-gray-800 transition-all ${item.isDestructive
+                  ? 'hover:bg-red-50 dark:hover:bg-red-900/10'
+                  : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                  }`}
               >
                 <motion.div
-                  className={`p-3 rounded-full mb-3 ${
-                    item.isDestructive
-                      ? 'bg-red-100 dark:bg-red-900/20 text-red-500'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                  }`}
+                  className={`p-3 rounded-full mb-3 ${item.isDestructive
+                    ? 'bg-red-100 dark:bg-red-900/20 text-red-500'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                    }`}
                   whileHover={{ rotate: 10, scale: 1.1 }}
                 >
                   {item.icon}
                 </motion.div>
-                <span className={`text-sm font-medium text-center ${
-                  item.isDestructive ? 'text-red-500' : 'text-gray-700 dark:text-gray-300'
-                }`}>
+                <span className={`text-sm font-medium text-center ${item.isDestructive ? 'text-red-500' : 'text-gray-700 dark:text-gray-300'
+                  }`}>
                   {item.label}
                 </span>
               </motion.div>
@@ -219,11 +244,10 @@ const AccountSettings = () => {
                     }
                     setThemeSelectorOpen(false);
                   }}
-                  className={`w-full px-4 py-2 rounded-lg text-sm font-medium ${
-                    (darkMode && opt === "dark") || (!darkMode && opt === "light")
-                      ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
-                      : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white"
-                  }`}
+                  className={`w-full px-4 py-2 rounded-lg text-sm font-medium ${(darkMode && opt === "dark") || (!darkMode && opt === "light")
+                    ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
+                    : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white"
+                    }`}
                 >
                   {opt === "system" && "System Default"}
                   {opt === "light" && "Light Mode"}
@@ -243,7 +267,7 @@ const AccountSettings = () => {
 
       <LogoutModal isOpen={showModal} onClose={() => setShowModal(false)} />
       <FeedbackModal isOpen={isRateus} onClose={() => setIsRateus(false)} />
-      <DeliveryAddressModal      
+      <DeliveryAddressModal
         isOpen={showAddressModal}
         onClose={() => setShowAddressModal(false)}
         currentAddress={currentAddress}

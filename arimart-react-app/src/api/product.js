@@ -1,8 +1,11 @@
-// src/api/products.js
 import API from "./index";
+export const fetchProducts = (page = 1, pageSize = 10) => 
+  API.get(`/products?page=${page}&pageSize=${pageSize}`);
 
-// Calls your .NET Core API endpoints
-export const fetchProducts = () => API.get("/products");
 export const fetchProductById = (id) => API.get(`/products/${id}`);
-export const searchProducts = (query) => API.get(`/products/search?query=${query}`);
-export const fetchProductNames = (query = "") => API.get(`/products/names?query=${query}`);
+
+export const searchProducts = (query, page = 1, pageSize = 10) => 
+  API.get(`/products/search?query=${query}&page=${page}&pageSize=${pageSize}`);
+
+export const fetchProductNames = (query = "") => 
+  API.get(`/products/names?query=${query}`);

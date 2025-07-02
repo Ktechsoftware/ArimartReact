@@ -3,6 +3,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import DProductCard from './DProductcards';
 import API from '../../api';
+import ProductCard from './ProductCard';
 
 const DesktopProducts = () => {
     const [allProducts, setAllProducts] = useState([]);
@@ -14,7 +15,7 @@ const DesktopProducts = () => {
     const location = useLocation();
 
     const query = new URLSearchParams(location.search).get('query');
-
+    
     useEffect(() => {
         if (query) {
             setIsSearching(true);
@@ -80,7 +81,7 @@ const DesktopProducts = () => {
                 <p className="text-center text-gray-500 dark:text-gray-400">No products found.</p>
             ) : (
                 <div className="relative group">
-                    <button
+                    {/* <button
                         onClick={() => scroll('left')}
                         className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white dark:bg-gray-800 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                     >
@@ -92,14 +93,11 @@ const DesktopProducts = () => {
                         className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white dark:bg-gray-800 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                     >
                         <ChevronRightIcon className="text-gray-700 dark:text-gray-300 text-xl" />
-                    </button>
+                    </button> */}
 
-                    <div
-                        ref={carouselRef}
-                        className="flex gap-6 overflow-x-auto pb-6 px-1 scrollbar-hide"
-                    >
-                        {productsToDisplay.map((product) => (
-                            <DProductCard key={product.id} product={product} />
+                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 p-4">
+                        {productsToDisplay.products.map((product) => (
+                            <ProductCard key={product.id} product={product} />
                         ))}
                     </div>
                 </div>

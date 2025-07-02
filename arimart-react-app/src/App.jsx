@@ -1,18 +1,28 @@
 import { BrowserRouter as Router } from 'react-router-dom';
-import { ThemeProvider } from './context/ThemeContext'; // Adjust path as needed
+import { ThemeProvider } from './context/ThemeContext';
 import AppRoutes from './routes/AppRoutes';
 import { Toaster } from 'react-hot-toast';
 import { DealAlertModal } from './components/GroupBuying/DealAlertModal';
-import { CartProvider } from './context/CartContext';
-import { Provider } from 'react-redux';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import store from './Store';
+import { fetchCartByUserId } from './Store/cartSlice';
+import { useEffect } from 'react';
+import { CartProvider } from './context/CartContext';
 
-export default function App() {
+function AppContent() {
+  const dispatch = useDispatch();
+  const { isAuthenticated, userData } = useSelector((state) => state.auth);
+  const userId = isAuthenticated ? userData?.id : null;
+
+  useEffect(() => {
+    if (userId) {
+      dispatch(fetchCartByUserId(userId));
+    }
+  }, [userId, dispatch]);
+
   return (
     <>
-    <DealAlertModal/>
-    <Provider store={store}>
-      <CartProvider>
+      <DealAlertModal />
       <ThemeProvider>
         <Router>
           <AppRoutes />
@@ -34,8 +44,16 @@ export default function App() {
           className: 'shadow-xl text-sm bg-white text-gray-800 dark:bg-gray-800 dark:text-white',
         }}
       />
-      </CartProvider>
-      </Provider>
     </>
+  );
+}
+
+export default function App() {
+  return (
+    <Provider store={store}>
+      <CartProvider>
+      <AppContent />
+      </CartProvider>
+    </Provider>
   );
 }

@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 export default function EmptyCart() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+    <div className="flex flex-col items-center justify-center min-h-screen p-6">
       {/* Animated shopping bag */}
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
@@ -15,7 +15,7 @@ export default function EmptyCart() {
         <div className="absolute inset-0 bg-red-100 dark:bg-red-900/30 rounded-full blur-xl opacity-70 animate-pulse" />
         <ShoppingBag 
           size={80} 
-          className="text-red-500 dark:text-red-400 relative z-10" 
+          className="text-red-500 dark:text-red-400 relative z-[5]" 
           strokeWidth={1.5}
         />
       </motion.div>

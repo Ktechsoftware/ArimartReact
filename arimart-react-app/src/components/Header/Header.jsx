@@ -5,6 +5,7 @@ import logo from '../../assets/images/logo.png';
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTheme } from "../../context/ThemeContext";
+import CartIcon from "../common/CartIcon";
 
 export default function Header({ title, setbaricon = true, setcarticon = true, cartIconRef }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -42,18 +43,7 @@ export default function Header({ title, setbaricon = true, setcarticon = true, c
 
           <div className="flex items-center gap-4">
             {setcarticon && (
-              <Link to="/cart" className="relative">
-                <motion.div ref={cartIconRef} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                  <ShoppingCart className="w-6 h-6 text-black dark:text-white" />
-                </motion.div>
-                <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-semibold w-5 h-5 flex items-center justify-center rounded-full"
-                >
-                  0
-                </motion.span>
-              </Link>
+              <CartIcon show={true} />
             )}
           </div>
         </div>

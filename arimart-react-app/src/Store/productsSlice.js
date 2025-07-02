@@ -38,28 +38,6 @@ export const fetchProductById = createAsyncThunk(
   }
 );
 
-export const createProduct = createAsyncThunk(
-  'products/createProduct',
-  async (productData, { rejectWithValue }) => {
-    try {
-      const response = await fetch('https://api.example.com/products', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(productData),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to create product: ${response.status}`);
-      }
-      
-      return await response.json();
-    } catch (error) {
-      return rejectWithValue(error.message);
-    }
-  }
-);
 
 export const updateProduct = createAsyncThunk(
   'products/updateProduct',

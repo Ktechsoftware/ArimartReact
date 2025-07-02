@@ -1,3 +1,4 @@
+// src/redux/slices/authSlice.js
 import { createSlice } from '@reduxjs/toolkit';
 import Cookies from 'js-cookie';
 
@@ -24,7 +25,7 @@ const authSlice = createSlice({
     },
     logout: (state) => {
       Cookies.remove('userLoginDataArimart');
-      localStorage.removeItem('shopping_cart'); // 💥 Clear cart
+      localStorage.removeItem('shopping_cart');
       state.isAuthenticated = false;
       state.userData = null;
     },

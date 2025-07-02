@@ -10,7 +10,6 @@ const Marketplace = () => {
     <div>
        <Header title={market.charAt(0).toUpperCase() + market.slice(1) + " Market"} setbaricon={false}  setcarticon={false}/>
         <SubCategoriesPage mainCategory="Grocery" />
-      <ProductCard />
     </div>
   )
 }

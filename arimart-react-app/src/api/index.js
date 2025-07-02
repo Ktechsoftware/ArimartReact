@@ -6,27 +6,33 @@ const API = axios.create({
   baseURL: 'http://localhost:5015/api',
   headers: {
     'X-Api-Key': API_KEY,
-    'Content-Type': 'application/json'
-  }
+    'Content-Type': 'application/json',
+  },
 });
 
+// ✅ Unified token injection interceptor
 API.interceptors.request.use((req) => {
   try {
-    const profile = localStorage.getItem('Profile');
+    // Prefer 'token' over old 'Profile'
+    let token = localStorage.getItem('token');
 
-    if (profile) {
-      const { token } = JSON.parse(profile);
-      if (token) {
-        req.headers.Authorization = `Bearer ${token}`;
+    // Fallback: extract token from 'Profile' if needed
+    if (!token) {
+      const profile = localStorage.getItem('Profile');
+      if (profile) {
+        const parsed = JSON.parse(profile);
+        token = parsed?.token;
       }
     }
+
+    if (token) {
+      req.headers.Authorization = `Bearer ${token}`;
+    }
   } catch (err) {
-    console.error("Error parsing localStorage Profile:", err);
+    console.error('Error setting Authorization header:', err);
   }
 
   return req;
-}, (error) => {
-  return Promise.reject(error);
-});
+}, (error) => Promise.reject(error));
 
 export default API;

@@ -1,6 +1,9 @@
 import { Pencil, User, Lock, CreditCard, MapPin, Camera, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
+import { useEffect } from "react";
+import Cookies from "js-cookie";
+
 
 export default function UserProfileSettings() {
   const [activeEditPanel, setActiveEditPanel] = useState(null);
@@ -12,6 +15,23 @@ export default function UserProfileSettings() {
     newPassword: "",
     address: "123 Main St, Mumbai, India"
   });
+
+  useEffect(() => {
+    const cookie = Cookies.get('userLoginDataArimart');
+    if (cookie) {
+      try {
+        const user = JSON.parse(cookie);
+        setFormData(prev => ({
+          ...prev,
+          fullName: user?.fullName || "",
+          email: user?.email || "",
+        }));
+      } catch (err) {
+        console.error("Failed to parse user cookie:", err);
+      }
+    }
+  }, []);
+
   const [errors, setErrors] = useState({});
 
   const handleEditClick = (panel) => {
@@ -32,27 +52,27 @@ export default function UserProfileSettings() {
     e.preventDefault();
     // Basic validation
     const newErrors = {};
-    
+
     if (activeEditPanel === 'profile' && !formData.fullName.trim()) {
       newErrors.fullName = "Full name is required";
     }
-    
+
     if (activeEditPanel === 'profile' && !formData.email.trim()) {
       newErrors.email = "Email is required";
     } else if (activeEditPanel === 'profile' && !/^\S+@\S+\.\S+$/.test(formData.email)) {
       newErrors.email = "Email is invalid";
     }
-    
+
     if (activeEditPanel === 'password' && !formData.oldPassword) {
       newErrors.oldPassword = "Old password is required";
     }
-    
+
     if (activeEditPanel === 'password' && !formData.newPassword) {
       newErrors.newPassword = "New password is required";
     } else if (activeEditPanel === 'password' && formData.newPassword.length < 6) {
       newErrors.newPassword = "Password must be at least 6 characters";
     }
-    
+
     if (activeEditPanel === 'address' && !formData.address.trim()) {
       newErrors.address = "Address is required";
     }
@@ -68,7 +88,7 @@ export default function UserProfileSettings() {
   return (
     <div className="max-w-md mx-auto px-4 pb-24 bg-white dark:bg-gray-900 min-h-screen relative">
       <div className="flex flex-col items-center mb-6 relative pt-8">
-        <motion.div 
+        <motion.div
           className="relative w-24 h-24 mb-2"
           whileHover={{ scale: 1.05 }}
         >
@@ -77,7 +97,7 @@ export default function UserProfileSettings() {
             alt="profile"
             className="w-24 h-24 rounded-full object-cover border-4 border-white dark:border-gray-800 shadow-md"
           />
-          <motion.button 
+          <motion.button
             className="absolute bottom-1 right-1 bg-green-500 p-2 rounded-full shadow"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
@@ -85,7 +105,12 @@ export default function UserProfileSettings() {
             <Camera size={16} className="text-white" />
           </motion.button>
         </motion.div>
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{formData.fullName}</h2>
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
+          {formData.fullName
+            ?.toLowerCase()
+            .replace(/\b\w/g, char => char.toUpperCase()) || "Guest"}
+        </h2>
+
         <p className="text-sm text-gray-500 dark:text-gray-400">{formData.email}</p>
       </div>
 
@@ -93,38 +118,38 @@ export default function UserProfileSettings() {
         <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
           Personal Information
         </h3>
-        <SettingItem 
-          icon={<User size={18} />} 
-          label="Edit Profile" 
+        <SettingItem
+          icon={<User size={18} />}
+          label="Edit Profile"
           onClick={() => handleEditClick('profile')}
         />
-        <SettingItem 
-          icon={<CreditCard size={18} />} 
-          label="Payment Method" 
+        <SettingItem
+          icon={<CreditCard size={18} />}
+          label="Payment Method"
           onClick={() => handleEditClick('payment')}
         />
-        <SettingItem 
-          icon={<Lock size={18} />} 
-          label="Change Password" 
+        <SettingItem
+          icon={<Lock size={18} />}
+          label="Change Password"
           onClick={() => handleEditClick('password')}
         />
       </div>
 
       <div className="mb-6">
         <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Address</h3>
-        <SettingItem 
-          icon={<MapPin size={18} />} 
-          label="Edit Address" 
+        <SettingItem
+          icon={<MapPin size={18} />}
+          label="Edit Address"
           onClick={() => handleEditClick('address')}
         />
       </div>
 
-      <motion.div 
-  className="fixed md:static bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white/90 to-transparent dark:from-gray-900/90 z-10 md:z-0"
-  initial={{ y: 20, opacity: 0 }}
-  animate={{ y: 0, opacity: 1 }}
-  transition={{ delay: 0.2 }}
->
+      <motion.div
+        className="fixed md:static bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white/90 to-transparent dark:from-gray-900/90 z-10 md:z-0"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.2 }}
+      >
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
@@ -265,7 +290,7 @@ export default function UserProfileSettings() {
 
 function SettingItem({ icon, label, onClick }) {
   return (
-    <motion.div 
+    <motion.div
       className="flex items-center justify-between bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-white px-4 py-3 rounded-xl mb-2 shadow-sm"
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.98 }}

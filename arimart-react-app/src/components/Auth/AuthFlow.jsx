@@ -4,6 +4,7 @@ import logo from '../../assets/images/logo.png';
 import LoaderSpinner from "../LoaderSpinner";
 import Cookies from 'js-cookie';
 import { motion, AnimatePresence } from "framer-motion";
+import { sendOtp, verifyOtp, registerUser } from '../../api/auth'
 
 export default function AuthFlow() {
   const [step, setStep] = useState(1);
@@ -14,6 +15,7 @@ export default function AuthFlow() {
   const [isValid, setIsValid] = useState(false);
   const [isTouched, setIsTouched] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   const navigate = useNavigate()
   const validateIndianMobile = (number) => {
     const indianMobileRegex = /^[6-9]\d{9}$/;
@@ -36,7 +38,7 @@ export default function AuthFlow() {
       newOtp[index] = value;
       setOtp(newOtp);
 
-      if (value && index < 5) {
+      if (value && index < 7) {
         document.getElementById(`otp-input-${index + 1}`).focus();
       }
     }
@@ -55,15 +57,15 @@ export default function AuthFlow() {
   const handleOTPPaste = (e) => {
     e.preventDefault();
     const pasteData = e.clipboardData.getData('text/plain').replace(/\D/g, '');
-    if (pasteData.length === 4) {
+    if (pasteData.length === 6) {
       const newOtp = [...otp];
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 6; i++) {
         if (pasteData[i]) {
           newOtp[i] = pasteData[i];
         }
       }
       setOtp(newOtp);
-      document.getElementById('otp-input-5').focus();
+      document.getElementById('otp-input-6').focus();
     }
   };
 
@@ -75,30 +77,25 @@ export default function AuthFlow() {
     }, 1000);
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     setIsLoading(true);
+    try {
+      const res = await registerUser(form.fullName, form.email, mobile);
+      const { token, user } = res.data;
 
-    const userId = `user_${Math.random().toString(36).substr(2, 9)}`;
-    const userData = {
-      fullName: form.fullName,
-      email: form.email,
-      userId: userId,
-      type: "user",
-      username: mobile,
-      referral: form.referral || null,
-    };
+      // ✅ Save token
+      localStorage.setItem('token', token);
+      Cookies.set('userLoginDataArimart', JSON.stringify(user), { expires: 7, secure: true, sameSite: 'strict' });
 
-    Cookies.set('userLoginDataArimart', JSON.stringify(userData), {
-      expires: 7,
-      secure: true,
-      sameSite: 'strict'
-    });
-
-    setTimeout(() => {
-      navigate("/home");
+      navigate('/home');
+    } catch (err) {
+      alert("Registration failed");
+      console.error(err);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
+
 
   useEffect(() => {
     if (step === 2 && countdown > 0) {
@@ -110,26 +107,6 @@ export default function AuthFlow() {
   const bagRef = useRef(null);
   const [bagTilt, setBagTilt] = useState({ x: 0, y: 0 });
   const [bagHover, setBagHover] = useState(false);
-
-  // Handle mouse movement for 3D tilt effect
-  const handleMouseMove = (e) => {
-    if (!bagRef.current) return;
-    const rect = bagRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    setBagTilt({
-      x: (y - centerY) / 25,
-      y: (centerX - x) / 25
-    });
-  };
-
-  // Reset tilt when mouse leaves
-  const handleMouseLeave = () => {
-    setBagTilt({ x: 0, y: 0 });
-    setBagHover(false);
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
@@ -164,11 +141,7 @@ export default function AuthFlow() {
 
       {/* Shopping Bag Container with 3D effects */}
       <motion.div
-        ref={bagRef}
         className="relative z-10 w-full max-w-md"
-        onMouseMove={handleMouseMove}
-        onMouseEnter={() => setBagHover(true)}
-        onMouseLeave={handleMouseLeave}
         style={{
           perspective: "1000px",
           transformStyle: "preserve-3d"
@@ -263,6 +236,13 @@ export default function AuthFlow() {
                     Mobile Number
                   </label>
 
+                  {isLocalhost && (
+                    <div className="text-center text-sm text-green-600 dark:text-green-400">
+                      Demo Logined Mobile Number is <strong>8799690044</strong>
+                    </div>
+                  )}
+
+
                   <div className="relative mb-2">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                       <span className="text-gray-500 dark:text-gray-400">+91</span>
@@ -289,10 +269,6 @@ export default function AuthFlow() {
                       }`}>
                       {isValid ? (
                         <>
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          Valid mobile number
                         </>
                       ) : (
                         <>
@@ -313,7 +289,26 @@ export default function AuthFlow() {
                     </div>
                   )}
                   <button
-                    onClick={() => handleStepChange(2)}
+                    onClick={async () => {
+                      setIsLoading(true);
+                      try {
+                        const res = await sendOtp(mobile);
+
+                        // ✅ success based on response
+                        if (res?.status === 200 && res.data?.message?.includes("OTP sent")) {
+                          handleStepChange(2);
+                        } else {
+                          alert(res.data?.message || "Failed to send OTP. Please try again.");
+                        }
+                      } catch (err) {
+                        console.error("Send OTP Error:", err);
+                        const errorMessage =
+                          err?.response?.data?.message || "Error sending OTP. Please try again.";
+                        alert(errorMessage);
+                      } finally {
+                        setIsLoading(false);
+                      }
+                    }}
                     disabled={!isValid}
                     className={`w-full py-3 px-4 rounded-lg font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all ${isValid
                       ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500 dark:bg-green-700 dark:hover:bg-green-800 cursor-pointer'
@@ -337,15 +332,22 @@ export default function AuthFlow() {
                       className={`text-sm ${countdown > 0 ? 'text-gray-400' : 'text-blue-600 dark:text-blue-400 hover:underline'}`}
                     >
                       {countdown > 0 ? `Resend code in ${countdown}s` : 'Resend OTP'}
+
+                      {isLocalhost && (
+                        <div className="text-center text-sm text-green-600 dark:text-green-400">
+                          Mock OTP is <strong>123456</strong>
+                        </div>
+                      )}
+
                     </button>
                   </div>
 
                   <div className="space-y-2">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      4-digit verification code
+                      6-digit verification code
                     </label>
                     <div className="flex justify-between gap-2 sm:gap-3">
-                      {[...Array(4)].map((_, i) => (
+                      {[...Array(6)].map((_, i) => (
                         <input
                           key={i}
                           type="text"
@@ -368,9 +370,33 @@ export default function AuthFlow() {
                   </div>
 
                   <button
-                    onClick={() => handleStepChange(3)}
-                    disabled={otp.length < 4}
-                    className={`w-full py-3 rounded-lg font-medium text-white transition-colors ${otp.length === 4
+                    onClick={async () => {
+                      setIsLoading(true);
+                      const code = otp.join('');
+
+                      try {
+                        const res = await verifyOtp(mobile, code);
+
+                        if (res.data.requiresRegistration) {
+                          handleStepChange(3); // user not found → go to registration
+                        } else {
+                          const { token, user } = res.data;
+
+                          // ✅ Save token
+                          localStorage.setItem('token', token);
+                          Cookies.set('userLoginDataArimart', JSON.stringify(user), { expires: 7, secure: true, sameSite: 'strict' });
+
+                          navigate('/home');
+                        }
+                      } catch (err) {
+                        alert("Invalid or expired OTP");
+                        console.error(err);
+                      } finally {
+                        setIsLoading(false);
+                      }
+                    }}
+                    disabled={otp.length < 6}
+                    className={`w-full py-3 rounded-lg font-medium text-white transition-colors ${otp.length === 6
                       ? 'bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800'
                       : 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed'
                       }`}
