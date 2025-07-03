@@ -15,7 +15,7 @@ const DesktopProducts = () => {
     const location = useLocation();
 
     const query = new URLSearchParams(location.search).get('query');
-    
+
     useEffect(() => {
         if (query) {
             setIsSearching(true);
@@ -58,7 +58,10 @@ const DesktopProducts = () => {
     };
 
     if (loading) {
-        return <div className="p-8 text-gray-500">Loading...</div>;
+        return <>
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            <span>Processing...</span>
+        </>
     }
 
     if (error) {
@@ -68,7 +71,7 @@ const DesktopProducts = () => {
     const productsToDisplay = isSearching ? searchResults : allProducts;
 
     return (
-        <div className="hidden md:block py-8 px-4 bg-white dark:bg-gray-900">
+        <div className="py-8 px-4 bg-white dark:bg-gray-900">
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-gray-800 dark:text-white">
                     {isSearching
@@ -95,7 +98,7 @@ const DesktopProducts = () => {
                         <ChevronRightIcon className="text-gray-700 dark:text-gray-300 text-xl" />
                     </button> */}
 
-                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 p-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 p-4">
                         {productsToDisplay.products.map((product) => (
                             <ProductCard key={product.id} product={product} />
                         ))}

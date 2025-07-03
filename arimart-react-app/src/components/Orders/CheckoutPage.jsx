@@ -3,12 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Minus, Plus, MapPin, Wallet2, StickyNote, CreditCard, Smartphone, ChevronDown } from 'lucide-react';
 import OrderConfirmedModal from './OrderConfirmedModal';
 import { useCart } from '../../context/CartContext';
-
-const cartItems = [
-  { id: 1, name: 'Bell Pepper Red', desc: '1kg', price: 199, image: '/images/pepper.png' },
-  { id: 2, name: 'Red Chicken Egg', desc: '12 Piece', price: 79, image: '/images/egg.png' },
-  { id: 3, name: 'Organic Banana', desc: '10 Piece', price: 49, image: '/images/banana.png' },
-];
+import { checkoutCart } from '../../Store/orderSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { clearCart } from '../../Store/cartSlice';
+import toast from 'react-hot-toast';
 
 const paymentMethods = [
   { id: 'card', name: 'Credit/Debit Card', icon: <CreditCard className="w-5 h-5" /> },
@@ -21,6 +19,9 @@ export default function CheckoutPage() {
   const [showModal, setShowModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(paymentMethods[2]);
   const [walletBalance] = useState(150);
+  const dispatch = useDispatch();
+  const userId = useSelector(state => state.auth.userData?.id);
+
 
   const handleQty = (id, delta) => {
     setItems(prev => prev.map(i =>
@@ -29,17 +30,39 @@ export default function CheckoutPage() {
   };
 
   const { items, subtotal, totalItems } = useCart();
-  
+  const [latestOrderId, setLatestOrderId] = useState(null);
+
+  const handlecheckoutCart = async () => {
+    try {
+      const cartIds = items.map(item => item.id).join(',');
+      const payload = {
+        Addid: cartIds,
+        Userid: userId,
+        Sipid: "0"
+      };
+
+      const res = await dispatch(checkoutCart(payload)).unwrap();
+      console.log("Order response:", res);
+      const orderId = res.orderId;
+      setLatestOrderId(orderId);
+      setShowModal(true);
+      clearCart();
+      toast.success("Order placed successfully");
+    } catch (err) {
+      toast.error(err.message || "Order failed");
+    }
+  };
+
   const shipping = 30;
   const discount = 10;
   const tax = 10;
-  const total = subtotal + shipping - discount-tax;
+  const total = subtotal + shipping - discount - tax;
 
   return (
     <div className="max-w-6xl mx-auto p-4 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen">
 
       {/* Delivery Address */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.1 }}
@@ -64,14 +87,14 @@ export default function CheckoutPage() {
       >
         <p className="font-semibold">Your Order ({totalItems})</p>
         {items.map(item => (
-          <motion.div 
+          <motion.div
             key={item.id}
             layout
             className="flex items-center gap-4"
           >
-            <motion.img 
-              src={item.image} 
-              alt={item.name} 
+            <motion.img
+              src={item.image}
+              alt={item.name}
               className="w-14 h-14 object-cover rounded-md"
               whileHover={{ scale: 1.05 }}
             />
@@ -80,11 +103,11 @@ export default function CheckoutPage() {
               <p className="text-sm text-gray-500 dark:text-gray-400">{item.categoryName}</p>
               <p className="font-bold mt-1">₹{item.price}</p>
             </div>
-            <motion.div 
+            <motion.div
               className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full"
               whileHover={{ scale: 1.05 }}
             >
-              <motion.button 
+              <motion.button
                 onClick={() => handleQty(item.id, -1)}
                 whileTap={{ scale: 0.9 }}
               >
@@ -98,7 +121,7 @@ export default function CheckoutPage() {
               >
                 {item.quantity}
               </motion.span>
-              <motion.button 
+              <motion.button
                 onClick={() => handleQty(item.id, 1)}
                 whileTap={{ scale: 0.9 }}
               >
@@ -123,7 +146,7 @@ export default function CheckoutPage() {
           </div>
           <span className="text-gray-700 dark:text-gray-300 font-semibold">₹{walletBalance.toFixed(2)}</span>
         </div>
-        
+
         <div className="p-3 bg-blue-50 dark:bg-gray-800 rounded-lg">
           <p className="font-semibold mb-1 text-sm">Shipping Details</p>
           <p className="text-gray-500 dark:text-gray-400 text-sm">Expected delivery: 30-45 min</p>
@@ -137,28 +160,28 @@ export default function CheckoutPage() {
         transition={{ delay: 0.4 }}
         className="mb-6"
       >
-        <motion.div 
-  className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-800 rounded-xl cursor-pointer border border-gray-200 dark:border-gray-700"
-  onClick={() => setShowPaymentOptions(!showPaymentOptions)}
-  whileHover={{ backgroundColor: "#f5f5f5" }}
-  whileTap={{ scale: 0.98 }}
->
-  <div className="flex flex-col">
-    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Payment Method</p>
-    <div className="flex items-center gap-3">
-      {selectedPayment.icon}
-      <span className="font-medium text-gray-800 dark:text-gray-200">
-        {selectedPayment.name}
-      </span>
-    </div>
-  </div>
-  <motion.div
-    animate={{ rotate: showPaymentOptions ? 180 : 0 }}
-    transition={{ duration: 0.2 }}
-  >
-    <ChevronDown className="w-5 h-5 text-gray-500" />
-  </motion.div>
-</motion.div>
+        <motion.div
+          className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-800 rounded-xl cursor-pointer border border-gray-200 dark:border-gray-700"
+          onClick={() => setShowPaymentOptions(!showPaymentOptions)}
+          whileHover={{ backgroundColor: "#f5f5f5" }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <div className="flex flex-col">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Payment Method</p>
+            <div className="flex items-center gap-3">
+              {selectedPayment.icon}
+              <span className="font-medium text-gray-800 dark:text-gray-200">
+                {selectedPayment.name}
+              </span>
+            </div>
+          </div>
+          <motion.div
+            animate={{ rotate: showPaymentOptions ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ChevronDown className="w-5 h-5 text-gray-500" />
+          </motion.div>
+        </motion.div>
 
         <AnimatePresence>
           {showPaymentOptions && (
@@ -232,16 +255,16 @@ export default function CheckoutPage() {
       </motion.div>
 
       <div className="sticky bottom-0 left-0 right-0 flex justify-center p-4 bg-gradient-to-t from-white/90 to-transparent dark:from-gray-900/90 z-10">
-    <motion.button
-    onClick={() => setShowModal(true)}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      className="w-full max-w-md bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-xl shadow-lg transition"
-    >
-      Place Order
-    </motion.button>
-  </div>
-      <OrderConfirmedModal isOpen={showModal} onClose={() => setShowModal(false)} />
+        <motion.button
+          onClick={handlecheckoutCart}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="w-full max-w-md bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-xl shadow-lg transition"
+        >
+          Place Order
+        </motion.button>
+      </div>
+      <OrderConfirmedModal isOpen={showModal} onClose={() => setShowModal(false)} orderId={latestOrderId} />
     </div>
   );
 }

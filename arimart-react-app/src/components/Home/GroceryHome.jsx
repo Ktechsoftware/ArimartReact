@@ -16,6 +16,7 @@ import HomepageGrid from "./HomepageGrid";
 import HorizontalCategoryBar from "../category/HorizontalCategoryBar";
 import { DeliveryInfo } from "../ui/DeliveryInfo";
 import DealAlert from "../GroupBuying/DealAlert";
+import DProductCard from "../Products/DProductcards";
 
 const categories = [
   { label: "Vegetable", color: "bg-purple-100", icon: "🥦" },
@@ -99,7 +100,6 @@ export default function GroceryHome() {
 
         {/* Special Offers */}
         <h2 className="text-xl md:text-3xl font-bold text-base mb-2">Special Offers</h2>
-        {/* <ProductCard/> */}
         <DesktopProducts/>
       </div>
       <FilterSheet isOpen={showFilter} onClose={() => setShowFilter(false)} />

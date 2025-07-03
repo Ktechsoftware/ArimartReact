@@ -97,11 +97,11 @@ const AccountSettings = () => {
             </motion.div>
             <div>
               <h1 className="text-xl font-bold">
-                {capitalizeWords(userData?.fullName) || "Guest"}
+                {capitalizeWords(userData?.name) || "Guest"}
               </h1>
 
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                +91 {userData?.userContact || "0000000000"}
+                +91 {userData?.phone || "0000000000"}
               </p>
 
             </div>

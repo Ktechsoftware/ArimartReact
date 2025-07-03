@@ -104,7 +104,7 @@ export default function DesktopSidebar({ isOpen, onClose }) {
                                 <UserCircle size={20} />
                                 {isAuthenticated ? (
                                     <Link to="/account" className="text-md font-medium">
-                                        Hello, {userData?.fullName || userData?.username || "User"}
+                                        Hello, {userData?.name || userData?.username || "User"}
                                     </Link>
                                 ) : (
                                     <Link to="/auth" className="text-md font-medium">

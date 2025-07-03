@@ -8,7 +8,7 @@ import Cookies from "js-cookie";
 export default function UserProfileSettings() {
   const [activeEditPanel, setActiveEditPanel] = useState(null);
   const [formData, setFormData] = useState({
-    fullName: "Yogesh",
+    fullName: "",
     email: "yoegsh123@gmail.com",
     bio: "",
     oldPassword: "",
@@ -21,9 +21,10 @@ export default function UserProfileSettings() {
     if (cookie) {
       try {
         const user = JSON.parse(cookie);
+        // console.log("Parsed user data:", user);
         setFormData(prev => ({
           ...prev,
-          fullName: user?.fullName || "",
+          fullName: user?.name || "",
           email: user?.email || "",
         }));
       } catch (err) {

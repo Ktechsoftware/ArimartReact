@@ -20,7 +20,7 @@ const ProductCard = ({ product }) => {
 
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
-  console.log("ProductCard product:", product);
+  // console.log("ProductCard product:", product);
   const itemInCart = isInCart(product.id);
   const itemQuantity = getItemQuantity(product.id);
 

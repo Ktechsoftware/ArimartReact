@@ -5,6 +5,7 @@ import LoaderSpinner from "../LoaderSpinner";
 import Cookies from 'js-cookie';
 import { motion, AnimatePresence } from "framer-motion";
 import { sendOtp, verifyOtp, registerUser } from '../../api/auth'
+import toast from 'react-hot-toast';
 
 export default function AuthFlow() {
   const [step, setStep] = useState(1);
@@ -82,14 +83,11 @@ export default function AuthFlow() {
     try {
       const res = await registerUser(form.fullName, form.email, mobile);
       const { token, user } = res.data;
-
-      // ✅ Save token
       localStorage.setItem('token', token);
       Cookies.set('userLoginDataArimart', JSON.stringify(user), { expires: 7, secure: true, sameSite: 'strict' });
-
       navigate('/home');
     } catch (err) {
-      alert("Registration failed");
+      toast.error("Registration failed");
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -378,20 +376,29 @@ export default function AuthFlow() {
                         const res = await verifyOtp(mobile, code);
 
                         if (res.data.requiresRegistration) {
-                          handleStepChange(3); // user not found → go to registration
+                          toast.error("Please complete your registration to continue.");
+                          handleStepChange(3);
                         } else {
                           const { token, user } = res.data;
-
-                          // ✅ Save token
                           localStorage.setItem('token', token);
                           Cookies.set('userLoginDataArimart', JSON.stringify(user), { expires: 7, secure: true, sameSite: 'strict' });
 
                           navigate('/home');
                         }
                       } catch (err) {
-                        alert("Invalid or expired OTP");
-                        console.error(err);
-                      } finally {
+                        const status = err?.response?.status;
+                        const message = err?.response?.data?.message || "Invalid or expired OTP";
+
+                        if (status === 404 && message.includes("User not found")) {
+                          toast.error("User not found. Redirecting to registration.");
+                          handleStepChange(3);
+                        } else {
+                          toast.error(message);
+                        }
+
+                        console.error("OTP Verification Error:", err);
+                      }
+                      finally {
                         setIsLoading(false);
                       }
                     }}

@@ -117,7 +117,7 @@ export default function DesktopCategory() {
       </nav>
 
       {isSidebarOpen && (
-        <DesktopSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+        <DesktopSidebar key="mobile-sidebar" isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       )}
     </>
   );

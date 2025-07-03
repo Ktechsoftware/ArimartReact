@@ -30,7 +30,7 @@ const Intro = () => {
         >
           {isAuthenticated ? (
             <Link to="/account" className="text-md font-medium">
-              {userData?.fullName ?.toLowerCase()
+              {userData?.name ?.toLowerCase()
     .replace(/\b\w/g, char => char.toUpperCase()) || "Guest"}
             </Link>
           ) : (
