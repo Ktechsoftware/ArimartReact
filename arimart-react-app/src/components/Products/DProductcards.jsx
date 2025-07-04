@@ -13,7 +13,7 @@ const DProductCard = ({ product }) => {
   const dispatch = useDispatch();
   const userData = useSelector((state) => state.auth.userData);
   const wishlistItems = useSelector((state) => state.wishlist.items);
-  
+
   // Cart context
   const { addToCart, isInCart, getItemQuantity } = useCart();
 
@@ -30,10 +30,8 @@ const DProductCard = ({ product }) => {
       setIsWishlisted(false);
     }
   }, [wishlistItems, product.id]);
-
+  console.log("userData", userData);
   const handleWishlist = () => {
-    if (!userData?.userId) return toast.error("Please login to use wishlist.");
-
     dispatch(addToWishlist({ userid: userData.userId, pdid: product.id }));
     setIsWishlisted(true);
   };
@@ -67,9 +65,9 @@ const DProductCard = ({ product }) => {
         />
       </button>
 
-      <DiscountBadge 
-        price={product.totalprice || 200} 
-        originalPrice={product.netprice || 400} 
+      <DiscountBadge
+        price={product.totalprice || 200}
+        originalPrice={product.netprice || 400}
       />
 
       <Link
@@ -119,11 +117,10 @@ const DProductCard = ({ product }) => {
         whileTap={{ scale: 0.9 }}
         onClick={handleAddToCart}
         disabled={isAddingToCart}
-        className={`absolute bottom-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-200 ${
-          itemInCart 
-            ? 'bg-green-500 hover:bg-green-600' 
+        className={`absolute bottom-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-200 ${itemInCart
+            ? 'bg-green-500 hover:bg-green-600'
             : 'bg-orange-500 hover:bg-orange-600'
-        } ${isAddingToCart ? 'opacity-50 cursor-not-allowed' : ''}`}
+          } ${isAddingToCart ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
         {isAddingToCart ? (
           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

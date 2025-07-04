@@ -9,7 +9,7 @@ const Marketplace = () => {
   return (
     <div>
        <Header title={market.charAt(0).toUpperCase() + market.slice(1) + " Market"} setbaricon={false}  setcarticon={false}/>
-        <SubCategoriesPage mainCategory="Grocery" />
+        <SubCategoriesPage mainCategory="Grocery" categoryid={1} />
     </div>
   )
 }

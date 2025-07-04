@@ -1,9 +1,9 @@
 // contexts/CartContext.jsx - Updated to work with Redux
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { 
-  fetchCartByUserId, 
-  addToCartByUser, 
+import {
+  fetchCartByUserId,
+  addToCartByUser,
   removeFromCart as removeFromCartRedux,
   updateCartItemQuantity,
   clearCart as clearCartRedux
@@ -63,7 +63,7 @@ function cartReducer(state, action) {
     case CART_ACTIONS.LOAD_CART: {
       const normalizedItems = action.payload.items.map(normalizeCartItem);
       const { totalItems, subtotal } = calculateTotals(normalizedItems);
-      
+
       return {
         ...state,
         items: normalizedItems,
@@ -168,7 +168,7 @@ function cartReducer(state, action) {
 }
 
 // LocalStorage utilities
-const LOCAL_STORAGE_KEY = 'user_cart_925';
+const LOCAL_STORAGE_KEY = 'user_cart';
 
 const localStorageUtils = {
   getCart: () => {
@@ -207,7 +207,7 @@ const localStorageUtils = {
 export function CartProvider({ children }) {
   const [state, dispatch] = useReducer(cartReducer, initialState);
   const reduxDispatch = useDispatch();
-  
+
   // Get Redux cart state
   const reduxCartState = useSelector((state) => state.cart);
   const userData = useSelector((state) => state.auth.userData);
@@ -250,27 +250,39 @@ export function CartProvider({ children }) {
   }, [userId, isAuthenticated]);
 
   // Fetch cart from server when user logs in
+  // ✅ Load cart from server when userId becomes available
   useEffect(() => {
     if (userId) {
       loadCartFromServer();
     }
   }, [userId]);
 
-  // Load cart from server using Redux action
+  // ✅ Load cart from DB via Redux and sync to local state + localStorage
   const loadCartFromServer = async () => {
     if (!userId) return;
 
+    dispatch({ type: CART_ACTIONS.SET_LOADING, payload: true });
+
     try {
-      dispatch({ type: CART_ACTIONS.SET_LOADING, payload: true });
-      await reduxDispatch(fetchCartByUserId(userId)).unwrap();
+      // Fetch cart via Redux thunk
+      const cartItems = await reduxDispatch(fetchCartByUserId(userId)).unwrap();
+
+      // Load into local state
+      dispatch({
+        type: CART_ACTIONS.LOAD_CART,
+        payload: { items: cartItems }
+      });
+
       dispatch({ type: CART_ACTIONS.SYNC_SUCCESS });
     } catch (error) {
-      dispatch({ type: CART_ACTIONS.SET_ERROR, payload: error.message });
+      dispatch({ type: CART_ACTIONS.SET_ERROR, payload: error.message || 'Unknown error' });
+      dispatch({ type: CART_ACTIONS.SYNC_FAILURE, payload: error.message || 'Unknown error' });
       toast.error('Failed to load cart from server');
     } finally {
       dispatch({ type: CART_ACTIONS.SET_LOADING, payload: false });
     }
   };
+
 
   // Add item to cart
   const addToCart = async (product, quantity = 1) => {
@@ -301,7 +313,7 @@ export function CartProvider({ children }) {
           quantity: quantity,
           price: product.netprice || product.price
         })).unwrap();
-        
+
         dispatch({ type: CART_ACTIONS.SYNC_SUCCESS });
       } catch (error) {
         dispatch({ type: CART_ACTIONS.SYNC_FAILURE, payload: error.message });
@@ -329,7 +341,7 @@ export function CartProvider({ children }) {
           cartItemId,
           quantity: newQuantity
         })).unwrap();
-        
+
         dispatch({ type: CART_ACTIONS.SYNC_SUCCESS });
       } catch (error) {
         // Revert on failure
@@ -377,10 +389,10 @@ export function CartProvider({ children }) {
   // Clear entire cart
   const clearCart = async () => {
     const oldItems = [...state.items];
-    
+
     dispatch({ type: CART_ACTIONS.CLEAR_CART });
     localStorageUtils.clearCart();
-    
+
     toast.success('Cart cleared');
 
     // Sync with server if user is logged in
@@ -426,7 +438,7 @@ export function CartProvider({ children }) {
     error: state.error || reduxCartState.error,
     syncStatus: state.syncStatus,
     lastSyncTime: state.lastSyncTime,
-    
+
     // Actions
     addToCart,
     updateQuantity,
@@ -434,7 +446,7 @@ export function CartProvider({ children }) {
     clearCart,
     syncCartWithServer,
     loadCartFromServer,
-    
+
     // Utilities
     getItemQuantity,
     isInCart

@@ -8,17 +8,16 @@ import store from './Store';
 import { fetchCartByUserId } from './Store/cartSlice';
 import { useEffect } from 'react';
 import { CartProvider } from './context/CartContext';
+import { checkAuth } from './Store/authSlice';
 
 function AppContent() {
   const dispatch = useDispatch();
   const { isAuthenticated, userData } = useSelector((state) => state.auth);
   const userId = isAuthenticated ? userData?.id : null;
 
-  useEffect(() => {
-    if (userId) {
-      dispatch(fetchCartByUserId(userId));
-    }
-  }, [userId, dispatch]);
+useEffect(() => {
+  dispatch(checkAuth()); // check cookie and hydrate auth state
+}, [dispatch]);
 
   return (
     <>

@@ -1,40 +1,9 @@
 import { motion } from "framer-motion";
 
-const GrocerySubcategories = () => {
-  const categories = [
-    {
-      title: "Groceries & Food",
-      items: [
-        "Fruits & vegetables",
-        "Atta, rice & grains",
-        "Dals & pulses",
-        "Oil & ghee",
-        "Masala, sugar & spices",
-        "Milk & dairy",
-        "Snacks & biscuits",
-        "Cereals & dry fruits",
-        "Tea, coffee & drink mixes",
-        "Juices & cold drinks",
-        "Chocolates & ice creams",
-        "Eggs, meat & fish",
-        "Breads & bakery",
-        "Sauces & spreads",
-        "Noodles & pasta",
-        "Ready to eat & frozen food"
-      ]
-    },
-    {
-      title: "Beauty & Personal Care",
-      items: [
-        "Bath & body",
-        "Hair care",
-        "Skin & face",
-        "Deos & perfumes",
-        "Feminine hygiene",
-        "Men's grooming"
-      ]
-    }
-  ];
+const GrocerySubcategories = ({category}) => {
+  if (category) {
+    const formattedCategory = category.toLowerCase().replace(/ /g, "-");  
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8 transition-colors duration-300">

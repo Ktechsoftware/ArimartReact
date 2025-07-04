@@ -4,7 +4,7 @@ import {
   fetchCategories,
   fetchSubcategories,
   fetchChildSubcategories,
-} from '../../Store/categoriesSlice';
+} from '../../Store/categoriesSlice'
 
 export default function CategoryLayout() {
   const dispatch = useDispatch();
@@ -12,14 +12,16 @@ export default function CategoryLayout() {
 
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
-
+  console.log("categories", categories);
+  console.log("subcategories", subcategories);
+  console.log("childSubcategories", childSubcategories);
   useEffect(() => {
     dispatch(fetchCategories());
   }, [dispatch]);
 
   const handleCategoryClick = (category) => {
     setSelectedCategory(category);
-    setSelectedSubcategory(null); // reset subcategory selection
+    setSelectedSubcategory(null);
     dispatch(fetchSubcategories(category.id));
   };
 
@@ -29,7 +31,7 @@ export default function CategoryLayout() {
   };
 
   return (
-    <div className="grid grid-cols-2 gap-0 w-full h-screen mb-20 border rounded shadow-md bg-white dark:bg-gray-900 overflow-hidden">
+    <div className="grid grid-cols-3 gap-0 w-full h-screen mb-20 border rounded shadow-md bg-white dark:bg-gray-900 overflow-hidden">
       {/* Categories */}
       <div className="bg-gray-100 dark:bg-gray-800 p-4 overflow-y-auto">
         <h2 className="text-md font-semibold text-gray-700 dark:text-white mb-3">Categories</h2>
@@ -74,6 +76,24 @@ export default function CategoryLayout() {
         )}
       </div>
 
+      {/* Child Subcategories */}
+      <div className="bg-gray-100 dark:bg-gray-850 p-4 overflow-y-auto border-l border-gray-200 dark:border-gray-700">
+        <h2 className="text-md font-semibold text-gray-700 dark:text-white mb-3">Child Subcategories</h2>
+        {selectedSubcategory && childSubcategories.length > 0 ? (
+          <ul className="space-y-2">
+            {childSubcategories.map((child) => (
+              <li
+                key={child.id}
+                className="cursor-pointer px-3 py-2 rounded hover:bg-white dark:hover:bg-gray-700 transition-all"
+              >
+                {child.childcategoryName}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-gray-500">No data available</p>
+        )}
+      </div>
     </div>
   );
 }

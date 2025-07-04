@@ -137,10 +137,11 @@ export default function AppRoutes() {
               <Route path="/orders/tracking" element={<OrderTrack />} />
               <Route path="/category">
                 <Route index element={<Categoryindex />} />
-                <Route path=":market" element={<Marketplace />} />
-                <Route path=":market/:subcategory" element={<CategoryProductscreen />} />
-                <Route path=":market/:subcategory/:id" element={<Productpage />} />
+                <Route path=":market/:categoryid" element={<Marketplace />} />
+                <Route path=":market/subcategory/:subcategoryid" element={<CategoryProductscreen />} />
+                <Route path=":market/product/:id" element={<Productpage />} />
               </Route>
+
               <Route path="/search" element={<Searchitems />} />
               <Route path="/term&condition" element={<Termcondition />} />
               <Route path="/categories" element={<Categoryindex />} />

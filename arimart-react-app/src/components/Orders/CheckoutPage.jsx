@@ -7,6 +7,7 @@ import { checkoutCart } from '../../Store/orderSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { clearCart } from '../../Store/cartSlice';
 import toast from 'react-hot-toast';
+import { fetchWalletBalance } from '../../Store/walletSlice';
 
 const paymentMethods = [
   { id: 'card', name: 'Credit/Debit Card', icon: <CreditCard className="w-5 h-5" /> },
@@ -21,7 +22,12 @@ export default function CheckoutPage() {
   const [walletBalance] = useState(150);
   const dispatch = useDispatch();
   const userId = useSelector(state => state.auth.userData?.id);
-
+const userData = useSelector((state) => state.auth.userData);
+  useEffect(() => {
+    if (userData.userId) {
+      dispatch(fetchWalletBalance(userData.userId));
+    }
+  }, [userData]);
 
   const handleQty = (id, delta) => {
     setItems(prev => prev.map(i =>
@@ -144,7 +150,7 @@ export default function CheckoutPage() {
             <Wallet2 className="w-5 h-5 text-green-600" />
             Wallet Balance
           </div>
-          <span className="text-gray-700 dark:text-gray-300 font-semibold">₹{walletBalance.toFixed(2)}</span>
+          <span className="text-gray-700 dark:text-gray-300 font-semibold">₹{userData.walletBalance.toFixed(2)}</span>
         </div>
 
         <div className="p-3 bg-blue-50 dark:bg-gray-800 rounded-lg">

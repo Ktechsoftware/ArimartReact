@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchCategories, fetchSubcategories, fetchChildSubcategories } from '../../Store/categoriesSlice'
 
 const categories = [
   {
@@ -56,6 +58,42 @@ export default function Categories() {
       setLoading(false);
     }, 4000);
   }, []);
+  const dispatch = useDispatch();
+  const { categories, subcategories, childSubcategories } = useSelector((state) => state.category);
+
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
+
+  useEffect(() => {
+    dispatch(fetchCategories());
+  }, [dispatch]);
+
+  // Once categories are loaded, pick the one matching the `market` param
+  useEffect(() => {
+    if (categories.length > 0) {
+      const matchedCategory = categories.find(
+        (cat) =>
+          cat.label === market
+      );
+
+      if (matchedCategory) {
+        setSelectedCategory(matchedCategory);
+        dispatch(fetchSubcategories(matchedCategory.id));
+      }
+    }
+  }, [categories, market, dispatch]);
+
+  const handleCategoryClick = (category) => {
+    setSelectedCategory(category);
+    setSelectedSubcategory(null);
+    dispatch(fetchSubcategories(category.id));
+  };
+
+  const handleSubcategoryClick = (subcategory) => {
+    setSelectedSubcategory(subcategory);
+    dispatch(fetchChildSubcategories(subcategory.id));
+  };
+
 
   return (
     <div className="px-4 relative">
@@ -113,7 +151,7 @@ export default function Categories() {
             animate={{ opacity: 1 }}
             transition={{ staggerChildren: 0.05 }}
           >
-            {categories.map((cat, i) => (
+            {subcategories.map((subcat, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, x: 20 }}
@@ -127,26 +165,26 @@ export default function Categories() {
                   y: -5,
                   boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
                 }}
-                className={`flex-shrink-0 w-28 h-36 md:w-32 md:h-40 ${cat.color} rounded-xl flex flex-col items-center justify-center p-4 cursor-pointer transition-all hover:border hover:border-gray-200 dark:hover:border-gray-600`}
+                className="flex-shrink-0 w-28 h-36 md:w-32 md:h-40 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-600 rounded-xl flex flex-col items-center justify-center p-4 cursor-pointer transition-all hover:border hover:border-gray-200 dark:hover:border-gray-600"
+                onClick={() => handleSubcategoryClick(subcat)}
               >
-                <Link to={`/category/${market}/${cat.label.toLowerCase().replace(/ /g, "-")}`}>
-                  <motion.div
-                    whileHover={{ scale: 1.1 }}
-                    className="w-16 h-16 md:w-20 md:h-20 mb-4 rounded-full bg-white dark:bg-gray-900 flex items-center justify-center overflow-hidden"
-                  >
-                    <img
-                      src={cat.image}
-                      alt={cat.label}
-                      className=" w-full h-full object-contain p-2"
-                      loading="lazy"
-                    />
-                  </motion.div>
-                  <span className="text-xs md:text-sm font-medium text-gray-700 dark:text-gray-200 text-center">
-                    {cat.label}
-                  </span>
-                </Link>
+                <motion.div
+                  whileHover={{ scale: 1.1 }}
+                  className="w-16 h-16 md:w-20 md:h-20 mb-4 rounded-full bg-white dark:bg-gray-900 flex items-center justify-center overflow-hidden"
+                >
+                  <img
+                    src={subcat.image || "https://via.placeholder.com/80"} // fallback image
+                    alt={subcat.name}
+                    className="w-full h-full object-contain p-2"
+                    loading="lazy"
+                  />
+                </motion.div>
+                <span className="text-xs md:text-sm font-medium text-gray-700 dark:text-gray-200 text-center">
+                  {subcat.name}
+                </span>
               </motion.div>
             ))}
+
           </motion.div>
         </div>
       )}
