@@ -17,7 +17,7 @@ const ProductCard = ({ product }) => {
   const wishlistItems = useSelector((state) => state.wishlist.items);
 
   const { addToCart, isInCart, getItemQuantity } = useCart();
-
+  // console.log("ProductCard product:", product);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   // console.log("ProductCard product:", product);
@@ -38,6 +38,7 @@ const ProductCard = ({ product }) => {
     setIsAddingToCart(true);
     try {
       await addToCart(product, 1);
+      console.log('Product added to cart:', product);
     } catch (error) {
       console.error('Error adding to cart:', error);
     } finally {
@@ -62,15 +63,16 @@ const ProductCard = ({ product }) => {
         />
       </button>
 
-      <DiscountBadge 
-        price={product.totalprice || 200} 
-        originalPrice={product.netprice || 400} 
+      <DiscountBadge
+        price={product.totalprice || 200}
+        originalPrice={product.netprice || 400}
       />
 
       <Link
-        to={`/category/${market || product.categoryName}/${product.subcategoryName || product.productName}/${product.id}`}
+        to={`/category/${product.categoryName}/${product.subcategoryName}/product/${product.id}`}
         className="h-32 w-full bg-gray-100 rounded-md overflow-hidden mb-2 block"
       >
+
         <img
           src={product.image}
           alt={product.productName}
@@ -111,11 +113,10 @@ const ProductCard = ({ product }) => {
         whileTap={{ scale: 0.9 }}
         onClick={handleAddToCart}
         disabled={isAddingToCart}
-        className={`absolute bottom-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-200 ${
-          itemInCart 
-            ? 'bg-green-500 hover:bg-green-600' 
+        className={`absolute bottom-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-200 ${itemInCart
+            ? 'bg-green-500 hover:bg-green-600'
             : 'bg-orange-500 hover:bg-orange-600'
-        } ${isAddingToCart ? 'opacity-50 cursor-not-allowed' : ''}`}
+          } ${isAddingToCart ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
         {isAddingToCart ? (
           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

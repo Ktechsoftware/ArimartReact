@@ -134,12 +134,12 @@ export default function AppRoutes() {
               <Route path="/promocodes" element={<PromocodeScreen />} />
               <Route path="/checkout" element={<CheckoutScreen />} />
               <Route path="/orders" element={<OrderScreen />} />
-              <Route path="/orders/tracking" element={<OrderTrack />} />
+              <Route path="/orders/tracking/:trackId" element={<OrderTrack />} />
               <Route path="/category">
                 <Route index element={<Categoryindex />} />
                 <Route path=":market/:categoryid" element={<Marketplace />} />
                 <Route path=":market/subcategory/:subcategoryid" element={<CategoryProductscreen />} />
-                <Route path=":market/product/:id" element={<Productpage />} />
+                <Route path=":market/:subcategory/product/:id" element={<Productpage />} />
               </Route>
 
               <Route path="/search" element={<Searchitems />} />

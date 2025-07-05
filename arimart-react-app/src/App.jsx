@@ -16,7 +16,7 @@ function AppContent() {
   const userId = isAuthenticated ? userData?.id : null;
 
 useEffect(() => {
-  dispatch(checkAuth()); // check cookie and hydrate auth state
+  dispatch(checkAuth());
 }, [dispatch]);
 
   return (

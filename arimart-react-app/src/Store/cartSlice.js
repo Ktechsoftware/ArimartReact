@@ -17,10 +17,12 @@ export const addToCartByUser = createAsyncThunk(
   'cart/addToCartByUser',
   async (cartData, { rejectWithValue, getState }) => {
     try {
+      console.log('Adding to cart for user:', cartData);
       await API.post('/cart/add/user', cartData);
       const userId = getState().auth.userData?.id;
       if (!userId) throw new Error('User ID not found');
       const updatedCart = await API.get(`/cart/${userId}`);
+      console.log('Updated stored cart:', updatedCart.data);
       return updatedCart.data.items || [];
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
@@ -45,6 +47,7 @@ export const fetchCartByUserId = createAsyncThunk(
   async (userId, { rejectWithValue }) => {
     try {
       const updatedCart = await API.get(`/cart/${userId}`);
+      console.log('Updated cart:', updatedCart.data);
       return updatedCart.data.items || [];
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
@@ -66,9 +69,9 @@ export const fetchCartByUserAndGroup = createAsyncThunk(
 
 export const removeFromCart = createAsyncThunk(
   'cart/removeFromCart',
-  async (cartItemId, { rejectWithValue, getState }) => {
+  async ({ userId, cartItemId }, { rejectWithValue }) => {
     try {
-      await API.delete(`/cart/${cartItemId}`);
+      await API.delete('/cart/remove', { data: { userId, itemId: cartItemId } });
       return cartItemId;
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
@@ -78,15 +81,21 @@ export const removeFromCart = createAsyncThunk(
 
 export const updateCartItemQuantity = createAsyncThunk(
   'cart/updateCartItemQuantity',
-  async ({ cartItemId, quantity }, { rejectWithValue }) => {
+  async ({ userId, cartItemId, quantity }, { rejectWithValue }) => {
     try {
-      await API.put(`/cart/${cartItemId}`, { quantity });
+      await API.put('/cart/update', {
+        userId,
+        itemId: cartItemId,
+        quantity,
+      });
       return { cartItemId, quantity };
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
     }
   }
 );
+
+
 
 const cartSlice = createSlice({
   name: 'cart',

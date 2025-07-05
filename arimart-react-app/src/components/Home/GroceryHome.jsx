@@ -85,14 +85,14 @@ export default function GroceryHome() {
           />
         </div>
       )}
-      <div className="m-3 bg-gradient-to-br from-green-50 to-green-200 dark:from-green-900 dark:to-green-600 p-4 rounded-xl flex items-center justify-between mb-6">
+      {/* <div className="m-3 bg-gradient-to-br from-green-50 to-green-200 dark:from-green-900 dark:to-green-600 p-4 rounded-xl flex items-center justify-between mb-6">
           <img
             src="https://m.media-amazon.com/images/G/31/img24/Fresh/April/Pc_6.jpg"
             alt="promo"
           />
-        </div>
+        </div> */}
       <MainPage />
-      <DealAlert/>
+      {/* <DealAlert/> */}
       <HotDealsCarousel />
 
       <Categories />

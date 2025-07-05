@@ -1,4 +1,4 @@
-// contexts/CartContext.jsx - Updated to work with Redux
+// contexts/CartContext.jsx - Fixed update and remove functions
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -250,14 +250,13 @@ export function CartProvider({ children }) {
   }, [userId, isAuthenticated]);
 
   // Fetch cart from server when user logs in
-  // ✅ Load cart from server when userId becomes available
   useEffect(() => {
     if (userId) {
       loadCartFromServer();
     }
   }, [userId]);
 
-  // ✅ Load cart from DB via Redux and sync to local state + localStorage
+  // Load cart from DB via Redux and sync to local state + localStorage
   const loadCartFromServer = async () => {
     if (!userId) return;
 
@@ -283,7 +282,6 @@ export function CartProvider({ children }) {
     }
   };
 
-
   // Add item to cart
   const addToCart = async (product, quantity = 1) => {
     const cartItem = {
@@ -295,7 +293,7 @@ export function CartProvider({ children }) {
       subcategoryName: product.subcategoryName,
       quantity: quantity
     };
-
+    console.log('Adding to cart:', cartItem);
     // Add to local state immediately for better UX
     dispatch({
       type: CART_ACTIONS.ADD_ITEM,
@@ -322,42 +320,60 @@ export function CartProvider({ children }) {
     }
   };
 
-  // Update item quantity
+  // Update item quantity - FIXED
   const updateQuantity = async (itemId, newQuantity) => {
     const item = state.items.find(item => item.id === itemId);
-    const oldQuantity = item?.quantity;
+    if (!item) {
+      console.error('Item not found:', itemId);
+      toast.error('Item not found');
+      return;
+    }
 
-    // Update local state immediately
+    const oldQuantity = item.quantity;
+
+    // Update local state first for UI responsiveness
     dispatch({
       type: CART_ACTIONS.UPDATE_QUANTITY,
       payload: { id: itemId, quantity: newQuantity }
     });
 
-    // Sync with server if user is logged in
-    if (userId && item?.originalItem) {
+    // Sync with server if logged in
+    if (userId && item.originalItem) {
       try {
+        // Get the correct cart item ID from the original item
         const cartItemId = item.originalItem.Id || item.originalItem.id;
+
+        // Call the Redux action with correct parameters
         await reduxDispatch(updateCartItemQuantity({
+          userId,
           cartItemId,
-          quantity: newQuantity
+          quantity: newQuantity // Fixed: use newQuantity instead of undefined 'quantity'
         })).unwrap();
 
         dispatch({ type: CART_ACTIONS.SYNC_SUCCESS });
+        toast.success('Quantity updated');
       } catch (error) {
-        // Revert on failure
+        // Revert to old quantity on failure
         dispatch({
           type: CART_ACTIONS.UPDATE_QUANTITY,
           payload: { id: itemId, quantity: oldQuantity }
         });
         dispatch({ type: CART_ACTIONS.SYNC_FAILURE, payload: error.message });
-        toast.error('Failed to update quantity');
+        toast.error(`Failed to update quantity: ${error.message}`);
+        console.error('Update quantity failed:', error);
       }
     }
   };
 
-  // Remove item from cart
+  // Remove item from cart - FIXED
   const removeFromCart = async (itemId) => {
     const item = state.items.find(item => item.id === itemId);
+    if (!item) {
+      console.error('Item not found:', itemId);
+      toast.error('Item not found');
+      return;
+    }
+
     const itemToRemove = { ...item };
 
     // Remove from local state immediately
@@ -366,22 +382,27 @@ export function CartProvider({ children }) {
       payload: { id: itemId }
     });
 
-    toast.success(`${itemToRemove?.name || 'Item'} removed from cart`);
+    toast.success(`${itemToRemove.name || 'Item'} removed from cart`);
 
-    // Sync with server if user is logged in
-    if (userId && item?.originalItem) {
+    // Sync with backend if user is authenticated
+    if (userId && item.originalItem) {
       try {
+        // Get the correct cart item ID from the original item
         const cartItemId = item.originalItem.Id || item.originalItem.id;
-        await reduxDispatch(removeFromCartRedux(cartItemId)).unwrap();
+
+        // Call the Redux action with correct parameters
+        await reduxDispatch(removeFromCartRedux({
+          userId,
+          cartItemId // Fixed: pass both userId and cartItemId as expected by the action
+        })).unwrap();
+
         dispatch({ type: CART_ACTIONS.SYNC_SUCCESS });
       } catch (error) {
-        // Restore on failure
-        dispatch({
-          type: CART_ACTIONS.ADD_ITEM,
-          payload: itemToRemove
-        });
+        // Re-add item locally if server failed
+        dispatch({ type: CART_ACTIONS.ADD_ITEM, payload: itemToRemove });
         dispatch({ type: CART_ACTIONS.SYNC_FAILURE, payload: error.message });
-        toast.error('Failed to remove item');
+        toast.error(`Failed to remove item: ${error.message}`);
+        console.error('Remove item failed:', error);
       }
     }
   };
@@ -446,8 +467,6 @@ export function CartProvider({ children }) {
     clearCart,
     syncCartWithServer,
     loadCartFromServer,
-
-    // Utilities
     getItemQuantity,
     isInCart
   };

@@ -43,7 +43,7 @@ const ConfettiPiece = () => {
   );
 };
 
-export default function OrderConfirmedModal({ isOpen, onClose, orderId }) {
+export default function OrderConfirmedModal({ isOpen, onClose, trackId }) {
   const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
@@ -116,6 +116,8 @@ export default function OrderConfirmedModal({ isOpen, onClose, orderId }) {
           </motion.h2>
         </motion.div>
 
+        
+
         {/* Order Details */}
         <motion.div
           className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 shadow-inner space-y-2 mb-6"
@@ -157,7 +159,10 @@ export default function OrderConfirmedModal({ isOpen, onClose, orderId }) {
             </div>
           </div>
         </motion.div>
-        <Link to={`/orders/tracking/${orderId}`} className="w-full">
+         <p className="text-sm text-gray-500 mt-2">
+            Your tracking ID is: <span className="font-semibold">{trackId}</span>
+          </p>
+        <Link to={`/orders/tracking/${trackId}`} className="w-full">
           <motion.button
             onClick={onClose}
             className="w-full bg-orange-500 text-white py-2 rounded-full text-sm font-semibold hover:bg-orange-600 transition"

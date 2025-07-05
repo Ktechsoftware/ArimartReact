@@ -24,7 +24,9 @@ export default function CartDetails() {
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
   const [localLoading, setLocalLoading] = useState({});
   const [selectedTab, setSelectedTab] = useState("cart");
+  const userId = useSelector((state) => state.auth.userData?.id);
 
+console.log("CartDetails items:", items);
 
   // Cart calculations
   const shipping = subtotal > 500 ? 0 : 30; // Free shipping over ₹500
@@ -38,6 +40,8 @@ export default function CartDetails() {
     setLocalLoading(prev => ({ ...prev, [itemId]: true }));
     try {
       await updateQuantity(itemId, newQuantity);
+    } catch (error) {
+      console.error('Update quantity failed:', error);
     } finally {
       setLocalLoading(prev => ({ ...prev, [itemId]: false }));
     }
@@ -48,11 +52,15 @@ export default function CartDetails() {
 
     setLocalLoading(prev => ({ ...prev, [itemId]: true }));
     try {
+      // Same: remove uses userId + itemId
       await removeFromCart(itemId);
+    } catch (error) {
+      console.error('Remove item failed:', error);
     } finally {
       setLocalLoading(prev => ({ ...prev, [itemId]: false }));
     }
   };
+
 
   const handleSyncCart = async () => {
     if (isAuthenticated) {
@@ -178,7 +186,7 @@ export default function CartDetails() {
                         <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-2 mb-1">
                           {item.name}
                         </h3>
-                            {console.log(item)}
+                        {console.log(item)}
                         {item.categoryName && (
                           <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
                             {item.categoryName}
