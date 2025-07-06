@@ -15,7 +15,7 @@ const DProductCard = ({ product }) => {
   const wishlistItems = useSelector((state) => state.wishlist.items);
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
   
-  console.log("product", product);
+  // console.log("product", product);
   
   // Cart context
   const { addToCart, isInCart, getItemQuantity } = useCart();
@@ -49,7 +49,7 @@ const DProductCard = ({ product }) => {
     }
   }, [wishlistItems, productId]);
 
-  console.log("userData", userData);
+  // console.log("userData", userData);
 
   const handleWishlist = async () => {
     if (!isAuthenticated) {

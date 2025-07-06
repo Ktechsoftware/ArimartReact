@@ -38,7 +38,21 @@ import TopProductStore from '../pages/TopStores/TopProductStore';
 import Marketplace from '../pages/Mainstore/Marketplace';
 import GroupDealScreen from '../pages/GroupBuy/GroupDealScreen';
 import Termcondition from '../pages/Privacypolicy/termcondition';
+import Trackorders from '../pages/Orders/Trackorders';
+import PaymentOrder from '../pages/PaymentScreen/PaymentOrder';
 
+const publicRoutes = [
+  "/", "/home", "/onboard", "/auth", "/about", "/contactus", "/faq", "/privacypolicy",
+  "/search", "/categories", "/topstore/:price", "/explore"
+];
+
+const hideBottomNavRoutes = [
+  '/', '/onboard', '/auth', '/faq', '/privacypolicy', '/cart', '/checkout',
+  '/account/editprofile', '/home/wallet', '/home/referandearn',
+  '/wishlist', '/about', '/contactus', '/notification', '/promocodes'
+];
+
+const hideBottomNavRoutesWithPrefix = ['/product', '/orders', '/topstore'];
 export default function AppRoutes() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -47,44 +61,34 @@ export default function AppRoutes() {
   const device = useDeviceType();
   const [isLoading, setIsLoading] = useState(false);
 
-  const publicRoutes = [
-    "/", "/home", "/onboard", "/auth", "/about", "/contactus", "/faq", "/privacypolicy",
-    "/product", "/product/:category", "/product/:category/:id",
-    "/search", "/categories", "/topstore/:price", "/explore"
-  ];
-
-  const hideBottomNavRoutes = [
-    '/', '/onboard', '/auth', '/faq', '/privacypolicy', '/cart', '/checkout',
-    '/account/editprofile', '/home/wallet', '/home/referandearn',
-    '/wishlist', '/about', '/contactus', '/notification', '/promocodes'
-  ];
-
-  const hideBottomNavRoutesWithPrefix = ['/product', '/orders', '/topstore'];
-
   const shouldHideBottomNav =
     hideBottomNavRoutes.includes(location.pathname) ||
     hideBottomNavRoutesWithPrefix.some(prefix => location.pathname.startsWith(prefix));
 
-  // Unified auth and redirect logic
+  // ✅ Unified auth & route protection
   useEffect(() => {
     dispatch(checkAuth());
 
-    const isPublicRoute = publicRoutes.some(route =>
-      matchPath(route, location.pathname)
+    const isProductPage = location.pathname.startsWith("/category");
+
+    const isPublic = isProductPage || publicRoutes.some(route =>
+      matchPath({ path: route, end: true }, location.pathname)
     );
 
-    if (!isPublicRoute && !isAuthenticated) {
+
+    if (!isPublic && !isAuthenticated) {
       toast.error("Login Please");
       navigate("/auth", { replace: true });
     }
 
+
+    // Redirect authenticated users away from landing/onboarding
     if (isAuthenticated && ['/', '/auth', '/onboard'].includes(location.pathname)) {
       navigate('/home', { replace: true });
     }
-
   }, [location.pathname, isAuthenticated]);
 
-  // Route loading bar
+  // ✅ Loading bar on route change
   useEffect(() => {
     setIsLoading(true);
     const timer = setTimeout(() => setIsLoading(false), 800);
@@ -135,6 +139,8 @@ export default function AppRoutes() {
               <Route path="/checkout" element={<CheckoutScreen />} />
               <Route path="/orders" element={<OrderScreen />} />
               <Route path="/orders/tracking/:trackId" element={<OrderTrack />} />
+              <Route path="/orders/track/:trackId" element={<Trackorders />} />
+              <Route path="/checkout/payment" element={<PaymentOrder />} />
               <Route path="/category">
                 <Route index element={<Categoryindex />} />
                 <Route path=":market/:categoryid" element={<Marketplace />} />

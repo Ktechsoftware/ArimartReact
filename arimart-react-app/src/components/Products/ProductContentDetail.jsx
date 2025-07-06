@@ -1,13 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { Star, Check, Trash2, Plus, Minus, Heart } from "lucide-react";
+import { Star, Check, Trash2, Plus, Minus, Heart, Users } from "lucide-react";
 import DProductCard from "./DProductcards";
 import { fetchProductById } from "../../Store/productDetailSlice";
 import { addToWishlist } from "../../Store/wishlistSlice";
 import { useCart } from "../../context/CartContext";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
+import { GroupBuySection } from "../../pages/GroupBuy/GroupBuySection";
+import { fetchAllGroups } from "../../Store/groupBuySlice";
+import ProductReview from "../Reviews/ProductReview";
+
 
 export default function ProductContentDetail() {
   const { id } = useParams();
@@ -26,6 +30,10 @@ export default function ProductContentDetail() {
   const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [groups, setGroups] = useState([]);
+  const [groupLoading, setGroupLoading] = useState(false);
+  const [groupError, setGroupError] = useState(null);
+
 
   const productDetailState = useSelector((state) => state.productDetail) || {};
   const { product = null, loading = false, error = null } = productDetailState;
@@ -36,23 +44,6 @@ export default function ProductContentDetail() {
   // Safe usage — don't access product.id until after product is confirmed
   const itemInCart = product ? isInCart(product.id) : false;
   const itemQuantity = product ? getItemQuantity(product.id) : 0;
-
-  // Comprehensive Debug logging
-  console.log('=== CART DEBUG ===');
-  console.log('Product:', product);
-  console.log('Product ID:', product?.id);
-  console.log('Product Name:', product?.productName || product?.name);
-  console.log('Item in cart:', itemInCart);
-  console.log('Item quantity:', itemQuantity);
-  console.log('Is adding to cart:', isAddingToCart);
-  console.log('Cart functions available:', {
-    addToCart: typeof addToCart,
-    isInCart: typeof isInCart,
-    getItemQuantity: typeof getItemQuantity,
-    updateQuantity: typeof updateQuantity,
-    removeFromCart: typeof removeFromCart
-  });
-  console.log('=================');
 
   // Demo images for left side
   const demoImages = [
@@ -68,25 +59,37 @@ export default function ProductContentDetail() {
   // Check if product is in wishlist
   useEffect(() => {
     if (wishlistItems && product?.id) {
-      const isInWishlist = wishlistItems.some((item) => 
+      const isInWishlist = wishlistItems.some((item) =>
         item.pdid === product.id || item.productId === product.id || item.id === product.id
       );
       setIsWishlisted(isInWishlist);
     }
   }, [wishlistItems, product?.id]);
 
-  // Debug cart state changes
   useEffect(() => {
-    if (product?.id) {
-      console.log('=== CART STATE CHANGED ===');
-      console.log('Product ID:', product.id);
-      console.log('isInCart:', isInCart(product.id));
-      console.log('getItemQuantity:', getItemQuantity(product.id));
-      console.log('itemInCart variable:', itemInCart);
-      console.log('itemQuantity variable:', itemQuantity);
-      console.log('========================');
-    }
-  }, [product?.id, itemInCart, itemQuantity, isInCart, getItemQuantity]);
+    const fetchGroups = async () => {
+      setGroupLoading(true);
+      try {
+        const response = await dispatch(fetchAllGroups()).unwrap();
+        console.log('Fetched groups:', response);
+        setGroups(Array.isArray(response) ? response : []);
+        console.log('Fetched groups:', groups);
+      } catch (error) {
+        setGroupError(error.message || "Failed to fetch groups");
+      } finally {
+        setGroupLoading(false);
+      }
+    };
+
+    fetchGroups();
+  }, [dispatch]);
+
+  // Find group for current product
+  const productGroup = useMemo(() => {
+    if (!product?.id || !groups.length) return null;
+    console.log('group for product', product.id, 'is', productGroup);
+    return groups.find(group => group.pdid === product.id);
+  }, [groups, product?.id]);
 
   if (loading) {
     return <div className="p-6 text-center text-gray-500 dark:text-gray-400">Loading product details...</div>;
@@ -106,27 +109,21 @@ export default function ProductContentDetail() {
       return;
     }
 
-    console.log('=== ADDING TO CART ===');
-    console.log('Product before add:', product);
-    console.log('Product ID:', product.id);
-    console.log('Before add - isInCart:', isInCart(product.id));
-    console.log('Before add - quantity:', getItemQuantity(product.id));
-
     setIsAddingToCart(true);
     try {
       const result = await addToCart(product, 1);
       console.log('Add to cart result:', result);
-      
+
       // Check immediately after
       console.log('After add - isInCart:', isInCart(product.id));
       console.log('After add - quantity:', getItemQuantity(product.id));
-      
+
       // Force a small delay to see if state updates
       setTimeout(() => {
         console.log('After timeout - isInCart:', isInCart(product.id));
         console.log('After timeout - quantity:', getItemQuantity(product.id));
       }, 100);
-      
+
       toast.success(`${product.productName || product.name} added to cart`);
     } catch (error) {
       console.error("Error adding to cart:", error);
@@ -190,11 +187,11 @@ export default function ProductContentDetail() {
         return;
       }
 
-      await dispatch(addToWishlist({ 
-        userid: userId, 
-        pdid: product.id 
+      await dispatch(addToWishlist({
+        userid: userId,
+        pdid: product.id
       })).unwrap();
-      
+
       setIsWishlisted(true);
       toast.success(`${product.productName || product.name} added to wishlist`);
     } catch (error) {
@@ -230,45 +227,53 @@ export default function ProductContentDetail() {
         <div className="space-y-4">
           {/* Main Image */}
           <div className="relative">
-            <img
+            <motion.img
               src={demoImages[selectedImage]}
-              alt={product.productName || product.name || 'Product'}
+              alt={product.productName}
               className="rounded-lg w-full h-80 object-cover"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
               onError={(e) => {
                 e.target.src = '/placeholder-image.jpg';
               }}
             />
             {/* Wishlist Heart Icon */}
-            <button
+            <motion.button
               onClick={handleWishlist}
               disabled={isAddingToWishlist}
-              className="absolute top-3 right-3 z-[5] w-10 h-10 rounded-full bg-white dark:bg-gray-800 shadow-md flex items-center justify-center hover:scale-105 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="absolute top-3 right-3 z-[5] w-10 h-10 rounded-full bg-white dark:bg-gray-800 shadow-md flex items-center justify-center"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
             >
               {isAddingToWishlist ? (
-                <div className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                <motion.div
+                  className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full"
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 1 }}
+                />
               ) : (
                 <Heart
-                  className={`w-5 h-5 ${
-                    isWishlisted 
-                      ? "fill-red-500 stroke-red-500" 
-                      : "stroke-gray-500 hover:stroke-red-400"
-                  }`}
+                  className={`w-5 h-5 ${isWishlisted
+                    ? "fill-red-500 stroke-red-500"
+                    : "stroke-gray-500 hover:stroke-red-400"
+                    }`}
                 />
               )}
-            </button>
+            </motion.button>
           </div>
 
           {/* Thumbnail Images */}
           <div className="flex gap-2">
             {demoImages.map((img, index) => (
-              <button
+              <motion.button
                 key={index}
                 onClick={() => setSelectedImage(index)}
-                className={`w-20 h-20 rounded-md overflow-hidden border-2 transition ${
-                  selectedImage === index 
-                    ? 'border-blue-500' 
-                    : 'border-gray-200 dark:border-gray-600'
-                }`}
+                className={`w-20 h-20 rounded-md overflow-hidden border-2 transition ${selectedImage === index
+                  ? 'border-blue-500'
+                  : 'border-gray-200 dark:border-gray-600'
+                  }`}
+                whileHover={{ y: -5 }}
               >
                 <img
                   src={img}
@@ -278,29 +283,42 @@ export default function ProductContentDetail() {
                     e.target.src = '/placeholder-image.jpg';
                   }}
                 />
-              </button>
+              </motion.button>
             ))}
           </div>
         </div>
 
         {/* Right Side - Product Details */}
         <div className="md:col-span-2 space-y-3">
-          <h1 className="text-xl font-semibold">
-            {product.productName || product.name || 'Unknown Product'}
-          </h1>
-          <div className="flex items-center gap-2 text-sm">
+          <motion.h1
+            className="text-xl font-semibold"
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.1 }}
+          >
+            {product.productName}
+          </motion.h1>
+
+          <motion.div
+            className="flex items-center gap-2 text-sm"
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.15 }}
+          >
             <div className="flex items-center text-yellow-500">
               <Star size={16} fill="currentColor" />
               <span className="ml-1 font-medium">
-                {product.categoryName || 'Category'}
+                {product.categoryName} &gt; {product.subcategoryName} &gt; {product.childCategoryName}
               </span>
             </div>
-            <span className="text-gray-500 dark:text-gray-400">
-              ({product.reviews || 0} ratings) • {product.sold || 0} bought this month
-            </span>
-          </div>
+          </motion.div>
 
-          <div className="space-y-1">
+          <motion.div
+            className="space-y-1"
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
             <div className="text-2xl font-bold text-lime-600">
               ₹{getDisplayPrice()}
               {getOriginalPrice() > 0 && getOriginalPrice() !== getDisplayPrice() && (
@@ -315,47 +333,46 @@ export default function ProductContentDetail() {
               )}
             </div>
             <p className="text-sm text-gray-500">Inclusive of all taxes</p>
-          </div>
+          </motion.div>
 
-          <div className="text-sm text-orange-600 bg-orange-50 dark:bg-orange-900/10 border border-orange-300 dark:border-orange-500 px-3 py-2 rounded-md">
+          <motion.div
+            className="text-sm text-orange-600 bg-orange-50 dark:bg-orange-900/10 border border-orange-300 dark:border-orange-500 px-3 py-2 rounded-md"
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.25 }}
+          >
             Cashback: Get 5% back with Amazon Pay ICICI Bank credit card for Prime members.
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-2 gap-3 text-sm mt-2 text-gray-700 dark:text-gray-300">
+          <motion.div
+            className="grid grid-cols-2 gap-3 text-sm mt-2 text-gray-700 dark:text-gray-300"
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
             <span>✔ Free Delivery</span>
             <span>✔ Secure Transaction</span>
             <span>✔ Returnable</span>
             <span>✔ Vegetarian</span>
-          </div>
+          </motion.div>
         </div>
       </div>
 
-      <div className="border p-4 rounded-md mt-6 bg-gray-50 dark:bg-gray-800">
-        {/* Debug Section - Remove this in production */}
-        {/* <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-700 rounded">
-          <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">Debug Info:</h3>
-          <p className="text-sm text-blue-700 dark:text-blue-300">
-            Product ID: {product?.id} | 
-            In Cart: {itemInCart ? 'Yes' : 'No'} | 
-            Quantity: {itemQuantity} | 
-            Adding: {isAddingToCart ? 'Yes' : 'No'}
-          </p>
-          <button 
-            onClick={() => {
-              console.log('Manual cart check:', {
-                productId: product?.id,
-                isInCart: isInCart(product?.id),
-                quantity: getItemQuantity(product?.id),
-                itemInCart,
-                itemQuantity
-              });
-            }}
-            className="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-sm"
-          >
-            Check Cart State
-          </button>
-        </div> */}
+      {/* Group Buy Discount Section */}
+      {!groupLoading && productGroup && (
+        <GroupBuySection
+          userId={userData?.userId || userData?.id}
+          product={{ ...product, gid: productGroup.gid }}
+        />
+      )}
 
+      {/* Stock & Add to Cart Section */}
+      <motion.div
+        className="border p-4 rounded-md mt-6 bg-gray-50 dark:bg-gray-800"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.4 }}
+      >
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
           <div>
             <p className="text-green-600 font-medium">In Stock</p>
@@ -418,61 +435,102 @@ export default function ProductContentDetail() {
             </motion.button>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* Description Section */}
-      <div className="mt-8">
+      <motion.div
+        className="mt-8"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.45 }}
+      >
         <h2 className="text-lg font-semibold mb-2">Product Description</h2>
         <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">
-          {product.shortdescription || product.description || "No description available."}
+          {product.shortdesc || "No description available."}
         </p>
-      </div>
+      </motion.div>
+
+      {/* Health Benefits */}
+      {product.pPros && (
+        <motion.div
+          className="mt-8"
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
+          <h2 className="text-lg font-semibold mb-2">Health Benefits</h2>
+          <div
+            className="prose prose-sm dark:prose-invert max-w-none"
+            dangerouslySetInnerHTML={{ __html: product.pPros }}
+          />
+        </motion.div>
+      )}
 
       {/* Image Badges */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10 bg-white dark:bg-gray-800 border rounded-md p-6 justify-center items-center">
-        <img 
-          src="https://m.media-amazon.com/images/S/aplus-media-library-service-media/f4258821-4583-407e-9882-650d32b364af.__CR0,0,300,300_PT0_SX300_V1___.jpg" 
-          alt="Verified" 
+      <motion.div
+        className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10 bg-white dark:bg-gray-800 border rounded-md p-6 justify-center items-center"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.55 }}
+      >
+        <img
+          src="https://m.media-amazon.com/images/S/aplus-media-library-service-media/f4258821-4583-407e-9882-650d32b364af.__CR0,0,300,300_PT0_SX300_V1___.jpg"
+          alt="Verified"
           className="mx-auto"
           onError={(e) => {
             e.target.style.display = 'none';
           }}
         />
-        <img 
-          src="https://m.media-amazon.com/images/S/aplus-media-library-service-media/94c5ccbd-5093-4b45-a9dd-55fb709761fd.__CR0,0,300,300_PT0_SX300_V1___.jpg" 
-          alt="Verified" 
+        <img
+          src="https://m.media-amazon.com/images/S/aplus-media-library-service-media/94c5ccbd-5093-4b45-a9dd-55fb709761fd.__CR0,0,300,300_PT0_SX300_V1___.jpg"
+          alt="Verified"
           className="mx-auto"
           onError={(e) => {
             e.target.style.display = 'none';
           }}
         />
-        <img 
-          src="https://m.media-amazon.com/images/S/aplus-media-library-service-media/b5c01efa-26a5-4350-bfa5-bd697b45c5f3.__CR0,0,300,300_PT0_SX300_V1___.jpg" 
-          alt="Verified" 
+        <img
+          src="https://m.media-amazon.com/images/S/aplus-media-library-service-media/b5c01efa-26a5-4350-bfa5-bd697b45c5f3.__CR0,0,300,300_PT0_SX300_V1___.jpg"
+          alt="Verified"
           className="mx-auto"
           onError={(e) => {
             e.target.style.display = 'none';
           }}
         />
-      </div>
+      </motion.div>
 
       {/* Ingredients */}
-      <div className="mt-8">
+      <motion.div
+        className="mt-8"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.6 }}
+      >
         <h3 className="text-lg font-semibold">Ingredients</h3>
         <p className="text-sm mt-1 text-gray-700 dark:text-gray-300">
-          {product.ingredients || "banana"}
+          {product.ingredients || "No ingredients listed."}
         </p>
-      </div>
+      </motion.div>
 
       {/* Legal */}
-      <div className="mt-6 text-xs text-gray-500 dark:text-gray-400">
-        {product.longdesc || product.longDescription || "No additional information available."}
-      </div>
+      <motion.div
+        className="mt-6 text-xs text-gray-500 dark:text-gray-400"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.65 }}
+        dangerouslySetInnerHTML={{ __html: product.longdesc || "No additional information available." }}
+      />
 
+      <ProductReview />
       {/* Related Products */}
-      <h4 className="mt-6 text-xl font-semibold text-gray-700 dark:text-gray-300">
+      <motion.h4
+        className="mt-6 text-xl font-semibold text-gray-700 dark:text-gray-300"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.7 }}
+      >
         Products related to this item
-      </h4>
+      </motion.h4>
       <DProductCard product={product} />
     </div>
   );
