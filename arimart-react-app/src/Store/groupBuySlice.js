@@ -1,139 +1,100 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import API from "../api";
 
 // ---------------------- ASYNC THUNKS ----------------------
 
-// Get all active groups
-export const fetchAllGroups = createAsyncThunk(
-    "group/fetchAll",
-    async (_, thunkAPI) => {
-        try {
-            const response = await axios.get(`/api/group/all`);
-            return response.data;
-        } catch (error) {
-            return thunkAPI.rejectWithValue(error.response?.data || "Failed to fetch groups");
-        }
-    }
-);
+export const fetchAllGroups = createAsyncThunk("group/fetchAll", async (_, thunkAPI) => {
+  try {
+    const res = await API.get(`/group/all`);
+    return res.data;
+  } catch (err) {
+    return thunkAPI.rejectWithValue(err.response?.data || "Failed to fetch groups");
+  }
+});
 
-// Get single group by ID
-export const fetchGroupById = createAsyncThunk(
-    "group/fetchById",
-    async (gid, thunkAPI) => {
-        try {
-            const response = await axios.get(`/api/group/${gid}`);
-            return response.data;
-        } catch (error) {
-            return thunkAPI.rejectWithValue(error.response?.data || "Failed to fetch group");
-        }
-    }
-);
+export const fetchGroupById = createAsyncThunk("group/fetchById", async (gid, thunkAPI) => {
+  try {
+    const res = await API.get(`/group/${gid}`);
+    return res.data;
+  } catch (err) {
+    return thunkAPI.rejectWithValue(err.response?.data || "Failed to fetch group");
+  }
+});
 
-// Create new group
-export const createGroup = createAsyncThunk(
-    "group/create",
-    async (groupData, thunkAPI) => {
-        try {
-            const response = await axios.post(`/api/group/create`, groupData);
-            return response.data;
-        } catch (error) {
-            return thunkAPI.rejectWithValue(error.response?.data || "Failed to create group");
-        }
-    }
-);
+export const createGroup = createAsyncThunk("group/create", async (groupData, thunkAPI) => {
+  try {
+    const res = await API.post(`/group/create`, groupData);
+    return res.data;
+  } catch (err) {
+    return thunkAPI.rejectWithValue(err.response?.data || "Failed to create group");
+  }
+});
 
-// Join existing group
-export const joinGroup = createAsyncThunk(
-    "group/join",
-    async (joinData, thunkAPI) => {
-        try {
-            const response = await axios.post(`/api/group/join`, joinData);
-            return response.data;
-        } catch (error) {
-            return thunkAPI.rejectWithValue(error.response?.data || "Failed to join group");
-        }
-    }
-);
+export const joinGroup = createAsyncThunk("group/join", async (joinData, thunkAPI) => {
+  try {
+    const res = await API.post(`/group/join`, joinData);
+    return res.data;
+  } catch (err) {
+    return thunkAPI.rejectWithValue(err.response?.data || "Failed to join group");
+  }
+});
 
-// Leave group
-export const leaveGroup = createAsyncThunk(
-    "group/leave",
-    async ({ groupId, userId }, thunkAPI) => {
-        try {
-            const response = await axios.delete(`/api/group/leave`, {
-                params: { groupId, userId }
-            });
-            return { groupId, userId, message: response.data };
-        } catch (error) {
-            return thunkAPI.rejectWithValue(error.response?.data || "Failed to leave group");
-        }
-    }
-);
+export const leaveGroup = createAsyncThunk("group/leave", async ({ groupId, userId }, thunkAPI) => {
+  try {
+    const res = await API.delete(`/group/leave`, {
+      params: { groupId, userId },
+    });
+    return { groupId, userId, message: res.data };
+  } catch (err) {
+    return thunkAPI.rejectWithValue(err.response?.data || "Failed to leave group");
+  }
+});
 
-// Get group members
-export const fetchGroupMembers = createAsyncThunk(
-    "group/fetchMembers",
-    async (groupId, thunkAPI) => {
-        try {
-            const response = await axios.get(`/api/group/members/${groupId}`);
-            return response.data;
-        } catch (error) {
-            return thunkAPI.rejectWithValue(error.response?.data || "Failed to fetch group members");
-        }
-    }
-);
+export const fetchGroupMembers = createAsyncThunk("group/fetchMembers", async (groupId, thunkAPI) => {
+  try {
+    const res = await API.get(`/group/members/${groupId}`);
+    return res.data;
+  } catch (err) {
+    return thunkAPI.rejectWithValue(err.response?.data || "Failed to fetch members");
+  }
+});
 
-// Get user's joined groups
-export const fetchMyJoinedGroups = createAsyncThunk(
-    "group/fetchMyJoined",
-    async (userId, thunkAPI) => {
-        try {
-            const response = await axios.get(`/api/group/my-joined/${userId}`);
-            return response.data;
-        } catch (error) {
-            return thunkAPI.rejectWithValue(error.response?.data || "Failed to fetch joined groups");
-        }
-    }
-);
+export const fetchMyJoinedGroups = createAsyncThunk("group/fetchMyJoined", async (userId, thunkAPI) => {
+  try {
+    const res = await API.get(`/group/my-joined/${userId}`);
+    return res.data;
+  } catch (err) {
+    return thunkAPI.rejectWithValue(err.response?.data || "Failed to fetch joined groups");
+  }
+});
 
-// Get all group refer codes
-export const fetchAllGroupReferCodes = createAsyncThunk(
-    "group/fetchAllReferCodes",
-    async (_, thunkAPI) => {
-        try {
-            const response = await axios.get(`/api/group`);
-            return response.data;
-        } catch (error) {
-            return thunkAPI.rejectWithValue(error.response?.data || "Failed to fetch refer codes");
-        }
-    }
-);
+export const fetchAllGroupReferCodes = createAsyncThunk("group/fetchAllReferCodes", async (_, thunkAPI) => {
+  try {
+    const res = await API.get(`/group`);
+    return res.data;
+  } catch (err) {
+    return thunkAPI.rejectWithValue(err.response?.data || "Failed to fetch refer codes");
+  }
+});
 
-// Get group refer code by ID
-export const fetchGroupReferCodeById = createAsyncThunk(
-    "group/fetchReferCodeById",
-    async (id, thunkAPI) => {
-        try {
-            const response = await axios.get(`/api/group/grouprefercode/${id}`);
-            return response.data;
-        } catch (error) {
-            return thunkAPI.rejectWithValue(error.response?.data || "Failed to fetch refer code");
-        }
-    }
-);
+export const fetchGroupReferCodeById = createAsyncThunk("group/fetchReferCodeById", async (id, thunkAPI) => {
+  try {
+    const res = await API.get(`/group/grouprefercode/${id}`);
+    return res.data;
+  } catch (err) {
+    return thunkAPI.rejectWithValue(err.response?.data || "Failed to fetch refer code");
+  }
+});
 
-// Get group refer code by product
-export const fetchGroupReferCodeByProduct = createAsyncThunk(
-    "group/fetchReferCodeByProduct",
-    async ({ pid, pdid }, thunkAPI) => {
-        try {
-            const response = await axios.get(`/api/group/grouprefercode/by-product/${pid}/${pdid}`);
-            return response.data;
-        } catch (error) {
-            return thunkAPI.rejectWithValue(error.response?.data || "Failed to fetch refer code");
-        }
-    }
-);
+export const fetchGroupReferCodeByProduct = createAsyncThunk("group/fetchReferCodeByProduct", async ({ pid, pdid }, thunkAPI) => {
+  try {
+    const res = await API.get(`/group/grouprefercode/by-product/${pid}/${pdid}`);
+    return res.data;
+  } catch (err) {
+    return thunkAPI.rejectWithValue(err.response?.data || "Failed to fetch refer code");
+  }
+});
+
 
 // ---------------------- SLICE ----------------------
 

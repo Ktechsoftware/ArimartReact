@@ -7,16 +7,16 @@ import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import { addToWishlist } from '../../Store/wishlistSlice';
 import { useCart } from '../../context/CartContext';
+import { fetchProductImageUrl } from '../../Store/productsSlice';
 
 const DProductCard = ({ product }) => {
   const { market, subcategory, id } = useParams();
   const dispatch = useDispatch();
   const userData = useSelector((state) => state.auth.userData);
   const wishlistItems = useSelector((state) => state.wishlist.items);
-  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
-  
+  const { imageUrls, imageLoading } = useSelector((state) => state.products);
   // console.log("product", product);
-  
+
   // Cart context
   const { addToCart, isInCart, getItemQuantity } = useCart();
 
@@ -27,7 +27,6 @@ const DProductCard = ({ product }) => {
   // Safe product property access
   const productId = product?.id;
   const productName = product?.productName || product?.name || 'Unknown Product';
-  const productImage = product?.image || '/placeholder-image.jpg';
   const categoryName = product?.categoryName || 'Category';
   const subcategoryName = product?.subcategoryName || product?.subCategory || '';
   const netPrice = product?.netprice || product?.price || 0;
@@ -38,11 +37,21 @@ const DProductCard = ({ product }) => {
 
   const itemInCart = productId ? isInCart(productId) : false;
   const itemQuantity = productId ? getItemQuantity(productId) : 0;
+const imageUrl = imageUrls?.[productId] || product?.image || '/placeholder-image.jpg';
+const isLoading = !!(productId && imageLoading?.[productId]);
+
+useEffect(() => {
+  if (productId && !imageUrls?.[productId] && !imageLoading?.[productId]) {
+    dispatch(fetchProductImageUrl(productId));
+  }
+}, [dispatch, productId, imageUrls, imageLoading]);
+
+const generateimageurl = () => imageUrl;
 
   // Check if product is in wishlist
   useEffect(() => {
     if (wishlistItems && productId) {
-      const isInWishlist = wishlistItems.some((item) => 
+      const isInWishlist = wishlistItems.some((item) =>
         item.pdid === productId || item.productId === productId || item.id === productId
       );
       setIsWishlisted(isInWishlist);
@@ -52,7 +61,7 @@ const DProductCard = ({ product }) => {
   // console.log("userData", userData);
 
   const handleWishlist = async () => {
-    if (!isAuthenticated) {
+    if (!userData?.id) {
       toast.error('Please login to add to wishlist');
       return;
     }
@@ -75,11 +84,11 @@ const DProductCard = ({ product }) => {
         return;
       }
 
-      await dispatch(addToWishlist({ 
-        userid: userId, 
-        pdid: productId 
+      await dispatch(addToWishlist({
+        userid: userId,
+        pdid: productId
       })).unwrap();
-      
+
       setIsWishlisted(true);
       toast.success(`${productName} added to wishlist`);
     } catch (error) {
@@ -146,11 +155,10 @@ const DProductCard = ({ product }) => {
           <div className="w-3 h-3 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
         ) : (
           <Heart
-            className={`w-4 h-4 ${
-              isWishlisted 
-                ? "fill-red-500 stroke-red-500" 
+            className={`w-4 h-4 ${isWishlisted
+                ? "fill-red-500 stroke-red-500"
                 : "stroke-gray-500 hover:stroke-red-400"
-            }`}
+              }`}
           />
         )}
       </button>
@@ -168,15 +176,22 @@ const DProductCard = ({ product }) => {
         to={generateProductLink()}
         className="h-32 w-full bg-gray-100 dark:bg-gray-800 rounded-md overflow-hidden mb-2 relative block"
       >
-        <img
-          src={productImage}
-          alt={productName}
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            e.target.src = '/placeholder-image.jpg';
-          }}
-        />
+        {isLoading ? (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : (
+          <img
+            src={imageUrl}
+            alt={productName}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.src = '/placeholder-image.jpg';
+            }}
+          />
+        )}
       </Link>
+
 
       {/* Product Name */}
       <p className="font-medium text-gray-800 dark:text-white line-clamp-2 leading-snug mb-1">
@@ -193,9 +208,8 @@ const DProductCard = ({ product }) => {
           {[...Array(5)].map((_, i) => (
             <Star
               key={i}
-              className={`w-3 h-3 fill-orange-400 stroke-orange-400 ${
-                i >= Math.round(rating) ? "opacity-30" : ""
-              }`}
+              className={`w-3 h-3 fill-orange-400 stroke-orange-400 ${i >= Math.round(rating) ? "opacity-30" : ""
+                }`}
             />
           ))}
         </div>
@@ -229,11 +243,10 @@ const DProductCard = ({ product }) => {
         whileTap={{ scale: 0.9 }}
         onClick={handleAddToCart}
         disabled={isAddingToCart}
-        className={`absolute bottom-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-200 ${
-          itemInCart
+        className={`absolute bottom-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-200 ${itemInCart
             ? 'bg-green-500 hover:bg-green-600'
             : 'bg-orange-500 hover:bg-orange-600'
-        } ${isAddingToCart ? 'opacity-50 cursor-not-allowed' : ''}`}
+          } ${isAddingToCart ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
         {isAddingToCart ? (
           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

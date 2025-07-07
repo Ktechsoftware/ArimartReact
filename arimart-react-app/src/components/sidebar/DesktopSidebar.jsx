@@ -10,12 +10,12 @@ const sidebarItems = [
         title: "Trending",
         items: [
             { label: "Bestsellers", link: "/bestsellers" },
-            { label: "Grocery", link: "/category/grocery" },
+            { label: "Grocery", link: "/category/grocery/1" },
             { label: "Today's Deals", link: "/deals" },
-            { label: "Mobiles, Computers", link: "/category/mobiles" },
-            { label: "Fashion", link: "/category/fashion" },
-            { label: "Electronics", link: "/category/electronics" },
-            { label: "Home & Kitchen", link: "/category/home-kitchen" },
+            { label: "Mobiles, Computers", link: "/category/mobiles/2" },
+            { label: "Fashion", link: "/category/fashion/3" },
+            { label: "Electronics", link: "/category/electronics/4" },
+            { label: "Home & Kitchen", link: "/category/home-kitchen/5" },
         ],
     },
     {

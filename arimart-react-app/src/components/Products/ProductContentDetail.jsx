@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { Star, Check, Trash2, Plus, Minus, Heart, Users } from "lucide-react";
+import { Star, Check, Trash2, Plus, Minus, Heart, Users, ChevronsUp, LoaderCircle } from "lucide-react";
 import DProductCard from "./DProductcards";
 import { fetchProductById } from "../../Store/productDetailSlice";
 import { addToWishlist } from "../../Store/wishlistSlice";
 import { useCart } from "../../context/CartContext";
 import { motion } from "framer-motion";
-import toast from "react-hot-toast";
+import toast, { LoaderIcon } from "react-hot-toast";
 import { GroupBuySection } from "../../pages/GroupBuy/GroupBuySection";
 import { fetchAllGroups } from "../../Store/groupBuySlice";
 import ProductReview from "../Reviews/ProductReview";
-
+import { fetchGroupBuysByProductId } from "../../Store/productsSlice";
 
 export default function ProductContentDetail() {
   const { id } = useParams();
@@ -30,10 +30,6 @@ export default function ProductContentDetail() {
   const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [groups, setGroups] = useState([]);
-  const [groupLoading, setGroupLoading] = useState(false);
-  const [groupError, setGroupError] = useState(null);
-
 
   const productDetailState = useSelector((state) => state.productDetail) || {};
   const { product = null, loading = false, error = null } = productDetailState;
@@ -47,13 +43,47 @@ export default function ProductContentDetail() {
 
   // Demo images for left side
   const demoImages = [
-    product?.image || '/placeholder-image.jpg',
+    "http://localhost:5015/Uploads/" + product?.image || '/placeholder-image.jpg',
     "https://m.media-amazon.com/images/S/aplus-media-library-service-media/f4258821-4583-407e-9882-650d32b364af.__CR0,0,300,300_PT0_SX300_V1___.jpg",
     "https://m.media-amazon.com/images/S/aplus-media-library-service-media/94c5ccbd-5093-4b45-a9dd-55fb709761fd.__CR0,0,300,300_PT0_SX300_V1___.jpg"
   ];
 
+  const productId = String(id); // 👈 ensure string type
+
+  // 🧠 useMemo to avoid unnecessary rerenders
+  const emptyGroupBuys = useMemo(() => [], []);
+
+  // ✅ Selector (safe) - Get group buys from Redux store
+  const groupBuys = useSelector((state) => {
+
+    const result = state.products.groupBuys?.[productId] || emptyGroupBuys;
+    return result;
+  });
+
+  // 🔄 Fetch group buys when product ID changes
   useEffect(() => {
-    if (id) dispatch(fetchProductById(id));
+    if (productId) {
+      dispatch(fetchGroupBuysByProductId(productId));
+    }
+  }, [dispatch, productId]);
+
+  // 🧪 Debug groupBuys data
+  useEffect(() => {
+
+    if (groupBuys?.length > 0) {
+    }
+  }, [groupBuys]);
+
+  // 🧪 Debug full redux state (optional)
+  const allGroupBuys = useSelector((state) => state.products.groupBuys);
+  useEffect(() => {
+  }, [allGroupBuys, productId]);
+
+  useEffect(() => {
+    if (id) {
+      // console.log("🔍 Fetching product by ID:", id);
+      dispatch(fetchProductById(id));
+    }
   }, [dispatch, id]);
 
   // Check if product is in wishlist
@@ -66,33 +96,34 @@ export default function ProductContentDetail() {
     }
   }, [wishlistItems, product?.id]);
 
+  // Helper function to check if we should show GroupBuySection
+  const shouldShowGroupBuySection = useMemo(() => {
+    if (!groupBuys || !Array.isArray(groupBuys) || groupBuys.length === 0) {
+      return false;
+    }
+
+    // Check if any group buy has a valid gid
+    const hasValidGid = groupBuys.some(groupBuy => {
+      return groupBuy?.gid;
+    });
+
+    console.log("🔍 shouldShowGroupBuySection result:", hasValidGid);
+    return hasValidGid;
+  }, [groupBuys]);
+
+  // Get the first valid group buy with gid
+  const validGroupBuys = useMemo(() => {
+    if (!Array.isArray(groupBuys)) return [];
+    return groupBuys.filter((groupBuy) => groupBuy?.gid);
+  }, [groupBuys]);
+
+
+  // 🔍 Additional debugging for the async thunk response
   useEffect(() => {
-    const fetchGroups = async () => {
-      setGroupLoading(true);
-      try {
-        const response = await dispatch(fetchAllGroups()).unwrap();
-        console.log('Fetched groups:', response);
-        setGroups(Array.isArray(response) ? response : []);
-        console.log('Fetched groups:', groups);
-      } catch (error) {
-        setGroupError(error.message || "Failed to fetch groups");
-      } finally {
-        setGroupLoading(false);
-      }
-    };
-
-    fetchGroups();
-  }, [dispatch]);
-
-  // Find group for current product
-  const productGroup = useMemo(() => {
-    if (!product?.id || !groups.length) return null;
-    console.log('group for product', product.id, 'is', productGroup);
-    return groups.find(group => group.pdid === product.id);
-  }, [groups, product?.id]);
+  }, [shouldShowGroupBuySection, validGroupBuys]);
 
   if (loading) {
-    return <div className="p-6 text-center text-gray-500 dark:text-gray-400">Loading product details...</div>;
+    return <div className="p-6 text-center text-gray-500 mx-auto dark:text-gray-400"><LoaderCircle /></div>;
   }
 
   if (error) {
@@ -358,13 +389,27 @@ export default function ProductContentDetail() {
         </div>
       </div>
 
-      {/* Group Buy Discount Section */}
-      {!groupLoading && productGroup && (
-        <GroupBuySection
-          userId={userData?.userId || userData?.id}
-          product={{ ...product, gid: productGroup.gid }}
-        />
-      )}
+      <div className="py-3">
+        <h3 className="text-2xl font-semibold">Currently running group</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400">If you dont't have own group, you can any running group</p>
+      </div>
+
+      {/* Group Buy Discount Section - Only show if valid group buys exist */}
+      {shouldShowGroupBuySection && validGroupBuys.map((groupBuy, index) => (
+        <motion.div
+          key={groupBuy.gid || index}
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.1 * index }}
+          className="mt-6"
+        >
+          <GroupBuySection
+            userId={userData?.userId || userData?.id}
+            product={{ ...product, gid: groupBuy.gid }}
+          />
+        </motion.div>
+      ))}
+
 
       {/* Stock & Add to Cart Section */}
       <motion.div

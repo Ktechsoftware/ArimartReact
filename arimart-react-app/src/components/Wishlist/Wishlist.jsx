@@ -8,7 +8,7 @@ const Wishlist = () => {
   const dispatch = useDispatch();
   const { userData } = useSelector((state) => state.auth); // logged-in user
   const { items, loading, error } = useSelector((state) => state.wishlist);
-
+  console.log("Wishlist: ", items);
   useEffect(() => {
     if (userData?.id) {
       dispatch(fetchWishlist(userData.id));

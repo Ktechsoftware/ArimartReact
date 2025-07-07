@@ -9,13 +9,15 @@ import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import { addToWishlist } from '../../Store/wishlistSlice';
 import { useCart } from '../../context/CartContext';
+import { fetchProductImageUrl } from '../../Store/productsSlice';
 
 const ProductCard = ({ product }) => {
   const { market } = useParams();
   const dispatch = useDispatch();
   const userData = useSelector((state) => state.auth.userData);
   const wishlistItems = useSelector((state) => state.wishlist.items);
-
+  const { imageUrls, imageLoading } = useSelector((state) => state.products);
+  // console.log("userData:", userData)
   const { addToCart, isInCart, getItemQuantity } = useCart();
   // console.log("ProductCard product:", product);
   const [isWishlisted, setIsWishlisted] = useState(false);
@@ -23,14 +25,17 @@ const ProductCard = ({ product }) => {
   // console.log("ProductCard product:", product);
   const itemInCart = isInCart(product.id);
   const itemQuantity = getItemQuantity(product.id);
+  const productId = product?.id;
+  const imageUrl = imageUrls?.[productId] || product?.image || '/placeholder-image.jpg';
+  const isLoading = !!(productId && imageLoading?.[productId]);
 
   useEffect(() => {
     setIsWishlisted(wishlistItems.some((item) => item.pdid === product.id));
   }, [wishlistItems, product.id]);
 
   const handleWishlist = () => {
-    if (!userData?.userId) return toast.error("Please login to use wishlist.");
-    dispatch(addToWishlist({ userid: userData.userId, pdid: product.id }));
+    if (!userData?.id) return toast.error("Please login to use wishlist.");
+    dispatch(addToWishlist({ userid: userData.id, pdid: product.id }));
     setIsWishlisted(true);
   };
 
@@ -45,6 +50,13 @@ const ProductCard = ({ product }) => {
       setIsAddingToCart(false);
     }
   };
+
+   const generateProductLink = () => {
+    const marketParam = market || product.categoryName;
+    const subcategoryParam = product.subcategoryName || product.name;
+    return `/category/${encodeURIComponent(marketParam)}/${encodeURIComponent(subcategoryParam)}/product/${productId}`;
+  };
+
 
   return (
     <motion.div
@@ -69,16 +81,26 @@ const ProductCard = ({ product }) => {
       />
 
       <Link
-        to={`/category/${product.categoryName}/${product.subcategoryName}/product/${product.id}`}
-        className="h-32 w-full bg-gray-100 rounded-md overflow-hidden mb-2 block"
+        to={generateProductLink()}
+        className="h-32 w-full bg-gray-100 dark:bg-gray-800 rounded-md overflow-hidden mb-2 relative block"
       >
-
-        <img
-          src={product.image}
-          alt={product.productName}
-          className="w-full h-full object-cover"
-        />
+        {isLoading ? (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : (
+          <img
+            src={"http://localhost:5015/Uploads/" + imageUrl}
+            alt={product.name}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.src = '/placeholder-image.jpg';
+            }}
+          />
+        )}
       </Link>
+
+
 
       <p className="font-medium text-gray-800 dark:text-white line-clamp-2 leading-snug mb-1">
         {product.productName}
@@ -114,8 +136,8 @@ const ProductCard = ({ product }) => {
         onClick={handleAddToCart}
         disabled={isAddingToCart}
         className={`absolute bottom-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-200 ${itemInCart
-            ? 'bg-green-500 hover:bg-green-600'
-            : 'bg-orange-500 hover:bg-orange-600'
+          ? 'bg-green-500 hover:bg-green-600'
+          : 'bg-orange-500 hover:bg-orange-600'
           } ${isAddingToCart ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
         {isAddingToCart ? (

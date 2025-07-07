@@ -174,7 +174,7 @@ export default function CheckoutPage() {
                     <button id="dropdown-phone-button-3" data-dropdown-toggle="dropdown-phone-3" class="z-10 inline-flex shrink-0 items-center rounded-s-lg border border-gray-300 bg-gray-100 px-4 py-2.5 text-center text-sm font-medium text-gray-900 hover:bg-gray-200 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-700" type="button">
                       <svg fill="none" aria-hidden="true" class="me-2 h-4 w-4" viewBox="0 0 20 15">
                         <rect width="19.6" height="14" y=".5" fill="#fff" rx="2" />
-                        <mask id="a" style="mask-type:luminance" width="20" height="15" x="0" y="0" maskUnits="userSpaceOnUse">
+                        <mask id="a"  width="20" height="15" x="0" y="0" maskUnits="userSpaceOnUse">
                           <rect width="19.6" height="14" y=".5" fill="#fff" rx="2" />
                         </mask>
                         <g mask="url(#a)">
@@ -216,7 +216,7 @@ export default function CheckoutPage() {
                             <span class="inline-flex items-center">
                               <svg fill="none" aria-hidden="true" class="me-2 h-4 w-4" viewBox="0 0 20 15">
                                 <rect width="19.6" height="14" y=".5" fill="#fff" rx="2" />
-                                <mask id="a" style="mask-type:luminance" width="20" height="15" x="0" y="0" maskUnits="userSpaceOnUse">
+                                <mask id="a"  width="20" height="15" x="0" y="0" maskUnits="userSpaceOnUse">
                                   <rect width="19.6" height="14" y=".5" fill="#fff" rx="2" />
                                 </mask>
                                 <g mask="url(#a)">
@@ -255,7 +255,7 @@ export default function CheckoutPage() {
                             <span class="inline-flex items-center">
                               <svg class="me-2 h-4 w-4" fill="none" viewBox="0 0 20 15">
                                 <rect width="19.6" height="14" y=".5" fill="#fff" rx="2" />
-                                <mask id="a" style="mask-type:luminance" width="20" height="15" x="0" y="0" maskUnits="userSpaceOnUse">
+                                <mask id="a"  width="20" height="15" x="0" y="0" maskUnits="userSpaceOnUse">
                                   <rect width="19.6" height="14" y=".5" fill="#fff" rx="2" />
                                 </mask>
                                 <g mask="url(#a)">
@@ -274,7 +274,7 @@ export default function CheckoutPage() {
                             <span class="inline-flex items-center">
                               <svg class="me-2 h-4 w-4" fill="none" viewBox="0 0 20 15" xmlns="http://www.w3.org/2000/svg">
                                 <rect width="19.6" height="14" y=".5" fill="#fff" rx="2" />
-                                <mask id="a" style="mask-type:luminance" width="20" height="15" x="0" y="0" maskUnits="userSpaceOnUse">
+                                <mask id="a"  width="20" height="15" x="0" y="0" maskUnits="userSpaceOnUse">
                                   <rect width="19.6" height="14" y=".5" fill="#fff" rx="2" />
                                 </mask>
                                 <g mask="url(#a)">
@@ -309,7 +309,7 @@ export default function CheckoutPage() {
                             <span class="inline-flex items-center">
                               <svg class="me-2 h-4 w-4" fill="none" viewBox="0 0 20 15">
                                 <rect width="19.6" height="14" y=".5" fill="#fff" rx="2" />
-                                <mask id="a" style="mask-type:luminance" width="20" height="15" x="0" y="0" maskUnits="userSpaceOnUse">
+                                <mask id="a"  width="20" height="15" x="0" y="0" maskUnits="userSpaceOnUse">
                                   <rect width="19.6" height="14" y=".5" fill="#fff" rx="2" />
                                 </mask>
                                 <g mask="url(#a)">
@@ -349,7 +349,7 @@ export default function CheckoutPage() {
                             <span class="inline-flex items-center">
                               <svg class="me-2 h-4 w-4" fill="none" viewBox="0 0 20 15">
                                 <rect width="19.1" height="13.5" x=".25" y=".75" fill="#fff" stroke="#F5F5F5" stroke-width=".5" rx="1.75" />
-                                <mask id="a" style="mask-type:luminance" width="20" height="15" x="0" y="0" maskUnits="userSpaceOnUse">
+                                <mask id="a"  width="20" height="15" x="0" y="0" maskUnits="userSpaceOnUse">
                                   <rect width="19.1" height="13.5" x=".25" y=".75" fill="#fff" stroke="#fff" stroke-width=".5" rx="1.75" />
                                 </mask>
                                 <g mask="url(#a)">

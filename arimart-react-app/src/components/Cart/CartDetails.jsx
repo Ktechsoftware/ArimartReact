@@ -172,7 +172,7 @@ console.log("CartDetails items:", items);
                       {/* Product Image */}
                       <div className="relative">
                         <img
-                          src={item.image}
+                          src={"http://localhost:5015/Uploads/" + item.image}
                           alt={item.name}
                           className="w-20 h-20 rounded-lg object-cover border border-gray-200 dark:border-gray-600"
                           onError={(e) => {

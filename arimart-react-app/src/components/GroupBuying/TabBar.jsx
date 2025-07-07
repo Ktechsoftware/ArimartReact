@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-export const TabBar = ({ activeTab, setActiveTab }) => {
+const TabBar = ({ activeTab, setActiveTab }) => {
   const tabs = [
     { id: "group-buys", label: "Group Buys" },
     { id: "hot-deals", label: "Hot Deals" },
@@ -30,3 +30,4 @@ export const TabBar = ({ activeTab, setActiveTab }) => {
     </div>
   );
 };
+export default TabBar;
