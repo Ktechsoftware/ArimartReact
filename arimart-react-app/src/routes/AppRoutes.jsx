@@ -40,6 +40,7 @@ import GroupDealScreen from '../pages/GroupBuy/GroupDealScreen';
 import Termcondition from '../pages/Privacypolicy/termcondition';
 import Trackorders from '../pages/Orders/Trackorders';
 import PaymentOrder from '../pages/PaymentScreen/PaymentOrder';
+import JointoGroup from '../pages/GroupBuy/JointoGroup';
 
 const publicRoutes = [
   "/", "/home", "/onboard", "/auth", "/about", "/contactus", "/faq", "/privacypolicy",
@@ -49,10 +50,10 @@ const publicRoutes = [
 const hideBottomNavRoutes = [
   '/', '/onboard', '/auth', '/faq', '/privacypolicy', '/cart', '/checkout',
   '/account/editprofile', '/home/wallet', '/home/referandearn',
-  '/wishlist', '/about', '/contactus', '/notification', '/promocodes'
+  '/wishlist', '/about', '/contactus', '/notification', '/promocodes','/category'
 ];
 
-const hideBottomNavRoutesWithPrefix = ['/product', '/orders', '/topstore'];
+const hideBottomNavRoutesWithPrefix = ['/product', '/orders', '/topstore','/category'];
 export default function AppRoutes() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -152,6 +153,7 @@ export default function AppRoutes() {
               <Route path="/term&condition" element={<Termcondition />} />
               <Route path="/categories" element={<Categoryindex />} />
               <Route path="/group-buying" element={<GroupDealScreen />} />
+              <Route path="group/join/:groupid/:grouprefercode" element={<JointoGroup />} />
             </Routes>
           </ResponsiveLayout>
         </motion.div>

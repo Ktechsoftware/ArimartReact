@@ -7,7 +7,9 @@ function Productpage() {
   return (
     <div className='mb-20'>
         <Header title={"Product Details"} setbaricon={false} />
-        <ProductDetails/>
+       <div className='mb-20 md:mb-0'>
+         <ProductDetails/>
+       </div>
         <ProductContentDetail/>
     </div>
   )
