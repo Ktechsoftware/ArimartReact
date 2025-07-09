@@ -16,7 +16,8 @@ import {
     ShieldCheck,
     Calendar,
     LogOut,
-    UserPlus
+    UserPlus,
+    Info
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
@@ -24,14 +25,15 @@ import {
     fetchGroupMembers,
     leaveGroup,
     joinGroup,
-    resetGroupState
+    resetGroupState,
+    fetchMyJoinedGroups
 } from '../../Store/groupBuySlice';
 import { useCart } from '../../context/CartContext';
 
 const JoinGroupOrder = () => {
     const { groupid, grouprefercode } = useParams();
     const userData = useSelector((state) => state.auth.userData);
-    const { addToGroupCart } = useCart();
+    const { addToCart, setCurrentGroup } = useCart();
     const dispatch = useDispatch();
     const [timeLeft, setTimeLeft] = useState(null);
     const [copiedCode, setCopiedCode] = useState(false);
@@ -40,7 +42,8 @@ const JoinGroupOrder = () => {
 
     const {
         groupsById,
-        groupMembers,
+        membersByGid,
+        myJoinedGroups,
         isLoadingMembers,
         error,
         isLeaving,
@@ -50,25 +53,50 @@ const JoinGroupOrder = () => {
     } = useSelector(state => state.group);
 
     const group = groupsById?.[groupid];
-    // console.log(group)
-    const isUserMember = groupMembers?.some(member =>
+    const groupMembers = membersByGid?.[groupid] || [];
+
+    // Check if user is in THIS specific group
+    const isUserInCurrentGroup = groupMembers?.some(member =>
         member.userid === currentUserId || member.userId === currentUserId
     );
-    // console.log(isUserMember)
-    // console.log(groupMembers)
-    // console.log(currentUserId)
 
-    // Fetch group details and members
+    // Check if user is in ANY group for the same product
+    const userJoinedGroupForProduct = myJoinedGroups?.find(joinedGroup =>
+        joinedGroup.productId === group?.productId &&
+        (joinedGroup.Gid === groupid || joinedGroup.gid === groupid)
+    );
+
+    // Check if user is in a DIFFERENT group for the same product
+    const userInDifferentGroup = myJoinedGroups?.find(joinedGroup => {
+        const joinedGroupId = joinedGroup.Gid || joinedGroup.gid;
+        const isCurrentUser = joinedGroup.userId === currentUserId || joinedGroup.userid === currentUserId;
+
+        return (
+            joinedGroup.productId === group?.productId &&
+            joinedGroupId !== groupid &&
+            isCurrentUser
+        );
+    });
+
+    // First, set the group context when user joins the group
     useEffect(() => {
-        if (groupid) {
+        if (isUserInCurrentGroup && groupid) {
+            setCurrentGroup(groupid);
+        }
+    }, [isUserInCurrentGroup, groupid]);
+
+    // Fetch group details, members, and user's joined groups
+    useEffect(() => {
+        if (groupid && currentUserId) {
             dispatch(fetchGroupById(groupid));
             dispatch(fetchGroupMembers(groupid));
+            dispatch(fetchMyJoinedGroups(currentUserId));
         }
 
         return () => {
             dispatch(resetGroupState());
         };
-    }, [groupid, dispatch]);
+    }, [groupid, currentUserId, dispatch]);
 
     // Countdown timer
     useEffect(() => {
@@ -104,6 +132,11 @@ const JoinGroupOrder = () => {
             return;
         }
 
+        if (userInDifferentGroup) {
+            toast.error("You are already in another group for this product");
+            return;
+        }
+
         const joinData = {
             groupId: groupid,
             userId: currentUserId,
@@ -124,21 +157,23 @@ const JoinGroupOrder = () => {
     useEffect(() => {
         if (joinSuccess) {
             toast.success("Successfully joined the group buy!");
-            // Refresh group members to show updated list
+            // Refresh group members and user's joined groups
             dispatch(fetchGroupMembers(groupid));
+            dispatch(fetchMyJoinedGroups(currentUserId));
             dispatch(resetGroupState());
         }
-    }, [joinSuccess, dispatch, groupid]);
+    }, [joinSuccess, dispatch, groupid, currentUserId]);
 
     // Handle leave success
     useEffect(() => {
         if (leaveSuccess) {
             toast.success("You've left the group buy");
-            // Refresh group members to show updated list
+            // Refresh group members and user's joined groups
             dispatch(fetchGroupMembers(groupid));
+            dispatch(fetchMyJoinedGroups(currentUserId));
             dispatch(resetGroupState());
         }
-    }, [leaveSuccess, dispatch, groupid]);
+    }, [leaveSuccess, dispatch, groupid, currentUserId]);
 
     // Handle errors
     useEffect(() => {
@@ -184,6 +219,182 @@ const JoinGroupOrder = () => {
         toast.success("Share link copied!");
         setTimeout(() => setCopiedUrl(false), 2000);
     };
+
+    // Render user status based on membership
+    const renderUserStatus = () => {
+        if (userInDifferentGroup) {
+            return (
+                <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+                            <Info className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                            <h4 className="font-semibold text-orange-800 dark:text-orange-400">
+                                You're in another group
+                            </h4>
+                            <p className="text-sm text-orange-700 dark:text-orange-300">
+                                You're already part of a different group for this product. You can only join one group per product.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        if (isUserInCurrentGroup) {
+            return (
+                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                            <ShieldCheck className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                            <h4 className="font-semibold text-green-800 dark:text-green-400">
+                                You're part of this group!
+                            </h4>
+                            <p className="text-sm text-green-700 dark:text-green-300">
+                                {currentMembers >= requiredMembers
+                                    ? "Group is complete! You can now add this item to your cart."
+                                    : `Waiting for ${membersNeeded} more member${membersNeeded > 1 ? 's' : ''} to complete the group.`
+                                }
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                        <UserPlus className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                        <h4 className="font-semibold text-blue-800 dark:text-blue-400">
+                            Join this group buy
+                        </h4>
+                        <p className="text-sm text-blue-700 dark:text-blue-300">
+                            Click the join button to participate in this group buy and get the discounted price
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // Render action buttons based on user status
+    const renderActionButtons = () => {
+        if (userInDifferentGroup) {
+            return (
+                <div className="pt-4 space-y-3">
+                    <motion.button
+                        disabled={true}
+                        className="w-full py-3 bg-gray-300 text-gray-500 rounded-lg font-semibold cursor-not-allowed"
+                    >
+                        Already in another group
+                    </motion.button>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                        You can only join one group per product
+                    </p>
+                </div>
+            );
+        } else if (isUserInCurrentGroup) {
+            {console.log(group)}
+            return (
+                <div className="pt-4 space-y-3">
+                    {/* Add to Cart Button */}
+                    <motion.button
+                        onClick={() => {
+                            setCurrentGroup(groupid);
+
+                            const cartItem = {
+                                pdid: group.productId,
+                                productName: group.productName,
+                                name: group.productName,
+                                netprice: group.gprice,
+                                price: group.gprice,
+                                image: group.image,
+                                categoryName: group.categoryName || '',
+                                subcategoryName: group.subcategoryName || '',
+                            };
+
+                            // Add to cart with the group context
+                            addToCart(
+                                cartItem,
+                                1,
+                                groupid
+                            );
+                        }}
+                        disabled={currentMembers < requiredMembers}
+                        className={`w-full py-3 rounded-lg font-semibold shadow-md transition-all duration-200
+    ${currentMembers >= requiredMembers
+                                ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700'
+                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            }`}
+                        whileHover={currentMembers >= requiredMembers ? { scale: 1.02 } : {}}
+                        whileTap={currentMembers >= requiredMembers ? { scale: 0.98 } : {}}
+                    >
+                        <ShoppingBag className="w-5 h-5 inline mr-2" />
+                        {currentMembers >= requiredMembers
+                            ? 'Add to Group Cart'
+                            : 'Waiting for more members'}
+                    </motion.button>
+
+                    {/* Leave Group Button */}
+                    <motion.button
+                        onClick={handleLeaveGroup}
+                        disabled={isLeaving}
+                        className="w-full py-3 border-2 border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                    >
+                        {isLeaving ? (
+                            <>
+                                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-red-500"></div>
+                                Leaving...
+                            </>
+                        ) : (
+                            <>
+                                <LogOut className="w-5 h-5" />
+                                Leave Group
+                            </>
+                        )}
+                    </motion.button>
+                </div>
+            );
+        } else {
+            return (
+                <div className="pt-4 space-y-3">
+                    <motion.button
+                        onClick={handleJoinGroup}
+                        disabled={isJoining || !timeLeft}
+                        className={`w-full py-3 rounded-lg font-semibold shadow-md transition-all duration-200 flex items-center justify-center gap-2
+                        ${!timeLeft
+                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                : 'bg-gradient-to-r from-green-600 to-blue-600 text-white hover:from-green-700 hover:to-blue-700'
+                            }`}
+                        whileHover={timeLeft ? { scale: 1.02 } : {}}
+                        whileTap={timeLeft ? { scale: 0.98 } : {}}
+                    >
+                        {isJoining ? (
+                            <>
+                                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                                Joining...
+                            </>
+                        ) : (
+                            <>
+                                <UserPlus className="w-5 h-5" />
+                                {timeLeft ? 'Join Group Buy' : 'Group Buy Ended'}
+                            </>
+                        )}
+                    </motion.button>
+                </div>
+            );
+        }
+    };
+
 
     return (
         <div className="max-w-6xl mx-auto px-4 py-8">
@@ -263,7 +474,10 @@ const JoinGroupOrder = () => {
 
                             <div className="text-center py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                                 <p className="text-blue-700 dark:text-blue-400 font-medium">
-                                    {membersNeeded} more {membersNeeded === 1 ? 'member' : 'members'} needed to unlock the deal!
+                                    {membersNeeded > 0
+                                        ? `${membersNeeded} more ${membersNeeded === 1 ? 'member' : 'members'} needed to unlock the deal!`
+                                        : 'Group is complete! Deal unlocked! 🎉'
+                                    }
                                 </p>
                             </div>
                         </div>
@@ -316,44 +530,12 @@ const JoinGroupOrder = () => {
                         </h2>
 
                         <div className="space-y-4">
-                            {isUserMember ? (
-                                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                                            <ShieldCheck className="w-5 h-5 text-white" />
-                                        </div>
-                                        <div>
-                                            <h4 className="font-semibold text-green-800 dark:text-green-400">
-                                                You're part of this group!
-                                            </h4>
-                                            <p className="text-sm text-green-700 dark:text-green-300">
-                                                You'll be notified when the group buy is complete
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                                            <UserPlus className="w-5 h-5 text-white" />
-                                        </div>
-                                        <div>
-                                            <h4 className="font-semibold text-blue-800 dark:text-blue-400">
-                                                Join this group buy
-                                            </h4>
-                                            <p className="text-sm text-blue-700 dark:text-blue-300">
-                                                Click the join button to participate in this group buy
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+                            {renderUserStatus()}
                         </div>
                     </div>
 
-                    {/* Referral Section - Only show if user is a member */}
-                    {isUserMember && (
+                    {/* Referral Section - Only show if user is in THIS group */}
+                    {isUserInCurrentGroup && (
                         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6">
                             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                 <Gift className="w-5 h-5 text-purple-600" />
@@ -363,7 +545,7 @@ const JoinGroupOrder = () => {
                             <div className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                        Your Referral Code
+                                        Group Referral Code
                                     </label>
                                     <div className="flex gap-2">
                                         <input
@@ -449,7 +631,7 @@ const JoinGroupOrder = () => {
                                                 </div>
                                                 <div>
                                                     <h4 className="font-medium text-gray-900 dark:text-white">
-                                                        {member.username || `Member ${index + 1}`}
+                                                        {member.userName || `Member ${index + 1}`}
                                                         {(member.userid === currentUserId || member.userId === currentUserId) && (
                                                             <span className="ml-2 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 px-2 py-1 rounded-full">
                                                                 You
@@ -457,7 +639,7 @@ const JoinGroupOrder = () => {
                                                         )}
                                                     </h4>
                                                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                        Joined {new Date(member.joinedAt).toLocaleDateString()}
+                                                        Joined {new Date(member.addedDate).toLocaleDateString()}
                                                     </p>
                                                 </div>
                                             </div>
@@ -490,238 +672,120 @@ const JoinGroupOrder = () => {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.1 }}
                             >
-                                <div className="mt-1 w-5 h-5 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
-                                    <span className="text-xs font-bold text-purple-600 dark:text-purple-400">1</span>
-                                </div>
-                                <p className="text-sm text-gray-600 dark:text-gray-300">
-                                    The deal will only be activated when we reach {requiredMembers} members.
+                                <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                                <p className="text-sm text-gray-700 dark:text-gray-300">
+                                    Minimum {requiredMembers} members required to unlock the group price
                                 </p>
                             </motion.li>
-
                             <motion.li
                                 className="flex items-start gap-3"
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.2 }}
                             >
-                                <div className="mt-1 w-5 h-5 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
-                                    <span className="text-xs font-bold text-purple-600 dark:text-purple-400">2</span>
-                                </div>
-                                <p className="text-sm text-gray-600 dark:text-gray-300">
-                                    If the group doesn't reach the required members before the deadline,
-                                    the group buy will be canceled and no charges will be made.
+                                <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                                <p className="text-sm text-gray-700 dark:text-gray-300">
+                                    Group buy expires on {new Date(group.eventSend1).toLocaleDateString()}
                                 </p>
                             </motion.li>
-
                             <motion.li
                                 className="flex items-start gap-3"
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.3 }}
                             >
-                                <div className="mt-1 w-5 h-5 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
-                                    <span className="text-xs font-bold text-purple-600 dark:text-purple-400">3</span>
-                                </div>
-                                <p className="text-sm text-gray-600 dark:text-gray-300">
-                                    You can invite friends to join this group using your referral code.
+                                <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                                <p className="text-sm text-gray-700 dark:text-gray-300">
+                                    You can only join one group per product
                                 </p>
                             </motion.li>
-
                             <motion.li
                                 className="flex items-start gap-3"
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.4 }}
                             >
-                                <div className="mt-1 w-5 h-5 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
-                                    <span className="text-xs font-bold text-purple-600 dark:text-purple-400">4</span>
-                                </div>
-                                <p className="text-sm text-gray-600 dark:text-gray-300">
-                                    Once the group is successful, orders will be processed and shipped together.
+                                <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                                <p className="text-sm text-gray-700 dark:text-gray-300">
+                                    Payment is processed only when group is complete
                                 </p>
                             </motion.li>
-
                             <motion.li
                                 className="flex items-start gap-3"
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.5 }}
                             >
-                                <div className="mt-1 w-5 h-5 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
-                                    <span className="text-xs font-bold text-purple-600 dark:text-purple-400">5</span>
-                                </div>
-                                <p className="text-sm text-gray-600 dark:text-gray-300">
-                                    You can leave the group anytime before the deadline if you change your mind.
+                                <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                                <p className="text-sm text-gray-700 dark:text-gray-300">
+                                    You can leave the group before it completes
                                 </p>
                             </motion.li>
                         </ul>
                     </div>
 
-                    {/* Order Summary */}
+                    {/* Group Details */}
                     <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6">
                         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                            <ShoppingBag className="w-5 h-5 text-purple-600" />
-                            Order Summary
-                        </h2>
-
-                        <div className="space-y-3">
-                            <div className="flex justify-between">
-                                <span className="text-gray-600 dark:text-gray-400">Product Price</span>
-                                <span className="font-medium">₹{groupPrice}</span>
-                            </div>
-
-                            <div className="flex justify-between">
-                                <span className="text-gray-600 dark:text-gray-400">Discount</span>
-                                <span className="text-green-600 dark:text-green-400 font-medium">
-                                    -₹{regularPrice - groupPrice}
-                                </span>
-                            </div>
-
-                            <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
-                                <div className="flex justify-between font-bold text-lg">
-                                    <span>Total</span>
-                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-600">
-                                        ₹{groupPrice}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="pt-4 space-y-3">
-                                {/* Join or Cart Button */}
-                                {isUserMember ? (
-                                    <motion.button
-                                        onClick={() => addToGroupCart({
-                                            id: group.productId,
-                                            name: group.productName,
-                                            price: group.gprice,
-                                            image: group.image,
-                                            groupId: groupid
-                                        }, groupid, 1)}
-                                        disabled={currentMembers < requiredMembers}
-                                        className={`w-full py-3 rounded-lg font-semibold shadow-md transition-all duration-200
-    ${currentMembers >= requiredMembers
-                                                ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700'
-                                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                            }`}
-                                        whileHover={currentMembers >= requiredMembers ? { scale: 1.02 } : {}}
-                                        whileTap={currentMembers >= requiredMembers ? { scale: 0.98 } : {}}
-                                    >
-                                        {currentMembers >= requiredMembers ? 'Add to Group Cart' : 'Waiting for more members'}
-                                    </motion.button>
-
-
-                                ) : (
-                                    <motion.button
-                                        onClick={handleJoinGroup}
-                                        disabled={isJoining || !timeLeft}
-                                        className={`w-full py-3 rounded-lg font-semibold shadow-md transition-all duration-200 flex items-center justify-center gap-2
-                                            ${!timeLeft
-                                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                                : 'bg-gradient-to-r from-green-600 to-blue-600 text-white hover:from-green-700 hover:to-blue-700'
-                                            }`}
-                                        whileHover={timeLeft ? { scale: 1.02 } : {}}
-                                        whileTap={timeLeft ? { scale: 0.98 } : {}}
-                                    >
-                                        {isJoining ? (
-                                            <>
-                                                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-                                                Joining...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <UserPlus className="w-5 h-5" />
-                                                {timeLeft ? 'Join Group Buy' : 'Group Buy Ended'}
-                                            </>
-                                        )}
-                                    </motion.button>
-                                )}
-
-                                {/* Leave Group Button - Only show if user is a member */}
-                                {isUserMember && (
-                                    <motion.button
-                                        onClick={handleLeaveGroup}
-                                        disabled={isLeaving}
-                                        className="w-full py-3 border-2 border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2"
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                    >
-                                        {isLeaving ? (
-                                            <>
-                                                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-red-500"></div>
-                                                Leaving...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <LogOut className="w-5 h-5" />
-                                                Leave Group
-                                            </>
-                                        )}
-                                    </motion.button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Safety & Security */}
-                    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6">
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                            <ShieldCheck className="w-5 h-5 text-purple-600" />
-                            Safety & Security
+                            <Tag className="w-5 h-5 text-purple-600" />
+                            Group Details
                         </h2>
 
                         <div className="space-y-4">
-                            <div className="flex items-start gap-3">
-                                <div className="mt-1 w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
-                                    <ShieldCheck className="w-4 h-4 text-green-600 dark:text-green-400" />
-                                </div>
-                                <div>
-                                    <h4 className="font-medium text-gray-900 dark:text-white">Secure Payments</h4>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                                        All transactions are protected with bank-level encryption
-                                    </p>
-                                </div>
+                            <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800">
+                                <span className="text-sm text-gray-600 dark:text-gray-400">Regular Price</span>
+                                <span className="text-sm font-semibold text-gray-900 dark:text-white">₹{regularPrice}</span>
                             </div>
-
-                            <div className="flex items-start gap-3">
-                                <div className="mt-1 w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                                    <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                                </div>
-                                <div>
-                                    <h4 className="font-medium text-gray-900 dark:text-white">Money Back Guarantee</h4>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                                        Full refund if group buy doesn't reach minimum members
-                                    </p>
-                                </div>
+                            <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800">
+                                <span className="text-sm text-gray-600 dark:text-gray-400">Group Price</span>
+                                <span className="text-sm font-semibold text-green-600 dark:text-green-400">₹{groupPrice}</span>
                             </div>
-
-                            <div className="flex items-start gap-3">
-                                <div className="mt-1 w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
-                                    <Gift className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                                </div>
-                                <div>
-                                    <h4 className="font-medium text-gray-900 dark:text-white">Quality Assured</h4>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                                        All products are verified and quality tested
-                                    </p>
-                                </div>
+                            <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800">
+                                <span className="text-sm text-gray-600 dark:text-gray-400">You Save</span>
+                                <span className="text-sm font-bold text-purple-600 dark:text-purple-400">
+                                    ₹{regularPrice - groupPrice} ({discountPercentage}%)
+                                </span>
+                            </div>
+                            <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800">
+                                <span className="text-sm text-gray-600 dark:text-gray-400">Required Members</span>
+                                <span className="text-sm font-semibold text-gray-900 dark:text-white">{requiredMembers}</span>
+                            </div>
+                            <div className="flex justify-between items-center py-2">
+                                <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                                    <Calendar className="w-4 h-4" />
+                                    Expires On
+                                </span>
+                                <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                                    {new Date(group.eventSend1).toLocaleDateString()}
+                                </span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Contact Support */}
-                    <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-800">
-                        <h3 className="font-bold text-gray-900 dark:text-white mb-2">Need Help?</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                            Have questions about this group buy? Our support team is here to help!
-                        </p>
-                        <motion.button
-                            className="w-full py-2 bg-white dark:bg-gray-800 text-purple-600 dark:text-purple-400 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border border-purple-200 dark:border-purple-700"
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                        >
-                            Contact Support
-                        </motion.button>
+                    {/* Action Buttons */}
+                    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6">
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                            Quick Actions
+                        </h2>
+                        {renderActionButtons()}
                     </div>
+
+                    {/* Warning for expired groups */}
+                    {!timeLeft && (
+                        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6">
+                            <div className="flex items-center gap-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                                <AlertCircle className="w-6 h-6 text-red-500 flex-shrink-0" />
+                                <div>
+                                    <h4 className="font-semibold text-red-800 dark:text-red-400">
+                                        Group Buy Expired
+                                    </h4>
+                                    <p className="text-sm text-red-700 dark:text-red-300">
+                                        This group buy has ended. You can no longer join this group.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

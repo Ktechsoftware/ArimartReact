@@ -15,8 +15,7 @@ export const fetchAllGroups = createAsyncThunk("group/fetchAll", async (_, thunk
 export const fetchGroupById = createAsyncThunk("group/fetchById", async (gid, thunkAPI) => {
   try {
     const res = await API.get(`/group/${gid}`);
-    // console.log(res.data)
-    return res.data;
+    return { gid, data: res.data };
   } catch (err) {
     return thunkAPI.rejectWithValue(err.response?.data || "Failed to fetch group");
   }
@@ -51,10 +50,11 @@ export const leaveGroup = createAsyncThunk("group/leave", async ({ groupId, user
   }
 });
 
+// ✅ ENHANCED: Store members by GID
 export const fetchGroupMembers = createAsyncThunk("group/fetchMembers", async (groupId, thunkAPI) => {
   try {
     const res = await API.get(`/group/members/${groupId}`);
-    return res.data;
+    return { groupId, members: res.data };
   } catch (err) {
     return thunkAPI.rejectWithValue(err.response?.data || "Failed to fetch members");
   }
@@ -78,10 +78,11 @@ export const fetchAllGroupReferCodes = createAsyncThunk("group/fetchAllReferCode
   }
 });
 
+// ✅ ENHANCED: Store refer codes by GID
 export const fetchGroupReferCodeById = createAsyncThunk("group/fetchReferCodeById", async (id, thunkAPI) => {
   try {
     const res = await API.get(`/group/refercode/${id}`);
-    return res.data;
+    return { gid: id, referCode: res.data };
   } catch (err) {
     return thunkAPI.rejectWithValue(err.response?.data || "Failed to fetch refer code");
   }
@@ -95,7 +96,6 @@ export const fetchGroupReferCodeByProduct = createAsyncThunk("group/fetchReferCo
     return thunkAPI.rejectWithValue(err.response?.data || "Failed to fetch refer code");
   }
 });
-
 
 // ---------------------- SLICE ----------------------
 
@@ -121,8 +121,17 @@ const groupSlice = createSlice({
 
     // Data
     allGroups: [],
-    groupsById: {}, // 👈 key = gid
-    groupMembers: [],
+    groupsById: {}, // key = gid, value = group data
+    
+    // ✅ ENHANCED: Store members by GID
+    membersByGid: {}, // key = gid, value = members array
+    
+    // ✅ ENHANCED: Store refer codes by GID
+    referCodesByGid: {}, // key = gid, value = refer code data
+    
+    // ✅ ENHANCED: Store loading states by GID
+    loadingStatesByGid: {}, // key = gid, value = { isLoadingMembers, isLoadingReferCode }
+    
     myJoinedGroups: [],
     allReferCodes: [],
     currentReferCode: null,
@@ -158,9 +167,20 @@ const groupSlice = createSlice({
       state.currentGroup = null;
     },
 
-    // Clear group members
-    clearGroupMembers: (state) => {
-      state.groupMembers = [];
+    // ✅ ENHANCED: Clear specific group members
+    clearGroupMembers: (state, action) => {
+      const gid = action.payload;
+      if (gid && state.membersByGid[gid]) {
+        delete state.membersByGid[gid];
+      }
+    },
+
+    // ✅ ENHANCED: Clear specific group refer code
+    clearGroupReferCode: (state, action) => {
+      const gid = action.payload;
+      if (gid && state.referCodesByGid[gid]) {
+        delete state.referCodesByGid[gid];
+      }
     },
 
     // Reset success flags
@@ -186,17 +206,17 @@ const groupSlice = createSlice({
         state.error = action.payload;
       });
 
-    // Fetch group by ID
+    // ✅ ENHANCED: Fetch group by ID
     builder
       .addCase(fetchGroupById.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
       .addCase(fetchGroupById.fulfilled, (state, action) => {
-        const group = action.payload;
+        const { gid, data } = action.payload;
         state.isLoading = false;
-        if (group?.gid) {
-          state.groupsById[group.gid] = group; // ✅ store by gid
+        if (gid && data) {
+          state.groupsById[gid] = data;
         }
       })
       .addCase(fetchGroupById.rejected, (state, action) => {
@@ -226,9 +246,8 @@ const groupSlice = createSlice({
           state.groupsById[action.payload.gid] = action.payload;
         }
         
-        // Auto-join: Add to myJoinedGroups (creator automatically joins their own group)
+        // Auto-join: Add to myJoinedGroups
         if (state.myJoinedGroups && action.payload) {
-          // Check if group is not already in myJoinedGroups to avoid duplicates
           const isAlreadyJoined = state.myJoinedGroups.some(
             group => group.Gid === action.payload.gid || group.gid === action.payload.gid
           );
@@ -284,10 +303,18 @@ const groupSlice = createSlice({
         state.isLeaving = false;
         state.leaveSuccess = true;
         state.lastLeftGroup = action.payload;
-        // Remove from myJoinedGroups if it exists
+        
+        // Remove from myJoinedGroups
         if (state.myJoinedGroups) {
           state.myJoinedGroups = state.myJoinedGroups.filter(
             group => group.Gid !== action.payload.groupId && group.gid !== action.payload.groupId
+          );
+        }
+        
+        // ✅ ENHANCED: Remove from membersByGid
+        if (state.membersByGid[action.payload.groupId]) {
+          state.membersByGid[action.payload.groupId] = state.membersByGid[action.payload.groupId].filter(
+            member => member.userid !== action.payload.userId && member.Userid !== action.payload.userId
           );
         }
       })
@@ -297,19 +324,40 @@ const groupSlice = createSlice({
         state.error = action.payload;
       });
 
-    // Fetch group members
+    // ✅ ENHANCED: Fetch group members by GID
     builder
-      .addCase(fetchGroupMembers.pending, (state) => {
+      .addCase(fetchGroupMembers.pending, (state, action) => {
         state.isLoadingMembers = true;
         state.error = null;
+        
+        // Set loading state for specific GID
+        const gid = action.meta.arg;
+        if (!state.loadingStatesByGid[gid]) {
+          state.loadingStatesByGid[gid] = {};
+        }
+        state.loadingStatesByGid[gid].isLoadingMembers = true;
       })
       .addCase(fetchGroupMembers.fulfilled, (state, action) => {
+        const { groupId, members } = action.payload;
         state.isLoadingMembers = false;
-        state.groupMembers = action.payload;
+        
+        // Store members by GID
+        state.membersByGid[groupId] = members;
+        
+        // Clear loading state for specific GID
+        if (state.loadingStatesByGid[groupId]) {
+          state.loadingStatesByGid[groupId].isLoadingMembers = false;
+        }
       })
       .addCase(fetchGroupMembers.rejected, (state, action) => {
         state.isLoadingMembers = false;
         state.error = action.payload;
+        
+        // Clear loading state for specific GID
+        const gid = action.meta.arg;
+        if (state.loadingStatesByGid[gid]) {
+          state.loadingStatesByGid[gid].isLoadingMembers = false;
+        }
       });
 
     // Fetch my joined groups
@@ -342,19 +390,40 @@ const groupSlice = createSlice({
         state.error = action.payload;
       });
 
-    // Fetch group refer code by ID
+    // ✅ ENHANCED: Fetch group refer code by ID
     builder
-      .addCase(fetchGroupReferCodeById.pending, (state) => {
+      .addCase(fetchGroupReferCodeById.pending, (state, action) => {
         state.isLoadingReferCodes = true;
         state.error = null;
+        
+        // Set loading state for specific GID
+        const gid = action.meta.arg;
+        if (!state.loadingStatesByGid[gid]) {
+          state.loadingStatesByGid[gid] = {};
+        }
+        state.loadingStatesByGid[gid].isLoadingReferCode = true;
       })
       .addCase(fetchGroupReferCodeById.fulfilled, (state, action) => {
+        const { gid, referCode } = action.payload;
         state.isLoadingReferCodes = false;
-        state.currentReferCode = action.payload;
+        
+        // Store refer code by GID
+        state.referCodesByGid[gid] = referCode;
+        
+        // Clear loading state for specific GID
+        if (state.loadingStatesByGid[gid]) {
+          state.loadingStatesByGid[gid].isLoadingReferCode = false;
+        }
       })
       .addCase(fetchGroupReferCodeById.rejected, (state, action) => {
         state.isLoadingReferCodes = false;
         state.error = action.payload;
+        
+        // Clear loading state for specific GID
+        const gid = action.meta.arg;
+        if (state.loadingStatesByGid[gid]) {
+          state.loadingStatesByGid[gid].isLoadingReferCode = false;
+        }
       });
 
     // Fetch group refer code by product
@@ -379,6 +448,7 @@ export const {
   clearError,
   clearCurrentGroup,
   clearGroupMembers,
+  clearGroupReferCode,
   resetSuccessFlags
 } = groupSlice.actions;
 

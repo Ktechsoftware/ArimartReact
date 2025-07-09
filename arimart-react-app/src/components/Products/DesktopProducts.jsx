@@ -58,10 +58,9 @@ const DesktopProducts = () => {
     };
 
     if (loading) {
-        return <>
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            <span>Processing...</span>
-        </>
+        return <div className="flex justify-center items-center h-screen">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+        </div>
     }
 
     if (error) {
@@ -98,7 +97,7 @@ const DesktopProducts = () => {
                         <ChevronRightIcon className="text-gray-700 dark:text-gray-300 text-xl" />
                     </button> */}
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 p-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 md:p-4">
                         {productsToDisplay.products.map((product) => (
                             <ProductCard key={product.id} product={product} />
                         ))}

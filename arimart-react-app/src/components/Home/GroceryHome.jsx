@@ -96,10 +96,10 @@ export default function GroceryHome() {
       <HotDealsCarousel />
 
       <Categories />
-      <div className="relative overflow-hidden py-4 px-3 sm:px-6 md:px-8">
+      <div className="relative overflow-hidden sm:px-6 md:px-8">
 
         {/* Special Offers */}
-        <h2 className="text-xl md:text-3xl font-bold text-base mb-2">Special Offers</h2>
+        {/* <h2 className="text-xl md:text-3xl font-bold text-base mb-2">Special Offers</h2> */}
         <DesktopProducts/>
       </div>
       <FilterSheet isOpen={showFilter} onClose={() => setShowFilter(false)} />

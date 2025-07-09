@@ -23,32 +23,33 @@ export default function ProductContentDetail() {
     addToCart,
     updateQuantity,
     removeFromCart,
-    isInCart,
-    getItemQuantity
+    isItemInCart,
+    getItemQuantity,
+    getCartItemInfo
   } = useCart();
 
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [optimisticInCart, setOptimisticInCart] = useState(false);
+
 
   const productDetailState = useSelector((state) => state.productDetail) || {};
   const { product = null, loading = false, error = null } = productDetailState;
   const userData = useSelector((state) => state.auth.userData);
   const wishlistItems = useSelector((state) => state.wishlist.items);
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
-
-  // Safe usage — don't access product.id until after product is confirmed
-  const itemInCart = product ? isInCart(product.id) : false;
-  const itemQuantity = product ? getItemQuantity(product.id) : 0;
-
+  const cartItem = product ? getCartItemInfo(product.id) : null;
+  const itemInCart = !!cartItem;
+  const itemQuantity = cartItem ? cartItem.quantity : 0;
+  console.log(cartItem,product, itemInCart)
   // Demo images for left side
   const demoImages = [
     "http://localhost:5015/Uploads/" + product?.image || '/placeholder-image.jpg',
     "https://m.media-amazon.com/images/S/aplus-media-library-service-media/f4258821-4583-407e-9882-650d32b364af.__CR0,0,300,300_PT0_SX300_V1___.jpg",
     "https://m.media-amazon.com/images/S/aplus-media-library-service-media/94c5ccbd-5093-4b45-a9dd-55fb709761fd.__CR0,0,300,300_PT0_SX300_V1___.jpg"
   ];
-
   const productId = String(id); // 👈 ensure string type
 
   // 🧠 useMemo to avoid unnecessary rerenders
@@ -82,12 +83,12 @@ export default function ProductContentDetail() {
 
   useEffect(() => {
     if (id) {
-      // console.log("🔍 Fetching product by ID:", id);
       dispatch(fetchProductById(id));
     }
   }, [dispatch, id]);
 
-  // Check if product is in wishlist
+
+
   useEffect(() => {
     if (wishlistItems && product?.id) {
       const isInWishlist = wishlistItems.some((item) =>
@@ -124,7 +125,9 @@ export default function ProductContentDetail() {
   }, [shouldShowGroupBuySection, validGroupBuys]);
 
   if (loading) {
-    return <div className="p-6 text-center text-gray-500 mx-auto dark:text-gray-400"><LoaderCircle /></div>;
+    return <div className="flex justify-center items-center h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+    </div>
   }
 
   if (error) {
@@ -143,21 +146,11 @@ export default function ProductContentDetail() {
 
     setIsAddingToCart(true);
     try {
-      const result = await addToCart(product, 1);
-      console.log('Add to cart result:', result);
-
-      // Check immediately after
-      console.log('After add - isInCart:', isInCart(product.id));
-      console.log('After add - quantity:', getItemQuantity(product.id));
-
-      // Force a small delay to see if state updates
-      setTimeout(() => {
-        console.log('After timeout - isInCart:', isInCart(product.id));
-        console.log('After timeout - quantity:', getItemQuantity(product.id));
-      }, 100);
-
+      await addToCart(product, 1);
+      setOptimisticInCart(true);
       toast.success(`${product.productName || product.name} added to cart`);
     } catch (error) {
+      setOptimisticInCart(false);
       console.error("Error adding to cart:", error);
       toast.error("Failed to add to cart");
     } finally {
@@ -165,32 +158,37 @@ export default function ProductContentDetail() {
     }
   };
 
+  const showQuantityControls = (itemInCart && itemQuantity > 0) || optimisticInCart;
+
   const handleIncrease = async () => {
+    const cartItemId = getCartItemInfo(product.id); // or pass groupId if needed
+    if (!cartItemId) return toast.error("Cart item not found");
     try {
-      await updateQuantity(product.id, itemQuantity + 1);
+      await updateQuantity(cartItemId, itemQuantity + 1); // use cartItemId here
     } catch (error) {
-      console.error("Error increasing quantity:", error);
       toast.error("Failed to update quantity");
     }
   };
 
   const handleDecrease = async () => {
+    const cartItemId = getCartItemInfo(product.id); // or pass groupId if needed
+    if (!cartItemId) return toast.error("Cart item not found");
     if (itemQuantity > 1) {
       try {
-        await updateQuantity(product.id, itemQuantity - 1);
+        await updateQuantity(cartItemId, itemQuantity - 1);
       } catch (error) {
-        console.error("Error decreasing quantity:", error);
         toast.error("Failed to update quantity");
       }
     }
   };
 
   const handleRemove = async () => {
+    const cartItemId = getCartItemInfo(product.id); // or pass groupId if needed
+    if (!cartItemId) return toast.error("Cart item not found");
     try {
-      await removeFromCart(product.id);
+      await removeFromCart(cartItemId);
       toast.success("Item removed from cart");
     } catch (error) {
-      console.error("Error removing from cart:", error);
       toast.error("Failed to remove item from cart");
     }
   };
@@ -474,7 +472,7 @@ export default function ProductContentDetail() {
 
           <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row items-center gap-3">
             <AnimatePresence mode="wait">
-              {itemInCart && itemQuantity > 0 ? (
+              {showQuantityControls ? (
                 <motion.div
                   key="quantity-controls"
                   initial={{ opacity: 0, scale: 0.8 }}
@@ -483,7 +481,25 @@ export default function ProductContentDetail() {
                   transition={{ duration: 0.3 }}
                   className="flex items-center gap-3 bg-gradient-to-r from-orange-500 to-red-500 rounded-full px-6 py-3 shadow-lg"
                 >
-                  {/* Quantity controls remain the same */}
+                  <button
+                    onClick={itemQuantity > 1 ? handleDecrease : handleRemove}
+                    className="p-2 rounded-full bg-white bg-opacity-80 hover:bg-opacity-100 transition disabled:opacity-50"
+                    disabled={isAddingToCart}
+                    title={itemQuantity > 1 ? "Decrease quantity" : "Remove from cart"}
+                  >
+                    {itemQuantity > 1 ? <Minus size={18} /> : <Trash2 size={18} />}
+                  </button>
+                  <span className="text-white font-semibold text-lg px-2 min-w-[2rem] text-center">
+                    {itemQuantity}
+                  </span>
+                  <button
+                    onClick={handleIncrease}
+                    className="p-2 rounded-full bg-white bg-opacity-80 hover:bg-opacity-100 transition disabled:opacity-50"
+                    disabled={isAddingToCart}
+                    title="Increase quantity"
+                  >
+                    <Plus size={18} />
+                  </button>
                 </motion.div>
               ) : (
                 <>
@@ -530,8 +546,6 @@ export default function ProductContentDetail() {
             </AnimatePresence>
           </div>
         </div>
-
-        {/* Success indicator remains the same */}
       </motion.div>
 
       {/* Description Section */}

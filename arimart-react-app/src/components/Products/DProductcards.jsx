@@ -18,7 +18,7 @@ const DProductCard = ({ product }) => {
   // console.log("product", product);
 
   // Cart context
-  const { addToCart, isInCart, getItemQuantity } = useCart();
+  const { addToCart, isItemInCart, getItemQuantity,getCartItemInfo } = useCart();
 
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
@@ -35,8 +35,9 @@ const DProductCard = ({ product }) => {
   const weight = product?.wweight || product?.weight || '';
   const availability = product?.isAvl || product?.availability || 'In Stock';
 
-  const itemInCart = productId ? isInCart(productId) : false;
-  const itemQuantity = productId ? getItemQuantity(productId) : 0;
+ const cartItem = product ? getCartItemInfo(product.id) : null;
+  const itemInCart = !!cartItem;
+  const itemQuantity = cartItem ? cartItem.quantity : 0;
 const imageUrl = imageUrls?.[productId] || product?.image || '/placeholder-image.jpg';
 const isLoading = !!(productId && imageLoading?.[productId]);
 

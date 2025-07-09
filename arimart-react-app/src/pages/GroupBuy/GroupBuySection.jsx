@@ -1,4 +1,4 @@
-// Enhanced GroupBuySection with responsive design and "See More" functionality
+// Enhanced GroupBuySection with GID-specific state management
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -18,19 +18,30 @@ export const GroupBuySection = ({ userId, product }) => {
   const [expanded, setExpanded] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
+  const gid = product?.gid;
+  // console.log(userId, gid)
+
+  // ✅ ENHANCED: Get GID-specific data from Redux store
   const {
-    groupMembers,
+    membersByGid,
+    referCodesByGid,
+    loadingStatesByGid,
     myJoinedGroups,
   } = useSelector(state => state.group);
 
-  const currentGroup = useSelector(state => state.group.groupsById?.[product.gid]);
+  // ✅ ENHANCED: Get specific group data
+  const currentGroup = useSelector(state => state.group.groupsById?.[gid]);
+  const groupMembers = membersByGid[gid] || [];
+  const referCodeData = referCodesByGid[gid];
+  const loadingStates = loadingStatesByGid[gid] || {};
 
+  // Local state
   const [hasJoined, setHasJoined] = useState(false);
   const [timeLeft, setTimeLeft] = useState(null);
-  const [referCode, setReferCode] = useState(null);
   const [hasJoinedOtherGroupForProduct, setHasJoinedOtherGroupForProduct] = useState(false);
   const [isGroupOwner, setIsGroupOwner] = useState(false);
   const [newMemberJoined, setNewMemberJoined] = useState(false);
+  const [previousMemberCount, setPreviousMemberCount] = useState(0);
 
   useEffect(() => {
     const handleResize = () => {
@@ -39,6 +50,20 @@ export const GroupBuySection = ({ userId, product }) => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // ✅ ENHANCED: Fetch data only when gid is available
+  useEffect(() => {
+    if (!gid) return;
+
+    // Fetch group details
+    dispatch(fetchGroupById(gid));
+
+    // Fetch group members
+    dispatch(fetchGroupMembers(gid));
+
+    // Fetch referral code
+    dispatch(fetchGroupReferCodeById(gid));
+  }, [gid, dispatch]);
 
   // Fetch user's joined groups
   useEffect(() => {
@@ -50,55 +75,50 @@ export const GroupBuySection = ({ userId, product }) => {
   // Check if current user is the group owner
   useEffect(() => {
     if (currentGroup && userId) {
-      const isOwner = currentGroup.userid === userId || currentGroup.Userid === userId;
+      const isOwner = currentGroup.cuserid === userId || currentGroup.cuserid === userId;
       setIsGroupOwner(isOwner);
     }
   }, [currentGroup, userId]);
 
+  // console.log(currentGroup)
+
   // Check if user has joined other groups for the same product
   useEffect(() => {
-    if (myJoinedGroups && product?.gid && product?.pid && product?.pdid) {
+    if (myJoinedGroups && gid && product?.pid && product?.pdid) {
       const otherGroupJoinedForProduct = myJoinedGroups.some(
         group =>
-          group.Gid !== product.gid &&
+          group.Gid !== gid &&  // Different group
           group.pid === product.pid &&
           group.pdid === product.pdid
       );
-      setHasJoinedOtherGroupForProduct(otherGroupJoinedForProduct);
-    }
-  }, [myJoinedGroups, product?.gid, product?.pid, product?.pdid]);
 
-  // Fetch members
-  useEffect(() => {
-    if (product?.gid && userId) {
-      dispatch(fetchGroupMembers(product.gid));
+      // Only set hasJoinedOtherGroupForProduct if user hasn't joined current group
+      if (!hasJoined) {
+        setHasJoinedOtherGroupForProduct(otherGroupJoinedForProduct);
+      } else {
+        // If user has joined current group, don't show "joined other group"
+        setHasJoinedOtherGroupForProduct(false);
+      }
     }
-  }, [product?.gid, userId, dispatch]);
+  }, [myJoinedGroups, gid, product?.pid, product?.pdid, hasJoined]);
 
-  // Fetch group details
-  useEffect(() => {
-    if (product?.gid) {
-      dispatch(fetchGroupById(product.gid));
-    }
-  }, [product?.gid, dispatch]);
-
-  // Update joined state and trigger animation for new members
+  // ✅ ENHANCED: Check membership and detect new members for this specific group
   useEffect(() => {
     if (groupMembers && userId) {
       const userInGroup = groupMembers.some(
-        member => member.userid === userId || member.Userid === userId
+        member => member.userId === userId || member.userId === userId
       );
-      
-      // Check if member count increased to trigger animation
-      const previousMemberCount = hasJoined ? currentMembers : 0;
-      if (groupMembers.length > previousMemberCount) {
+      if (groupMembers.length > previousMemberCount && previousMemberCount > 0) {
         setNewMemberJoined(true);
-        setTimeout(() => setNewMemberJoined(false), 2000);
+        setTimeout(() => setNewMemberJoined(false), 6000);
       }
-      
+
+      setPreviousMemberCount(groupMembers.length);
       setHasJoined(userInGroup);
     }
-  }, [groupMembers, userId]);
+  }, [groupMembers, userId, previousMemberCount]);
+
+  // console.log(groupMembers)
 
   // Countdown timer
   useEffect(() => {
@@ -127,20 +147,6 @@ export const GroupBuySection = ({ userId, product }) => {
     return () => clearInterval(timer);
   }, [currentGroup?.eventSend1]);
 
-  // Fetch referral code
-  useEffect(() => {
-    if (product?.gid) {
-      dispatch(fetchGroupReferCodeById(product.gid))
-        .unwrap()
-        .then((data) => {
-          setReferCode(data?.refercode);
-        })
-        .catch(() => {
-          // Silent fail for referral code
-        });
-    }
-  }, [product?.gid, dispatch]);
-
   // Handle navigation to group buy page
   const handleJoinToOrder = () => {
     if (!userId) {
@@ -148,16 +154,20 @@ export const GroupBuySection = ({ userId, product }) => {
       return;
     }
 
-    if (!product?.gid) {
+    if (!gid) {
       toast.error("Group ID not found");
       return;
     }
 
+    // Get referral code for this specific group
+    const referCode = referCodeData?.refercode;
+
     // Navigate to group buy page
-    navigate(`/group/join/${product.gid}${referCode ? `/ref=${referCode}` : ''}`);
+    navigate(`/group/join/${gid}${referCode ? `/ref=${referCode}` : ''}`);
   };
 
-  if (!product?.gid || !product?.gprice || !product?.gqty) return null;
+  // ✅ ENHANCED: Early return if no gid or essential product data
+  if (!gid || !product?.gprice || !product?.gqty) return null;
 
   const regularPrice = product.netprice || product.price || 0;
   const groupPrice = product.gprice || 0;
@@ -171,10 +181,15 @@ export const GroupBuySection = ({ userId, product }) => {
 
   return (
     <div className="border border-purple-200 dark:border-purple-700 p-3 rounded-lg bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 shadow-sm max-w-4xl mx-auto">
-      
+
+      {/* Debug Info - Remove in production */}
+      <div className="mb-2 text-xs text-gray-500 dark:text-gray-400">
+        GID: {gid} | Members: {currentMembers} | Owner: {isGroupOwner ? 'Yes' : 'No'}
+      </div>
+
       {/* Main Content - Always Visible */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        
+
         {/* Left Section: Vendor Info & Progress */}
         <div className="flex items-center gap-3 flex-1 w-full md:w-auto">
           <div className="p-1 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full shadow-sm">
@@ -188,7 +203,7 @@ export const GroupBuySection = ({ userId, product }) => {
               <Users className="w-4 h-4 text-white" />
             )}
           </div>
-          
+
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <h3 className="text-sm font-bold text-gray-800 dark:text-white truncate">
@@ -196,7 +211,7 @@ export const GroupBuySection = ({ userId, product }) => {
               </h3>
               {isGroupOwner && (
                 <span className="text-xs bg-yellow-400 text-yellow-800 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                  Owner
+                  You
                 </span>
               )}
               <motion.div
@@ -206,7 +221,7 @@ export const GroupBuySection = ({ userId, product }) => {
                 <Sparkles className="w-3 h-3 text-yellow-500" />
               </motion.div>
             </div>
-            
+
             {/* Progress Bar with Member Info */}
             <div className="flex items-center gap-2">
               <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden min-w-[100px]">
@@ -221,7 +236,7 @@ export const GroupBuySection = ({ userId, product }) => {
               <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
                 <span>{currentMembers}/{requiredMembers}</span>
                 {remainingMembers > 0 && (
-                  <motion.span 
+                  <motion.span
                     className="text-orange-500 font-medium"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -232,7 +247,7 @@ export const GroupBuySection = ({ userId, product }) => {
                 )}
               </div>
             </div>
-            
+
             {/* New Member Join Animation */}
             {newMemberJoined && (
               <motion.div
@@ -251,19 +266,19 @@ export const GroupBuySection = ({ userId, product }) => {
 
         {/* Center Section: Timer with Calendar Animation - Hidden on mobile when collapsed */}
         {(!isMobile || expanded) && isGroupBuyActive && (
-          <motion.div 
+          <motion.div
             className="flex items-center gap-1 bg-white/50 dark:bg-gray-800/50 px-2 py-1 rounded-lg border border-purple-200 dark:border-purple-700"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
             <motion.div
-              animate={{ 
+              animate={{
                 rotate: [0, -5, 5, -5, 0],
                 scale: [1, 1.1, 1]
               }}
-              transition={{ 
-                duration: 2, 
+              transition={{
+                duration: 2,
                 repeat: Infinity,
                 ease: "easeInOut"
               }}
@@ -272,250 +287,57 @@ export const GroupBuySection = ({ userId, product }) => {
             </motion.div>
             <div className="flex gap-1 text-xs font-medium text-purple-800 dark:text-purple-200">
               {timeLeft.days > 0 && (
-                <motion.span
-                  key={timeLeft.days}
-                  initial={{ opacity: 0.5 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  {timeLeft.days}d
-                </motion.span>
+                <span>{timeLeft.days}d</span>
               )}
-              <motion.span
-                key={timeLeft.hours}
-                initial={{ opacity: 0.5 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5 }}
-              >
-                {String(timeLeft.hours).padStart(2, '0')}h
-              </motion.span>
-              <motion.span
-                key={timeLeft.minutes}
-                initial={{ opacity: 0.5 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5 }}
-              >
-                {String(timeLeft.minutes).padStart(2, '0')}m
-              </motion.span>
-              <motion.span
-                key={timeLeft.seconds}
-                initial={{ opacity: 0.5, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.1 }}
-                className="text-red-500 font-bold"
-              >
-                {String(timeLeft.seconds).padStart(2, '0')}s
-              </motion.span>
+              <span>{timeLeft.hours}h</span>
+              <span>{timeLeft.minutes}m</span>
+              <span>{timeLeft.seconds}s</span>
             </div>
           </motion.div>
         )}
-        
-        {/* Show "Ended" badge when timer expires - Hidden on mobile when collapsed */}
-        {(!isMobile || expanded) && !isGroupBuyActive && (
-          <motion.div 
-            className="flex items-center gap-1 bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded-lg border border-red-200 dark:border-red-700"
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Calendar className="w-3 h-3 text-red-600 dark:text-red-400" />
-            <span className="text-xs font-medium text-red-800 dark:text-red-200">
-              Ended
-            </span>
-          </motion.div>
-        )}
 
-        {/* Right Section: Pricing, Members & Button */}
-        <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-normal mt-2 md:mt-0">
-          
-          {/* Member Avatars with Animation - Hidden on mobile when collapsed */}
-          {(!isMobile || expanded) && (
+        {/* Right Section: Join Button */}
+        <div className="flex md:flex-col md:items-end items-center gap-2">
+          <div className="text-xs text-gray-600 dark:text-gray-300 text-right">
             <div className="flex items-center gap-1">
-              <div className="flex -space-x-1">
-                {groupMembers?.slice(0, 3).map((member, index) => (
-                  <motion.div
-                    key={member.userid || index}
-                    className="w-5 h-5 rounded-full border border-white dark:border-gray-800 bg-gradient-to-br from-purple-400 to-blue-400 flex items-center justify-center shadow-sm"
-                    initial={{ opacity: 0, x: 5, scale: 0.8 }}
-                    animate={{ opacity: 1, x: 0, scale: 1 }}
-                    transition={{ 
-                      delay: index * 0.1,
-                      type: "spring",
-                      stiffness: 300,
-                      damping: 20
-                    }}
-                    whileHover={{ scale: 1.1 }}
-                  >
-                    <User className="w-2.5 h-2.5 text-white" />
-                  </motion.div>
-                ))}
-                {currentMembers > 3 && (
-                  <motion.div 
-                    className="w-5 h-5 rounded-full border border-white dark:border-gray-800 bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center text-white font-semibold text-xs shadow-sm"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ 
-                      delay: 0.3,
-                      type: "spring",
-                      stiffness: 300,
-                      damping: 20
-                    }}
-                    whileHover={{ scale: 1.1 }}
-                  >
-                    +{currentMembers - 3}
-                  </motion.div>
-                )}
-              </div>
-              
-              {/* Empty slots animation for remaining members */}
-              {remainingMembers > 0 && (
-                <div className="flex -space-x-1 ml-1">
-                  {Array.from({ length: Math.min(remainingMembers, 2) }).map((_, index) => (
-                    <motion.div
-                      key={`empty-${index}`}
-                      className="w-5 h-5 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: [0.3, 0.7, 0.3] }}
-                      transition={{ 
-                        delay: index * 0.2,
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                      }}
-                    >
-                      <UserPlus className="w-2.5 h-2.5 text-gray-400 dark:text-gray-500" />
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Pricing */}
-          <div className="text-right">
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-gray-500 line-through">₹{regularPrice}</span>
-              <span className="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-600">
-                ₹{groupPrice}
+              <Tag className="w-3 h-3 text-green-600" />
+              <span className="line-through text-gray-400">₹{regularPrice}</span>
+              <span className="font-bold text-green-700 dark:text-green-400">₹{groupPrice}</span>
+              <span className="bg-green-100 text-green-800 text-xs px-1.5 py-0.5 rounded">
+                {discountPercentage}% OFF
               </span>
             </div>
-            <span className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-1.5 py-0.5 rounded-full text-xs font-semibold">
-              {discountPercentage}% OFF
-            </span>
           </div>
-
-          {/* Join to Order Button with Enhanced Animation */}
-          <motion.button
+          <button
             onClick={handleJoinToOrder}
-            disabled={!isGroupBuyActive}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${
-              !isGroupBuyActive
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md"
-            }`}
-            whileHover={{ 
-              scale: !isGroupBuyActive ? 1 : 1.05,
-              boxShadow: !isGroupBuyActive ? "none" : "0 4px 20px rgba(168, 85, 247, 0.4)"
-            }}
-            whileTap={{ scale: !isGroupBuyActive ? 1 : 0.95 }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
+            className="flex items-center gap-2 px-4 py-1.5 rounded-full text-sm bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:opacity-90 transition-all shadow-md"
           >
-            <motion.div
-              animate={!isGroupBuyActive ? {} : { 
-                rotate: [0, 10, -10, 0],
-                scale: [1, 1.1, 1]
-              }}
-              transition={{ 
-                duration: 2, 
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            >
-              <ShoppingCart className="w-4 h-4" />
-            </motion.div>
-            {!isGroupBuyActive ? "Ended" : "Join to Order"}
-          </motion.button>
+            <ShoppingCart className="w-4 h-4" /> Join to order
+          </button>
         </div>
       </div>
 
-      {/* See More/Less Button for Mobile */}
+      {/* Toggle Expand/Collapse (for mobile) */}
       {isMobile && (
         <div className="flex justify-center mt-2">
-          <button 
-            onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1 text-sm text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 transition-colors"
+          <button
+            onClick={() => setExpanded(prev => !prev)}
+            className="text-xs text-purple-700 dark:text-purple-300 hover:underline flex items-center gap-1"
           >
             {expanded ? (
               <>
-                <ChevronUp className="w-4 h-4" />
-                <span>Show Less</span>
+                <ChevronUp className="w-3 h-3" />
+                Show Less
               </>
             ) : (
               <>
-                <ChevronDown className="w-4 h-4" />
-                <span>Show Details</span>
+                <ChevronDown className="w-3 h-3" />
+                Show More
               </>
             )}
           </button>
         </div>
       )}
-
-      {/* Expanded Details Section */}
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="overflow-hidden"
-          >
-            <div className="mt-4 pt-4 border-t border-purple-100 dark:border-purple-800 grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Time Remaining</p>
-                  <p className="text-sm font-medium">
-                    {isGroupBuyActive 
-                      ? `${timeLeft.days > 0 ? `${timeLeft.days}d ` : ''}${timeLeft.hours}h ${timeLeft.minutes}m`
-                      : 'Group Buy Ended'}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Tag className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Your Savings</p>
-                  <p className="text-sm font-medium">₹{regularPrice - groupPrice} ({discountPercentage}%)</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Members Joined</p>
-                  <p className="text-sm font-medium">
-                    {currentMembers} / {requiredMembers} ({remainingMembers > 0 ? `${remainingMembers} needed` : 'Goal reached!'})
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <User className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Your Status</p>
-                  <p className="text-sm font-medium">
-                    {hasJoined ? 'Joined' : hasJoinedOtherGroupForProduct ? 'Joined another group' : 'Not joined'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };

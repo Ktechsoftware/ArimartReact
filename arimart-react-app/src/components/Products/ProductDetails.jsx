@@ -20,7 +20,7 @@ export default function ProductDetails({ cartIconRef }) {
     addToCart,
     updateQuantity,
     removeFromCart,
-    isInCart,
+    isItemInCart,
     getItemQuantity
   } = useCart();
 
@@ -45,7 +45,7 @@ export default function ProductDetails({ cartIconRef }) {
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
 
   // Safe usage — don't access product.id until after product is confirmed
-  const itemInCart = product ? isInCart(product.id) : false;
+  const itemInCart = product ? isItemInCart(product.id) : false;
   const itemQuantity = product ? getItemQuantity(product.id) : 0;
 
   const productId = String(id || '');

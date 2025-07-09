@@ -1,9 +1,9 @@
-// components/product/DProductCard.js
+// components/product/ProductCard.jsx
 
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useParams } from 'react-router-dom';
-import { Heart, Plus, Check, Star } from 'lucide-react';
+import { Heart, Plus, Minus, Check, Star } from 'lucide-react';
 import DiscountBadge from '../ui/DiscountBadge';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
@@ -17,25 +17,27 @@ const ProductCard = ({ product }) => {
   const userData = useSelector((state) => state.auth.userData);
   const wishlistItems = useSelector((state) => state.wishlist.items);
   const { imageUrls, imageLoading } = useSelector((state) => state.products);
-  // console.log("userData:", userData)
-  const { addToCart, isInCart, getItemQuantity } = useCart();
-  // console.log("ProductCard product:", product);
+
+  const { addToCart, isItemInCart, getItemQuantity, updateQuantity, removeFromCart,getCartItemInfo } = useCart();
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
-  // console.log("ProductCard product:", product);
-  const itemInCart = isInCart(product.id);
-  const itemQuantity = getItemQuantity(product.id);
+  const [quantityLoading, setQuantityLoading] = useState(false);
+
   const productId = product?.id;
+ const cartItem = product ? getCartItemInfo(product.id) : null;
+  const itemInCart = !!cartItem;
+  const itemQuantity = cartItem ? cartItem.quantity : 0;
+
   const imageUrl = imageUrls?.[productId] || product?.image || '/placeholder-image.jpg';
   const isLoading = !!(productId && imageLoading?.[productId]);
 
   useEffect(() => {
-    setIsWishlisted(wishlistItems.some((item) => item.pdid === product.id));
-  }, [wishlistItems, product.id]);
+    setIsWishlisted(wishlistItems.some((item) => item.pdid === productId));
+  }, [wishlistItems, productId]);
 
   const handleWishlist = () => {
     if (!userData?.id) return toast.error("Please login to use wishlist.");
-    dispatch(addToWishlist({ userid: userData.id, pdid: product.id }));
+    dispatch(addToWishlist({ userid: userData.id, pdid: productId }));
     setIsWishlisted(true);
   };
 
@@ -43,7 +45,8 @@ const ProductCard = ({ product }) => {
     setIsAddingToCart(true);
     try {
       await addToCart(product, 1);
-      console.log('Product added to cart:', product);
+      // Optionally toast on success
+      // toast.success("Added to cart");
     } catch (error) {
       console.error('Error adding to cart:', error);
     } finally {
@@ -51,12 +54,36 @@ const ProductCard = ({ product }) => {
     }
   };
 
-   const generateProductLink = () => {
-    const marketParam = market || product.categoryName;
-    const subcategoryParam = product.subcategoryName || product.name;
-    return `/category/${encodeURIComponent(marketParam)}/${encodeURIComponent(subcategoryParam)}/product/${productId}`;
+  const handleUpdateQuantity = async (delta) => {
+    if (!itemInCart || !productId) return;
+    const newQuantity = Math.max(1, itemQuantity + delta);
+    setQuantityLoading(true);
+    try {
+      await updateQuantity(productId, newQuantity);
+    } catch (error) {
+      toast.error("Failed to update quantity");
+    } finally {
+      setQuantityLoading(false);
+    }
   };
 
+  const handleRemoveFromCart = async () => {
+    if (!itemInCart || !productId) return;
+    setQuantityLoading(true);
+    try {
+      await removeFromCart(productId);
+    } catch (error) {
+      toast.error("Failed to remove from cart");
+    } finally {
+      setQuantityLoading(false);
+    }
+  };
+
+  const generateProductLink = () => {
+    const marketParam = market || product.categoryName || "";
+    const subcategoryParam = product.subcategoryName || product.name || "";
+    return `/category/${encodeURIComponent(marketParam)}/${encodeURIComponent(subcategoryParam)}/product/${productId}`;
+  };
 
   return (
     <motion.div
@@ -100,8 +127,6 @@ const ProductCard = ({ product }) => {
         )}
       </Link>
 
-
-
       <p className="font-medium text-gray-800 dark:text-white line-clamp-2 leading-snug mb-1">
         {product.productName}
       </p>
@@ -130,31 +155,49 @@ const ProductCard = ({ product }) => {
         </span>
       </div>
 
-      <motion.button
-        whileHover={{ scale: itemInCart ? 1 : 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={handleAddToCart}
-        disabled={isAddingToCart}
-        className={`absolute bottom-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-200 ${itemInCart
-          ? 'bg-green-500 hover:bg-green-600'
-          : 'bg-orange-500 hover:bg-orange-600'
-          } ${isAddingToCart ? 'opacity-50 cursor-not-allowed' : ''}`}
-      >
-        {isAddingToCart ? (
-          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-        ) : itemInCart ? (
-          <div className="flex flex-col items-center">
-            <Check className="text-white w-4 h-4" />
-            {itemQuantity > 1 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                {itemQuantity}
-              </span>
-            )}
+      {/* Cart Action Area */}
+      <div className="absolute bottom-3 right-3">
+        {itemInCart ? (
+          <div className="flex items-center bg-white dark:bg-gray-800 rounded-full px-2 py-1 shadow border border-gray-200 dark:border-gray-600 gap-1">
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={itemQuantity > 1 ? () => handleUpdateQuantity(-1) : handleRemoveFromCart}
+              disabled={quantityLoading}
+              className="text-gray-600 dark:text-gray-300 hover:text-red-500 disabled:opacity-50 disabled:cursor-not-allowed p-1"
+              title={itemQuantity > 1 ? "Decrease quantity" : "Remove from cart"}
+            >
+              <Minus className="w-4 h-4" />
+            </motion.button>
+            <span className="text-sm font-semibold min-w-[2rem] text-center text-gray-900 dark:text-white">
+              {quantityLoading ? '...' : itemQuantity}
+            </span>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => handleUpdateQuantity(1)}
+              disabled={quantityLoading}
+              className="text-gray-600 dark:text-gray-300 hover:text-green-500 disabled:opacity-50 disabled:cursor-not-allowed p-1"
+              title="Increase quantity"
+            >
+              <Plus className="w-4 h-4" />
+            </motion.button>
           </div>
         ) : (
-          <Plus className="text-white w-4 h-4" />
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={handleAddToCart}
+            disabled={isAddingToCart}
+            className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-200 bg-orange-500 hover:bg-orange-600 ${isAddingToCart ? 'opacity-50 cursor-not-allowed' : ''}`}
+            title="Add to cart"
+          >
+            {isAddingToCart ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Plus className="text-white w-4 h-4" />
+            )}
+          </motion.button>
         )}
-      </motion.button>
+      </div>
     </motion.div>
   );
 };

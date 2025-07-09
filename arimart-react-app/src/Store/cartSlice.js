@@ -17,25 +17,29 @@ export const addToCartByUser = createAsyncThunk(
   'cart/addToCartByUser',
   async (cartData, { rejectWithValue, getState }) => {
     try {
-      console.log('Adding to cart for user:', cartData);
-      await API.post('/cart/add/user', cartData);
+      console.log('Adding to cart:', cartData);
+      
+      // Build request payload
+      const requestData = {
+        userId: cartData.userId,
+        productId: cartData.productId,
+        quantity: cartData.quantity,
+        price: cartData.price
+      };
+
+      // Add groupId only if it exists
+      if (cartData.groupId) {
+        requestData.groupId = cartData.groupId;
+      }
+
+      await API.post('/cart/add/user', requestData);
+      
       const userId = getState().auth.userData?.id;
       if (!userId) throw new Error('User ID not found');
+      
       const updatedCart = await API.get(`/cart/${userId}`);
-      console.log('Updated stored cart:', updatedCart.data);
+      console.log('Updated cart after add:', updatedCart.data);
       return updatedCart.data.items || [];
-    } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
-    }
-  }
-);
-
-export const addToCartByGroup = createAsyncThunk(
-  'cart/addToCartByGroup',
-  async (cartData, { rejectWithValue }) => {
-    try {
-      const response = await API.post('/cart/add/group', cartData);
-      return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
     }
@@ -58,8 +62,10 @@ export const fetchCartByUserId = createAsyncThunk(
 export const fetchCartByUserAndGroup = createAsyncThunk(
   'cart/fetchCartByUserAndGroup',
   async ({ userId, groupId }, { rejectWithValue }) => {
+    console.log(userId, groupId)
     try {
       const response = await API.get(`/cart/usergroup?userid=${userId}&groupid=${groupId}`);
+      console.log(response.data)
       return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
