@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Heart, Star, Plus, Minus, ShoppingCart, LoaderCircle, Trash2, Users, ChevronsUp } from "lucide-react";
@@ -11,138 +11,203 @@ import { useCart } from "../../context/CartContext";
 import { GroupBuySection } from "../../pages/GroupBuy/GroupBuySection";
 import ProductReview from "../Reviews/ProductReview";
 import toast from 'react-hot-toast';
+import { createGroup } from "../../Store/groupBuySlice";
 
 export default function ProductDetails({ cartIconRef }) {
   const { id } = useParams();
   const dispatch = useDispatch();
+  const navigator = useNavigate();
 
   const {
     addToCart,
     updateQuantity,
     removeFromCart,
     isItemInCart,
-    getItemQuantity
+    getItemQuantity,
+    getCartItemInfo
   } = useCart();
 
-  const [qty, setQty] = useState(1);
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [activeTab, setActiveTab] = useState("description");
-  const [userRating, setUserRating] = useState(0);
-  const [dotVisible, setDotVisible] = useState(false);
-  const [dotPos, setDotPos] = useState({ x: 0, y: 0 });
-  const [dotTarget, setDotTarget] = useState({ x: 0, y: 0 });
-  const [isCelebrating, setIsCelebrating] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(0);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
-  const [reviewText, setReviewText] = useState("");
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [optimisticInCart, setOptimisticInCart] = useState(false);
 
-  // Redux state
+  const [activeTab, setActiveTab] = useState("description");
+  const [userRating, setUserRating] = useState(0);
+  const [reviewText, setReviewText] = useState("");
+  const [isCelebrating, setIsCelebrating] = useState(false);
+
   const productDetailState = useSelector((state) => state.productDetail) || {};
   const { product = null, loading = false, error = null } = productDetailState;
   const userData = useSelector((state) => state.auth.userData);
   const wishlistItems = useSelector((state) => state.wishlist.items);
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
-
-  // Safe usage — don't access product.id until after product is confirmed
-  const itemInCart = product ? isItemInCart(product.id) : false;
-  const itemQuantity = product ? getItemQuantity(product.id) : 0;
-
-  const productId = String(id || '');
+  const cartItem = product ? getCartItemInfo(product.id) : null;
+  const itemInCart = !!cartItem;
+  const itemQuantity = cartItem ? cartItem.quantity : 0;
+  // console.log(cartItem, product, itemInCart)
+  // Demo images for left side
+  const demoImages = [
+    "http://localhost:5015/Uploads/" + product?.image || '/placeholder-image.jpg',
+    "https://m.media-amazon.com/images/S/aplus-media-library-service-media/f4258821-4583-407e-9882-650d32b364af.__CR0,0,300,300_PT0_SX300_V1___.jpg",
+    "https://m.media-amazon.com/images/S/aplus-media-library-service-media/94c5ccbd-5093-4b45-a9dd-55fb709761fd.__CR0,0,300,300_PT0_SX300_V1___.jpg"
+  ];
+  const productId = String(id);
   const emptyGroupBuys = useMemo(() => [], []);
-
-  // Get group buys from Redux store
   const groupBuys = useSelector((state) => {
+
     const result = state.products.groupBuys?.[productId] || emptyGroupBuys;
     return result;
   });
+  useEffect(() => {
+    if (productId) {
+      dispatch(fetchGroupBuysByProductId(productId));
+    }
+  }, [dispatch, productId]);
 
-  // Fetch product and group buys
+  useEffect(() => {
+
+    if (groupBuys?.length > 0) {
+    }
+  }, [groupBuys]);
+
+  const allGroupBuys = useSelector((state) => state.products.groupBuys);
+  useEffect(() => {
+  }, [allGroupBuys, productId]);
+
   useEffect(() => {
     if (id) {
       dispatch(fetchProductById(id));
-      dispatch(fetchGroupBuysByProductId(String(id)));
     }
   }, [dispatch, id]);
 
-  // Check if product is in wishlist
+
+
   useEffect(() => {
     if (wishlistItems && product?.id) {
       const isInWishlist = wishlistItems.some((item) =>
         item.pdid === product.id || item.productId === product.id || item.id === product.id
       );
-      setIsFavorite(isInWishlist);
+      setIsWishlisted(isInWishlist);
     }
   }, [wishlistItems, product?.id]);
 
-  // Helper function to check if we should show GroupBuySection
   const shouldShowGroupBuySection = useMemo(() => {
     if (!groupBuys || !Array.isArray(groupBuys) || groupBuys.length === 0) {
       return false;
     }
-    return groupBuys.some(groupBuy => groupBuy?.gid);
+
+    const hasValidGid = groupBuys.some(groupBuy => {
+      return groupBuy?.gid;
+    });
+
+    console.log("🔍 shouldShowGroupBuySection result:", hasValidGid);
+    return hasValidGid;
   }, [groupBuys]);
 
-  // Get valid group buys
   const validGroupBuys = useMemo(() => {
     if (!Array.isArray(groupBuys)) return [];
     return groupBuys.filter((groupBuy) => groupBuy?.gid);
   }, [groupBuys]);
 
-  // Use product data or fallback to demo data
-  const productData = product ? {
-    name: product.productName || product.name || "Beef Mixed Cut Bone",
-    description: product.shortdesc || "Premium quality beef mixed cuts with bone for rich flavor. Perfect for stews, curries, and grilling. Sourced from grass-fed cattle raised in organic farms.",
-    price: product.netprice || product.price || 23.46,
-    originalPrice: product.totalprice || product.originalPrice || 0,
-    weight: product.weight || "50 gm",
-    packageWeight: product.packageWeight || "1000 gm",
-    rating: product.rating || 4.5,
-    ratingCount: product.ratingCount || 128,
-    delivery: product.delivery || "Available on fast delivery",
-    images: product.image ? [
-      `http://localhost:5015/Uploads/${product.image}`,
-      "https://images.unsplash.com/photo-1603360946369-dc9bb6258143?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8YmVlZnxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60",
-      "https://images.unsplash.com/photo-1601050690597-df0568f70950?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8YmVlZnxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60"
-    ] : [
-      "https://images.unsplash.com/photo-1603360946369-dc9bb6258143?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8YmVlZnxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60",
-      "https://images.unsplash.com/photo-1601050690597-df0568f70950?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8YmVlZnxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60",
-      "https://images.unsplash.com/photo-1603360946369-dc9bb6258143?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8YmVlZnxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60"
-    ],
-    reviews: product.reviews || [
-      {
-        id: 1,
-        name: "Rahul Sharma",
-        rating: 5,
-        date: "2 days ago",
-        comment: "Excellent quality meat! Very fresh and tender. Will definitely order again."
-      },
-      {
-        id: 2,
-        name: "Priya Patel",
-        rating: 4,
-        date: "1 week ago",
-        comment: "Good quality but delivery was delayed by a day. Taste was great though."
-      },
-      {
-        id: 3,
-        name: "Amit Singh",
-        rating: 5,
-        date: "2 weeks ago",
-        comment: "Perfect for my biryani recipe. The cuts were exactly as described."
-      }
-    ],
-    longdesc: product.longdesc,
-    pPros: product.pPros,
-    ingredients: product.ingredients
-  } : null;
+  useEffect(() => {
+  }, [shouldShowGroupBuySection, validGroupBuys]);
 
-  // Calculate discount percentage
-  const calculateDiscountPercentage = () => {
-    if (productData?.originalPrice && productData?.price && productData.originalPrice > 0) {
-      return Math.round((1 - productData.price / productData.originalPrice) * 100);
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+    </div>
+  }
+
+  if (error) {
+    return <div className="p-6 text-center text-red-500 dark:text-red-400">Error: {error}</div>;
+  }
+
+  if (!product) {
+    return <div className="p-6 text-center text-gray-500 dark:text-gray-400">Product not found.</div>;
+  }
+
+  const handleAddToCart = async () => {
+    if (!product || !product.id) {
+      toast.error('Product not found');
+      return;
     }
-    return 0;
+setIsCelebrating(true);
+    setIsAddingToCart(true);
+    try {
+      await addToCart(product, 1);
+      setOptimisticInCart(true);
+      toast.success(`${product.productName || product.name} added to cart`);
+    } catch (error) {
+      setOptimisticInCart(false);
+      console.error("Error adding to cart:", error);
+      toast.error("Failed to add to cart");
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
+
+  const showQuantityControls = (itemInCart && itemQuantity > 0) || optimisticInCart;
+
+  const handleIncrease = async () => {
+    const cartItemId = getCartItemInfo(product.id);
+    if (!cartItemId) return toast.error("Cart item not found");
+    try {
+      await updateQuantity(cartItemId, itemQuantity + 1);
+    } catch (error) {
+      toast.error("Failed to update quantity");
+    }
+  };
+
+  const handleDecrease = async () => {
+    const cartItemId = getCartItemInfo(product.id);
+    if (!cartItemId) return toast.error("Cart item not found");
+    if (itemQuantity > 1) {
+      try {
+        await updateQuantity(cartItemId, itemQuantity - 1);
+      } catch (error) {
+        toast.error("Failed to update quantity");
+      }
+    }
+  };
+
+  const handleRemove = async () => {
+    const cartItemId = getCartItemInfo(product.id);
+    if (!cartItemId) return toast.error("Cart item not found");
+    try {
+      await removeFromCart(cartItemId);
+      toast.success("Item removed from cart");
+    } catch (error) {
+      toast.error("Failed to remove item from cart");
+    }
+  };
+
+  const handleCreateGroup = async () => {
+    const userId = userData?.userId || userData?.id;
+    if (!userId || !product?.id || !product?.pdid) {
+      toast.error("Missing user or product information");
+      return;
+    }
+
+    const payload = {
+      pid: product.id,          // product id
+      pdid: product.pdid || product.id, // product detail id fallback
+      userid: userId,           // user id
+      qty: 1,                   // default group qty
+      acctt: true,              // assuming true for active
+      sipid: product.sipid || 0 // optional; adjust if needed
+    };
+
+    try {
+      const resultAction = await dispatch(createGroup(payload)).unwrap();
+      toast.success("Group created successfully!");
+      console.log("Created group:", resultAction);
+      dispatch(fetchGroupBuysByProductId(product.id));
+    } catch (error) {
+      console.error("Group creation failed:", error);
+      toast.error(error?.message || "Failed to create group");
+    }
   };
 
   const handleWishlist = async () => {
@@ -151,12 +216,12 @@ export default function ProductDetails({ cartIconRef }) {
       return;
     }
 
-    if (!product?.id) {
+    if (!product.id) {
       toast.error('Product ID not found');
       return;
     }
 
-    if (isFavorite) {
+    if (isWishlisted) {
       toast.info('Already in wishlist');
       return;
     }
@@ -174,8 +239,8 @@ export default function ProductDetails({ cartIconRef }) {
         pdid: product.id
       })).unwrap();
 
-      setIsFavorite(true);
-      toast.success(`${productData.name} added to wishlist`);
+      setIsWishlisted(true);
+      toast.success(`${product.productName || product.name} added to wishlist`);
     } catch (error) {
       console.error('Error adding to wishlist:', error);
       toast.error('Failed to add to wishlist');
@@ -184,90 +249,11 @@ export default function ProductDetails({ cartIconRef }) {
     }
   };
 
-  const handleAddToCart = async (e) => {
-    if (!product || !product.id) {
-      toast.error('Product not found');
-      return;
-    }
-
-    // Get start position (button center)
-    const startRect = e.currentTarget.getBoundingClientRect();
-    const startX = startRect.left + startRect.width / 2;
-    const startY = startRect.top + startRect.height / 2;
-
-    // Set dot animation
-    setDotPos({ x: startX, y: startY });
-
-    if (cartIconRef?.current) {
-      // Get end position (cart icon center)
-      const endRect = cartIconRef.current.getBoundingClientRect();
-      const endX = endRect.left + endRect.width / 2;
-      const endY = endRect.top + endRect.height / 2;
-      setDotTarget({ x: endX, y: endY });
-      setDotVisible(true);
-      setTimeout(() => setDotVisible(false), 1000);
-    }
-
-    // Trigger celebration animation
-    setIsCelebrating(true);
-    setTimeout(() => setIsCelebrating(false), 1500);
-
-    setIsAddingToCart(true);
-    try {
-      const result = await addToCart(product, qty);
-      console.log(result)
-      toast.success(`${productData.name} added to cart`);
-    } catch (error) {
-      console.error("Error adding to cart:", error);
-      toast.error("Failed to add to cart");
-    } finally {
-      setIsAddingToCart(false);
-    }
-  };
-
-  const handleIncrease = async () => {
-    if (itemInCart && itemQuantity > 0) {
-      try {
-        await updateQuantity(product.id, itemQuantity + 1);
-      } catch (error) {
-        console.error("Error increasing quantity:", error);
-        toast.error("Failed to update quantity");
-      }
-    } else {
-      setQty(qty + 1);
-    }
-  };
-
-  const handleDecrease = async () => {
-    if (itemInCart && itemQuantity > 1) {
-      try {
-        await updateQuantity(product.id, itemQuantity - 1);
-      } catch (error) {
-        console.error("Error decreasing quantity:", error);
-        toast.error("Failed to update quantity");
-      }
-    } else {
-      setQty(Math.max(1, qty - 1));
-    }
-  };
-
-  const handleRemove = async () => {
-    try {
-      await removeFromCart(product.id);
-      toast.success("Item removed from cart");
-    } catch (error) {
-      console.error("Error removing from cart:", error);
-      toast.error("Failed to remove item from cart");
-    }
-  };
-
   const handleSubmitReview = () => {
     if (!userRating || !reviewText.trim()) {
       toast.error('Please provide both rating and review');
       return;
     }
-
-    // Here you would typically dispatch an action to submit the review
     toast.success('Review submitted successfully!');
     setUserRating(0);
     setReviewText('');
@@ -325,13 +311,20 @@ export default function ProductDetails({ cartIconRef }) {
     );
   }
 
-  if (!product || !productData) {
+  if (!product) {
     return (
       <div className="md:hidden block bg-white dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen flex items-center justify-center">
         <div className="text-center text-gray-500 dark:text-gray-400">Product not found.</div>
       </div>
     );
   }
+  const calculateDiscountPercentage = () => {
+    if (product.totalprice && product.netprice && product.totalprice > 0) {
+      return Math.round((1 - product.netprice / product.totalprice) * 100);
+    }
+    return 0;
+  };
+  console.log("product details : ", product)
   const regularPrice = product.netprice || product.price || 0;
   const groupPrice = product.gprice || 0;
   const discountPercentage =
@@ -349,35 +342,38 @@ export default function ProductDetails({ cartIconRef }) {
           <div className="lg:sticky lg:top-20 lg:flex-1">
             <div className="relative h-64 w-full overflow-hidden rounded-xl lg:h-[450px] lg:flex-1">
               <motion.button
-                whileTap={{ scale: 0.9 }}
                 onClick={handleWishlist}
                 disabled={isAddingToWishlist}
-                className={`absolute top-4 right-4 z-10 p-2 rounded-full ${isFavorite
-                  ? "bg-red-100 text-red-500 shadow-lg"
-                  : "bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 shadow-lg"
-                  }`}
+                className="absolute top-3 right-3 z-[5] w-10 h-10 rounded-full bg-white dark:bg-gray-800 shadow-md flex items-center justify-center"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
               >
                 {isAddingToWishlist ? (
                   <motion.div
-                    className="w-5 h-5 border-2 border-gray-500 border-t-transparent rounded-full"
+                    className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full"
                     animate={{ rotate: 360 }}
                     transition={{ repeat: Infinity, duration: 1 }}
                   />
                 ) : (
-                  <Heart size={20} fill={isFavorite ? "#ef4444" : "none"} />
+                  <Heart
+                    className={`w-5 h-5 ${isWishlisted
+                      ? "fill-red-500 stroke-red-500"
+                      : "stroke-gray-500 hover:stroke-red-400"
+                      }`}
+                  />
                 )}
               </motion.button>
 
               <div className="absolute top-4 left-4 z-10 flex items-center gap-1 text-sm bg-white/80 dark:bg-gray-800/80 px-3 py-1 rounded-full shadow-lg">
                 <Star className="text-yellow-400 w-4 h-4 fill-yellow-400" />
-                <span>{productData.rating}</span>
+                <span>{product.rating}</span>
               </div>
 
               <AnimatePresence>
                 <motion.img
-                  key={productData.images[selectedImage]}
-                  src={productData.images[selectedImage]}
-                  alt={productData.name}
+                  key={product.image}
+                  src={"http://localhost:5015/Uploads/" + product.image}
+                  alt={product.name}
                   className="absolute inset-0 w-full h-full object-cover"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -390,7 +386,7 @@ export default function ProductDetails({ cartIconRef }) {
               </AnimatePresence>
 
               <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
-                {productData.images.map((_, i) => (
+                {product.images?.map((_, i) => (
                   <motion.div
                     key={i}
                     className={`w-2 h-2 rounded-full cursor-pointer ${i === selectedImage ? "bg-white" : "bg-white/50"}`}
@@ -406,14 +402,14 @@ export default function ProductDetails({ cartIconRef }) {
           <div className="lg:flex-1 mt-4 lg:mt-0">
             <div className="p-2 lg:p-0">
               <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
-                <h2 className="text-2xl font-bold">{productData.name}</h2>
-                <p className="text-sm text-gray-500">{productData.weight} (Pack of {productData.packageWeight})</p>
+                <h2 className="text-2xl font-bold">{product.name}</h2>
+                <p className="text-sm text-gray-500">{product.weight} (Pack of {product.wweight})</p>
 
                 <div className="flex items-center justify-between my-3">
                   <div className="flex items-end">
-                    <span className="text-3xl font-bold text-green-600">₹{productData.price}</span>
-                    {productData.originalPrice > 0 && productData.originalPrice !== productData.price && (
-                      <span className="text-sm text-gray-500 ml-1 line-through">₹{productData.originalPrice}</span>
+                    <span className="text-3xl font-bold text-green-600">₹{product.price}</span>
+                    {product.originalPrice > 0 && product.originalPrice !== product.price && (
+                      <span className="text-sm text-gray-500 ml-1 line-through">₹{product.originalPrice}</span>
                     )}
                     {calculateDiscountPercentage() > 0 && (
                       <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full ml-2">
@@ -421,12 +417,12 @@ export default function ProductDetails({ cartIconRef }) {
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-purple-600 bg-purple-100 px-2 py-1 rounded-full">{productData.delivery}</p>
+                  <p className="text-sm text-purple-600 bg-purple-100 px-2 py-1 rounded-full">{product.delivery}</p>
                 </div>
 
                 {/* Category breadcrumb */}
                 {product.categoryName && (
-                  <div className="flex items-center gap-1 text-sm text-gray-500 mb-3">
+                  <div class="flex items-center gap-1 text-sm text-gray-500 mb-3 overflow-x-auto whitespace-nowrap scrollbar-hide">
                     <span>{product.categoryName}</span>
                     {product.subcategoryName && (
                       <>
@@ -497,24 +493,24 @@ export default function ProductDetails({ cartIconRef }) {
                 <AnimatePresence mode="wait">
                   {activeTab === "description" && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-                      <p className="text-gray-700 dark:text-gray-300 text-sm mb-4">{productData.description}</p>
+                      <p className="text-gray-700 dark:text-gray-300 text-sm mb-4">{product.description}</p>
 
                       {/* Health Benefits */}
-                      {productData.pPros && (
+                      {product.pPros && (
                         <div className="mb-4">
                           <h3 className="font-medium mb-2">Health Benefits</h3>
                           <div
                             className="text-sm text-gray-700 dark:text-gray-300"
-                            dangerouslySetInnerHTML={{ __html: productData.pPros }}
+                            dangerouslySetInnerHTML={{ __html: product.pPros }}
                           />
                         </div>
                       )}
 
                       {/* Ingredients */}
-                      {productData.ingredients && (
+                      {product.ingredients && (
                         <div className="mb-4">
                           <h3 className="font-medium mb-2">Ingredients</h3>
-                          <p className="text-sm text-gray-700 dark:text-gray-300">{productData.ingredients}</p>
+                          <p className="text-sm text-gray-700 dark:text-gray-300">{product.ingredients}</p>
                         </div>
                       )}
 
@@ -526,10 +522,10 @@ export default function ProductDetails({ cartIconRef }) {
                       </div>
 
                       {/* Long description */}
-                      {productData.longdesc && (
+                      {product.longdesc && (
                         <div
                           className="mt-4 text-xs text-gray-500 dark:text-gray-400"
-                          dangerouslySetInnerHTML={{ __html: productData.longdesc }}
+                          dangerouslySetInnerHTML={{ __html: product.longdesc }}
                         />
                       )}
                     </motion.div>
@@ -537,68 +533,13 @@ export default function ProductDetails({ cartIconRef }) {
 
                   {activeTab === "reviews" && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="space-y-4">
-                      {/* Review form */}
-                      <div className="mt-6">
-                        <h3 className="font-medium mb-3">Write a Review</h3>
-                        <div className="mb-4">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Your Rating</label>
-                          <div className="flex gap-1">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <Star
-                                key={star}
-                                className={`w-6 h-6 cursor-pointer ${star <= userRating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`}
-                                onClick={() => setUserRating(star)}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                        <div className="mb-4">
-                          <label htmlFor="review-text" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Your Review</label>
-                          <textarea
-                            id="review-text"
-                            rows={4}
-                            value={reviewText}
-                            onChange={(e) => setReviewText(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-800 dark:text-white"
-                            placeholder="Share details about your experience with this product"
-                          />
-                        </div>
-                        <button
-                          onClick={handleSubmitReview}
-                          className="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-4 rounded-md transition"
-                        >
-                          Submit Review
-                        </button>
-                      </div>
-
-                      <h3 className="font-medium mb-2">Customer Reviews ({productData.reviews.length})</h3>
-                      <div className="space-y-4">
-                        {productData.reviews.map((review) => (
-                          <div key={review.id} className="border-b border-gray-200 dark:border-gray-700 pb-4">
-                            <div className="flex justify-between items-start mb-1">
-                              <div>
-                                <p className="font-medium">{review.name}</p>
-                                <div className="flex items-center gap-1">
-                                  {[...Array(5)].map((_, i) => (
-                                    <Star
-                                      key={i}
-                                      className={`w-4 h-4 ${i < review.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`}
-                                    />
-                                  ))}
-                                </div>
-                              </div>
-                              <span className="text-xs text-gray-500">{review.date}</span>
-                            </div>
-                            <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{review.comment}</p>
-                          </div>
-                        ))}
-                      </div>
+                      <ProductReview/>
                     </motion.div>
                   )}
 
                   {activeTab === "more you like" && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-                      <ProductCard customGridClass={"grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3 p-1"} />
+                      {/* <ProductCard customGridClass={"grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3 p-1"} /> */}
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -627,15 +568,17 @@ export default function ProductDetails({ cartIconRef }) {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
                   transition={{ duration: 0.3 }}
-                  className="flex items-center bg-gradient-to-r from-orange-500 to-red-500 rounded-full px-6 py-3 gap-4 shadow-lg"
+                  className="flex items-center bg-gradient-to-r from-orange-500 to-red-500 rounded-full px-2 py-2 gap-4 shadow-lg"
                 >
                   <motion.button
                     whileTap={{ scale: 0.8 }}
                     whileHover={{ scale: 1.1 }}
-                    onClick={handleDecrease}
-                    className="text-white bg-white/20 rounded-full p-2 hover:bg-white/30 transition-colors"
+                     onClick={itemQuantity > 1 ? handleDecrease : handleRemove}
+                    className="p-2 rounded-full bg-white bg-opacity-80 hover:bg-opacity-100 transition disabled:opacity-50"
+                    disabled={isAddingToCart}
+                    title={itemQuantity > 1 ? "Decrease quantity" : "Remove from cart"}
                   >
-                    <Minus size={18} />
+                    {itemQuantity > 1 ? <Minus size={18} /> : <Trash2 size={18} />}
                   </motion.button>
 
                   <motion.div
@@ -692,9 +635,7 @@ export default function ProductDetails({ cartIconRef }) {
             <motion.button
               whileTap={{ scale: 0.95 }}
               whileHover={{ scale: 1.05 }}
-              onClick={() => {
-                toast.success('Group Buy feature coming soon!');
-              }}
+              onClick={handleCreateGroup}
               className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-2 px-5 rounded-full font-semibold shadow-lg flex flex-col items-center justify-center gap-0 transition-all duration-200"
             >
               <div className="flex items-center gap-1.5">
@@ -706,7 +647,7 @@ export default function ProductDetails({ cartIconRef }) {
           </div>
 
           {/* Cart Success Indicator */}
-          {itemInCart && (
+          {/* {itemInCart && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -717,10 +658,10 @@ export default function ProductDetails({ cartIconRef }) {
                 <span className="font-semibold text-sm">Added to Cart</span>
               </div>
               <p className="text-green-600 dark:text-green-400 text-xs mt-1">
-                Quantity: {itemQuantity} • Total: ₹{(productData.price * itemQuantity).toFixed(2)}
+                Quantity: {itemQuantity} • Total: ₹{(product.price * itemQuantity).toFixed(2)}
               </p>
             </motion.div>
-          )}
+          )} */}
 
           {/* Celebration Animation */}
           <AnimatePresence>

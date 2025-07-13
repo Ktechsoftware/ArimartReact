@@ -7,8 +7,10 @@ import {
     useRatingFilters,
     useRatingForm
 } from '../../Store/ratingSlice';
+import { data } from 'react-router-dom';
 
 const ReviewsComponent = ({ pdid }) => {
+    console.log(pdid)
     const dispatch = useDispatch();
     const userData = useSelector((state) => state.auth.userData);
 
@@ -42,6 +44,7 @@ const ReviewsComponent = ({ pdid }) => {
 
     // API queries
     const { data: analytics, isLoading: analyticsLoading } = useGetRatingAnalyticsQuery(pdid);
+    console.log(data.analytics)
     const { data: detailedRatings, isLoading: ratingsLoading } = useGetDetailedRatingsQuery({
         pdid,
         page: currentPage,

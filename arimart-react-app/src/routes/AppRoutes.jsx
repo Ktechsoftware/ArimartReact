@@ -53,7 +53,7 @@ const hideBottomNavRoutes = [
   '/wishlist', '/about', '/contactus', '/notification', '/promocodes','/category'
 ];
 
-const hideBottomNavRoutesWithPrefix = ['/product', '/orders', '/topstore','/category'];
+const hideBottomNavRoutesWithPrefix = ['/product', '/topstore','/category'];
 export default function AppRoutes() {
   const location = useLocation();
   const navigate = useNavigate();

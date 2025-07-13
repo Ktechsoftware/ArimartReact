@@ -33,7 +33,7 @@ export default function ProductContentDetail() {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
   const [optimisticInCart, setOptimisticInCart] = useState(false);
-
+  const [creatingGroup, setCreatingGroup] = useState(false);
 
   const productDetailState = useSelector((state) => state.productDetail) || {};
   const { product = null, loading = false, error = null } = productDetailState;
@@ -42,8 +42,8 @@ export default function ProductContentDetail() {
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
   const cartItem = product ? getCartItemInfo(product.id) : null;
   const itemInCart = !!cartItem;
-  const itemQuantity = cartItem ? cartItem.quantity : 0;
-  console.log(cartItem,product, itemInCart)
+  const itemQuantity = cartItem ? cartItem.quantity : 1;
+  console.log("cart quantity : ", itemQuantity)
   // Demo images for left side
   const demoImages = [
     "http://localhost:5015/Uploads/" + product?.image || '/placeholder-image.jpg',
@@ -148,7 +148,7 @@ export default function ProductContentDetail() {
     try {
       await addToCart(product, 1);
       setOptimisticInCart(true);
-      toast.success(`${product.productName || product.name} added to cart`);
+      // toast.success(`${product.productName || product.name} added to cart`);
     } catch (error) {
       setOptimisticInCart(false);
       console.error("Error adding to cart:", error);
@@ -183,7 +183,8 @@ export default function ProductContentDetail() {
   };
 
   const handleRemove = async () => {
-    const cartItemId = getCartItemInfo(product.id); // or pass groupId if needed
+    const cartItemId = getCartItemInfo(product.id);
+    console.log(cartItemId)
     if (!cartItemId) return toast.error("Cart item not found");
     try {
       await removeFromCart(cartItemId);
@@ -201,14 +202,15 @@ export default function ProductContentDetail() {
     }
 
     const payload = {
-      pid: product.id,          // product id
-      pdid: product.pdid || product.id, // product detail id fallback
-      userid: userId,           // user id
-      qty: 1,                   // default group qty
-      acctt: true,              // assuming true for active
-      sipid: product.sipid || 0 // optional; adjust if needed
+      pid: product.id,
+      pdid: product.pdid || product.id,
+      userid: userId,
+      qty: 1,
+      acctt: true,
+      sipid: product.sipid || 0
     };
 
+    setCreatingGroup(true);
     try {
       const resultAction = await dispatch(createGroup(payload)).unwrap();
       toast.success("Group created successfully!");
@@ -217,8 +219,11 @@ export default function ProductContentDetail() {
     } catch (error) {
       console.error("Group creation failed:", error);
       toast.error(error?.message || "Failed to create group");
+    } finally {
+      setCreatingGroup(false);
     }
   };
+
 
   const handleWishlist = async () => {
     if (!isAuthenticated) {
@@ -533,14 +538,36 @@ export default function ProductContentDetail() {
                     whileTap={{ scale: 0.95 }}
                     whileHover={{ scale: 1.05 }}
                     onClick={handleCreateGroup}
-                    className="w-full sm:w-auto bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold px-6 py-2 rounded-full shadow-lg flex flex-col items-center justify-center gap-0 transition-all duration-200"
+                    disabled={creatingGroup}
+                    className={`w-full sm:w-auto font-semibold px-6 py-2 rounded-full shadow-lg flex flex-col items-center justify-center gap-0 transition-all duration-200
+    ${creatingGroup
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white'}
+  `}
                   >
                     <div className="flex items-center gap-2">
-                      <Users size={20} />
-                      <span>Save {discountPercentage}%</span>
+                      {creatingGroup ? (
+                        <svg className="w-4 h-4 animate-spin text-white" viewBox="0 0 24 24" fill="none">
+                          <circle
+                            className="opacity-25"
+                            cx="12" cy="12" r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16 8 8 0 01-8-8z"
+                          />
+                        </svg>
+                      ) : (
+                        <Users size={20} />
+                      )}
+                      <span>{creatingGroup ? 'Creating...' : `Save ${discountPercentage}%`}</span>
                     </div>
-                    <span className="text-[10px] leading-none">on group buy</span>
+                    {!creatingGroup && <span className="text-[10px] leading-none">on group buy</span>}
                   </motion.button>
+
                 </>
               )}
             </AnimatePresence>

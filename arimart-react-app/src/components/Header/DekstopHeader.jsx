@@ -153,7 +153,7 @@ export default function DesktopHeader() {
                 onHoverEnd={() => setIsHoveringCart(false)}
               >
                 <GroupIcon />
-                <span>🔥 Join Group Buy Deals</span>
+                <span>🔥 Running Group Buy Deals</span>
               </motion.button>
             </Link>
             {!isAuthenticated ? (

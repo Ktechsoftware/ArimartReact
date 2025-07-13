@@ -45,8 +45,7 @@ const ProductCard = ({ product }) => {
     setIsAddingToCart(true);
     try {
       await addToCart(product, 1);
-      // Optionally toast on success
-      // toast.success("Added to cart");
+      console.log(product)
     } catch (error) {
       console.error('Error adding to cart:', error);
     } finally {

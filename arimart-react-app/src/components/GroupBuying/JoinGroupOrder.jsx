@@ -17,7 +17,9 @@ import {
     Calendar,
     LogOut,
     UserPlus,
-    Info
+    Info, ShoppingCart,
+    Minus,
+    Plus
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
@@ -39,6 +41,7 @@ const JoinGroupOrder = () => {
     const [copiedCode, setCopiedCode] = useState(false);
     const [copiedUrl, setCopiedUrl] = useState(false);
     const [currentUserId, setCurrentUserId] = useState(userData?.id);
+    const [quantity, setQuantity] = useState(1); // Added quantity state
 
     const {
         groupsById,
@@ -151,6 +154,36 @@ const JoinGroupOrder = () => {
         if (window.confirm("Are you sure you want to leave this group buy?")) {
             dispatch(leaveGroup({ groupId: groupid, userId: currentUserId }));
         }
+    };
+
+    // Handle quantity change
+    const handleQuantityChange = (newQuantity) => {
+        if (newQuantity >= 1) {
+            setQuantity(newQuantity);
+        }
+    };
+console.log(group)
+    // Handle add to cart
+    const handleAddToCart = () => {
+        if (quantity < 1) {
+            toast.error("Please select a valid quantity");
+            return;
+        }
+
+        setCurrentGroup(groupid);
+        const cartItem = {
+            pdid: group.pdid,
+            productName: group.productName,
+            name: group.productName,
+            netprice: group.gprice,
+            price: group.gprice,
+            image: group.image,
+            categoryName: group.categoryName || '',
+            subcategoryName: group.subcategoryName || '',
+        };
+
+        addToCart(cartItem, quantity, groupid);
+        // toast.success(`${quantity} item(s) added to cart!`);
     };
 
     // Handle join success
@@ -301,65 +334,68 @@ const JoinGroupOrder = () => {
                 </div>
             );
         } else if (isUserInCurrentGroup) {
-            {console.log(group)}
             return (
-                <div className="pt-4 space-y-3">
-                    {/* Add to Cart Button */}
-                    <motion.button
-                        onClick={() => {
-                            setCurrentGroup(groupid);
+                <div className="flex flex-col sm:flex-row items-stretch gap-3 pt-4">
+                    {/* Quantity Controller + Add to Cart */}
+                    <div className="flex items-stretch flex-1 gap-2">
+                        {/* Quantity Controller - Stacked on small screens */}
+                        <div className="flex items-center border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                            <button
+                                className="px-3 py-2 sm:px-2.5 sm:py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={() => handleQuantityChange(quantity - 1)}
+                                disabled={quantity <= 1}
+                            >
+                                <Minus className="w-4 h-4" />
+                            </button>
+                            <span className="px-4 py-2 sm:px-3 sm:py-1.5 text-sm font-medium text-gray-900 dark:text-white min-w-[2.5rem] text-center border-x border-gray-200 dark:border-gray-700">
+                                {quantity}
+                            </span>
+                            <button
+                                className="px-3 py-2 sm:px-2.5 sm:py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                                onClick={() => handleQuantityChange(quantity + 1)}
+                            >
+                                <Plus className="w-4 h-4" />
+                            </button>
+                        </div>
 
-                            const cartItem = {
-                                pdid: group.productId,
-                                productName: group.productName,
-                                name: group.productName,
-                                netprice: group.gprice,
-                                price: group.gprice,
-                                image: group.image,
-                                categoryName: group.categoryName || '',
-                                subcategoryName: group.subcategoryName || '',
-                            };
+                        {/* Add to Cart Button - Full width on mobile */}
+                        <motion.button
+                            onClick={handleAddToCart}
+                            className="flex-1 py-3 sm:py-2.5 rounded-lg font-medium shadow-sm transition-all duration-200 
+                     bg-gradient-to-r from-purple-600 to-blue-600 text-white 
+                     hover:from-purple-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2
+                     disabled:opacity-50 disabled:cursor-not-allowed"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                        >
+                            <div className="flex items-center justify-center gap-1.5">
+                                <ShoppingBag className="w-4 h-4" />
+                                <span className="whitespace-nowrap">Add to Group Cart</span>
+                            </div>
+                        </motion.button>
+                    </div>
 
-                            // Add to cart with the group context
-                            addToCart(
-                                cartItem,
-                                1,
-                                groupid
-                            );
-                        }}
-                        disabled={currentMembers < requiredMembers}
-                        className={`w-full py-3 rounded-lg font-semibold shadow-md transition-all duration-200
-    ${currentMembers >= requiredMembers
-                                ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700'
-                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            }`}
-                        whileHover={currentMembers >= requiredMembers ? { scale: 1.02 } : {}}
-                        whileTap={currentMembers >= requiredMembers ? { scale: 0.98 } : {}}
-                    >
-                        <ShoppingBag className="w-5 h-5 inline mr-2" />
-                        {currentMembers >= requiredMembers
-                            ? 'Add to Group Cart'
-                            : 'Waiting for more members'}
-                    </motion.button>
-
-                    {/* Leave Group Button */}
+                    {/* Leave Group Button - Full width on mobile */}
                     <motion.button
                         onClick={handleLeaveGroup}
                         disabled={isLeaving}
-                        className="w-full py-3 border-2 border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2"
+                        className="py-3 sm:py-2.5 px-4 border border-red-500/50 text-red-600 dark:text-red-400 
+                 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg font-medium 
+                 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2
+                 disabled:opacity-50 disabled:cursor-not-allowed"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                     >
                         {isLeaving ? (
-                            <>
-                                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-red-500"></div>
-                                Leaving...
-                            </>
+                            <div className="flex items-center justify-center gap-1.5">
+                                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-red-500"></div>
+                                <span>Leaving...</span>
+                            </div>
                         ) : (
-                            <>
-                                <LogOut className="w-5 h-5" />
-                                Leave Group
-                            </>
+                            <div className="flex items-center justify-center gap-1.5">
+                                <LogOut className="w-4 h-4" />
+                                <span>Leave Group</span>
+                            </div>
                         )}
                     </motion.button>
                 </div>
@@ -371,10 +407,10 @@ const JoinGroupOrder = () => {
                         onClick={handleJoinGroup}
                         disabled={isJoining || !timeLeft}
                         className={`w-full py-3 rounded-lg font-semibold shadow-md transition-all duration-200 flex items-center justify-center gap-2
-                        ${!timeLeft
+                                ${!timeLeft
                                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                 : 'bg-gradient-to-r from-green-600 to-blue-600 text-white hover:from-green-700 hover:to-blue-700'
-                            }`}
+                            } disabled:opacity-50 disabled:cursor-not-allowed`}
                         whileHover={timeLeft ? { scale: 1.02 } : {}}
                         whileTap={timeLeft ? { scale: 0.98 } : {}}
                     >
@@ -395,55 +431,71 @@ const JoinGroupOrder = () => {
         }
     };
 
-
     return (
         <div className="max-w-6xl mx-auto px-4 py-8">
-            <div className="md:max-w-96 max-w-72 mx-auto bg-white dark:bg-gray-900 rounded-3xl shadow-lg sticky top-28 z-[5px] mb-6 border border-gray-200 dark:border-gray-700">
-                <div className="grid items-center grid-cols-12 gap-4 p-1">
-                    <div className="col-span-2">
-                        <div className="w-full aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
-                            <img
-                                src={group.image ? `http://localhost:5015/uploads/${group.image}` : '/placeholder-product.jpg'}
-                                alt={group.productName}
-                                className="w-full h-full object-cover"
-                            />
-                        </div>
+            <div className="mx-auto bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden mb-6 border border-gray-200 dark:border-gray-700 transition-all duration-200 hover:shadow-xl max-w-md md:max-w-full">
+                {/* Header with group code */}
+                <div className="px-4 pt-3 pb-2 border-b border-gray-100 dark:border-gray-800 flex items-start sm:items-center justify-between gap-2 sm:gap-4">
+                    <div className="flex items-center">
+                        <Users className="w-4 h-4 mr-2 text-gray-500 dark:text-gray-400" />
+                        <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Group Buy</span>
                     </div>
-                    <div className="col-span-8 flex flex-col justify-center">
-                        <div className="flex items-baseline gap-3">
-                            <h1 className="text-md font-bold text-gray-900 dark:text-white truncate">
-                                {group.productName}
-                            </h1>
-                            <span className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap">
-                                {discountPercentage}% OFF
-                            </span>
+                    <div className="flex items-center">
+                        <span className="text-xs font-medium mr-2 text-gray-500 dark:text-gray-400">Code:</span>
+                        <span className="bg-gradient-to-r from-pink-500 to-rose-500 text-white px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide whitespace-nowrap">
+                            {grouprefercode}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Product info */}
+                <div className="p-4">
+                    <div className="flex flex-col md:flex-row gap-4">
+                        {/* Product Image */}
+                        <div className="flex-shrink-0 mx-auto xs:mx-0">
+                            <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+                                <img
+                                    src={group.image ? `http://localhost:5015/uploads/${group.image}` : '/placeholder-product.jpg'}
+                                    alt={group.productName}
+                                    className="w-full h-full object-cover"
+                                    loading="lazy"
+                                />
+                            </div>
                         </div>
 
-                        <div className="flex items-center gap-2 mt-1">
-                            <span className="text-sm line-through text-gray-500 dark:text-gray-400">
-                                ₹{regularPrice}
-                            </span>
-                            <span className="text-md font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-600">
-                                ₹{groupPrice}
-                            </span>
-                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-1 flex items-center">
-                                <ShoppingBag className="w-3 h-3 mr-1" />
-                                Group Buy
-                            </span>
-                        </div>
-                    </div>
+                        {/* Product Details */}
+                        <div className="flex-grow">
+                            <div className="flex flex-col xs:flex-row xs:items-start justify-between gap-2">
+                                <h3 className="font-bold text-gray-900 dark:text-white line-clamp-2 text-base xs:text-lg">
+                                    {group.productName}
+                                </h3>
+                                <span className={`self-start xs:self-auto px-2 py-1 rounded-full text-xs font-bold ${timeLeft ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400' : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'}`}>
+                                    {timeLeft ? 'ACTIVE' : 'ENDED'}
+                                </span>
+                            </div>
 
-                    {/* Status Indicator */}
-                    <div className="col-span-2 flex items-center justify-end">
-                        <div className={`px-3 py-1 rounded-full text-xs font-semibold ${timeLeft ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-                            : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
-                            }`}>
-                            {timeLeft ? 'Active' : 'Ended'}
+                            {/* Price Information */}
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                                <span className="text-sm xs:text-base line-through text-gray-500 dark:text-gray-400">
+                                    ₹{regularPrice}
+                                </span>
+                                <span className="text-lg xs:text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-600">
+                                    ₹{groupPrice}
+                                </span>
+                                <span className="bg-amber-100 dark:bg-amber-900/20 text-amber-800 dark:text-amber-400 px-2 py-0.5 rounded-full text-xs xs:text-sm font-semibold whitespace-nowrap">
+                                    {discountPercentage}% OFF
+                                </span>
+                            </div>
+
+                            {/* Action Buttons - Will take full width on mobile */}
+                            <div className="mt-4">
+                                {renderActionButtons()}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-
+            {/* Rest of the component remains the same... */}
             {/* Group Buy Details */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Left Column - Group Info */}
@@ -467,7 +519,7 @@ const JoinGroupOrder = () => {
 
                             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
                                 <div
-                                    className="bg-gradient-to-r from-purple-500 to-blue-500 h-3 rounded-full"
+                                    className="bg-gradient-to-r from-purple-500 to-blue-500 h-3 rounded-full transition-all duration-300"
                                     style={{ width: `${progressPercentage}%` }}
                                 ></div>
                             </div>
@@ -657,7 +709,10 @@ const JoinGroupOrder = () => {
                 </div>
 
                 {/* Right Column - Rules & Actions */}
-                <div className="space-y-6">
+                <div className="mb-20 md:mb-0 space-y-6">
+
+                    {/* Mobile padding bottom to prevent content from being hidden behind sticky buttons */}
+                    <div className="md:hidden md:h-32"></div>
                     {/* Group Rules */}
                     <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6">
                         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -762,13 +817,6 @@ const JoinGroupOrder = () => {
                         </div>
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6">
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                            Quick Actions
-                        </h2>
-                        {renderActionButtons()}
-                    </div>
 
                     {/* Warning for expired groups */}
                     {!timeLeft && (

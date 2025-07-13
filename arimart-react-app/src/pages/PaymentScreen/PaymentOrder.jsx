@@ -6,7 +6,7 @@ import Orderpayment from '../../components/Payment/Orderpayment'
 function PaymentOrder() {
   return (
     <div className=''>
-        <Header title="Track Your Order" setbaricon={false} setcarticon={false} />
+        <Header title="Payment" setbaricon={false} setcarticon={false} />
         <Orderpayment/>
     </div>
   )

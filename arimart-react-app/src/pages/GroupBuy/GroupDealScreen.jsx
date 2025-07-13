@@ -1,6 +1,6 @@
 import React from 'react'
-import { GroupBuyPage } from '../../components/GroupBuying/GroupBuyPage'
 import Header from '../../components/Header/Header'
+import { GroupBuyPage } from '../../components/GroupBuying/GroupBuyPage'
 
 const GroupDealScreen = () => {
   return (

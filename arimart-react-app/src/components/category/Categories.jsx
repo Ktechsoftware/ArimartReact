@@ -5,59 +5,40 @@ import { Link, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCategories, fetchSubcategories, fetchChildSubcategories } from '../../Store/categoriesSlice'
 
-const categories = [
-  {
-    label: "Fresh Vegetables",
-    image: "https://w7.pngwing.com/pngs/596/791/png-transparent-vegetables-on-beige-wicker-basket-x-o-produce-inc-organic-food-vegetable-cooking-fresh-fruits-and-vegetables-natural-foods-leaf-vegetable-food-thumbnail.png", // Transparent vegetables
-    color: "bg-gradient-to-br from-green-50 to-green-200 dark:from-green-900 dark:to-green-600",
-  },
-  {
-    label: "Fresh Fruits",
-    image: "https://www.pngall.com/wp-content/uploads/5/Fruits-PNG-File.png", // Transparent fruits
-    color: "bg-gradient-to-br from-red-50 to-red-200 dark:from-red-900 dark:to-red-600",
-  },
-  {
-    label: "Dairy & Eggs",
-    image: "https://www.pngmart.com/files/5/Eggs-PNG-Photos.png", // Transparent eggs & dairy
-    color: "bg-gradient-to-br from-yellow-50 to-yellow-200 dark:from-yellow-900 dark:to-yellow-600",
-  },
-  {
-    label: "Rice & Dals",
-    image: "https://www.pngall.com/wp-content/uploads/2016/05/Rice-Free-Download-PNG.png", // Transparent rice
-    color: "bg-gradient-to-br from-indigo-50 to-indigo-200 dark:from-indigo-900 dark:to-indigo-600",
-  },
-  {
-    label: "Masalas",
-    image: "https://www.pngmart.com/files/22/Spices-PNG-Pic.png", // Transparent spice mix
-    color: "bg-gradient-to-br from-orange-50 to-orange-200 dark:from-orange-900 dark:to-orange-600",
-  },
-  {
-    label: "Oils & Ghee",
-    image: "https://www.pngmart.com/files/3/Oil-PNG-HD.png", // Transparent oil bottle
-    color: "bg-gradient-to-br from-amber-50 to-amber-200 dark:from-amber-900 dark:to-amber-600",
-  },
-  {
-    label: "Snacks",
-    image: "https://www.pngmart.com/files/3/Chips-PNG-File.png", // Transparent chips/snacks
-    color: "bg-gradient-to-br from-purple-50 to-purple-200 dark:from-purple-900 dark:to-purple-600",
-  },
-  {
-    label: "Beverages",
-    image: "https://www.pngmart.com/files/22/Cold-Drink-PNG-Photos.png", // Transparent soda bottle
-    color: "bg-gradient-to-br from-blue-50 to-blue-200 dark:from-blue-900 dark:to-blue-600",
-  },
-];
-
-
 export default function Categories() {
   const { market, subcategory, id } = useParams();
   const scrollRef = useRef(null);
   const [loading, setLoading] = useState(true);
+  
+  // Random grocery images fallback
+  const groceryImages = [
+    "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=150&h=150&fit=crop&crop=center", // Bananas
+    "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=150&h=150&fit=crop&crop=center", // Apples
+    "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=150&h=150&fit=crop&crop=center", // Tomatoes
+    "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=150&h=150&fit=crop&crop=center", // Carrots
+    "https://images.unsplash.com/photo-1552318965-6e6be7484ada?w=150&h=150&fit=crop&crop=center", // Broccoli
+    "https://images.unsplash.com/photo-1563115298-e9585e7943d4?w=150&h=150&fit=crop&crop=center", // Oranges
+    "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=150&h=150&fit=crop&crop=center", // Potatoes
+    "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=150&h=150&fit=crop&crop=center", // Mixed fruits
+    "https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=150&h=150&fit=crop&crop=center", // Cooking ingredients
+    "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=150&h=150&fit=crop&crop=center", // Milk/dairy
+    "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=150&h=150&fit=crop&crop=center", // Bread
+    "https://images.unsplash.com/photo-1544716503-6d8f4682d6db?w=150&h=150&fit=crop&crop=center", // Rice/grains
+    "https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=150&h=150&fit=crop&crop=center", // Leafy greens
+    "https://images.unsplash.com/photo-1564393047592-a4b1ce7e2f2f?w=150&h=150&fit=crop&crop=center", // Ghee/oil
+    "https://images.unsplash.com/photo-1559181567-c3190ca9959b?w=150&h=150&fit=crop&crop=center", // Spices
+  ];
+
+  const getRandomGroceryImage = () => {
+    return groceryImages[Math.floor(Math.random() * groceryImages.length)];
+  };
+
   useEffect(() => {
     setTimeout(() => {
       setLoading(false);
     }, 4000);
   }, []);
+  
   const dispatch = useDispatch();
   const { categories, subcategories, childSubcategories } = useSelector((state) => state.category);
 
@@ -94,7 +75,12 @@ export default function Categories() {
     dispatch(fetchChildSubcategories(subcategory.id));
   };
 
+  const handleImageError = (e) => {
+    e.target.src = getRandomGroceryImage();
+  };
 
+  console.log(categories, subcategories)
+  
   return (
     <div className="px-4 relative">
       <h2 className="font-bold text-xl md:text-3xl mb-6 text-gray-800 dark:text-gray-200">
@@ -173,14 +159,15 @@ export default function Categories() {
                   className="w-16 h-16 md:w-20 md:h-20 mb-4 rounded-full bg-white dark:bg-gray-900 flex items-center justify-center overflow-hidden"
                 >
                   <img
-                    src={subcat.image || "https://via.placeholder.com/80"} // fallback image
-                    alt={subcat.name}
+                    src={subcat.image || getRandomGroceryImage()}
+                    alt={subcat.subcategoryName}
                     className="w-full h-full object-contain p-2"
                     loading="lazy"
+                    onError={handleImageError}
                   />
                 </motion.div>
                 <span className="text-xs md:text-sm font-medium text-gray-700 dark:text-gray-200 text-center">
-                  {subcat.name}
+                  {subcat.subcategoryName}
                 </span>
               </motion.div>
             ))}
@@ -189,6 +176,5 @@ export default function Categories() {
         </div>
       )}
     </div>
-
   );
 }

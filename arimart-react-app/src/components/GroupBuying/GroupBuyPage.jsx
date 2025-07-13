@@ -1,54 +1,65 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import HeroBanner from './HeroBanner';
 import TabBar from './TabBar';
-import DealsGrid from './DealsGrid';
-import { fetchAllGroups, fetchGroupMembers } from '../../Store/groupBuySlice';
+import { fetchCurrentRunningGroups } from '../../Store/groupBuySlice';
+import { fetchProductById } from '../../Store/productsSlice';
+import { GroupBuySection } from '../../pages/GroupBuy/GroupBuySection'
 
 export const GroupBuyPage = () => {
- const dispatch = useDispatch();
-const { allGroups, isLoading, error, groupMembers } = useSelector((state) => state.group);
+  const dispatch = useDispatch();
+  const [activeTab, setActiveTab] = useState('all');
 
-const [activeTab, setActiveTab] = useState('all');
-const [joinedDeals, setJoinedDeals] = useState([]);
+  // --- Redux selectors ---
+  const {
+    currentRunningGroups = [],
+    isLoading: groupsLoading = false,
+    error: groupsError = null,
+  } = useSelector((state) => state.group);
 
-useEffect(() => {
-  dispatch(fetchAllGroups());
-}, [dispatch]);
+  const products = useSelector((state) => state.products.items || []);
+  const productLoading = useSelector((state) => state.products.loading);
 
-// Fetch members when allGroups is loaded
-useEffect(() => {
-  if (allGroups.length > 0) {
-    allGroups.forEach(group => {
-      if (group.Gid) { // Only fetch if Gid exists
-        dispatch(fetchGroupMembers(group.Gid));
+  const userData = useSelector((state) => state.auth.userData);
+
+  // --- Fetch all current running groups on mount ---
+  useEffect(() => {
+    dispatch(fetchCurrentRunningGroups());
+  }, [dispatch]);
+
+  // --- Fetch product data for each running group (if not already loaded) ---
+  useEffect(() => {
+    currentRunningGroups.forEach(group => {
+      const productId = group.pid || group.Pid;
+      if (productId && !products.some(p => String(p.id) === String(productId))) {
+        dispatch(fetchProductById(productId));
       }
     });
-  }
-}, [allGroups, dispatch]);
+    // eslint-disable-next-line
+  }, [currentRunningGroups, products, dispatch]);
 
-const handleJoin = async (group) => {
-  if (!group?.Gid) return;
-  
-  try {
-    await dispatch(joinGroup(group.Gid)).unwrap();
-    setJoinedDeals(prev => [...prev, group.Gid]);
-    dispatch(fetchGroupMembers(group.Gid)); // Refresh members
-    toast.success(`Joined ${group.productName} successfully!`);
-  } catch (err) {
-    toast.error(err.message || "Failed to join group");
-  }
-};
-
-const deals = {
-  all: allGroups,
-  joined: allGroups.filter(g => joinedDeals.includes(g.Gid)),
-  expiringSoon: [...allGroups]
-    .filter(g => new Date(g.EndTime) > new Date())
-    .sort((a, b) => new Date(a.EndTime) - new Date(b.EndTime))
-    .slice(0, 5),
-};
+  // Compose {group, product} for each running group
+  const runningGroupsWithProduct = useMemo(() => {
+    return currentRunningGroups.map(group => {
+      const productId = group.pid || group.Pid;
+      // Find product in products array
+      const product = products.find(p => String(p.id) === String(productId));
+      // Compose a product object with group info
+      // The GroupBuySection expects a "product" prop with group info (gid, gprice, etc) merged in
+      const mergedProduct = product
+        ? {
+            ...product,
+            gid: group.gid || group.Gid || group.id,
+            gprice: group.gprice || group.Gprice,
+            gqty: group.gqty || group.Gqty,
+            pdid: group.pdid || group.Pdid || product.pdid,
+            // add any additional group fields if needed
+          }
+        : undefined;
+      return { group, product: mergedProduct };
+    });
+  }, [currentRunningGroups, products]);
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
@@ -65,18 +76,29 @@ const deals = {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
-            {isLoading ? (
+            {groupsLoading || productLoading ? (
               <div className="text-center py-20 text-gray-500">Loading group deals...</div>
-            ) : error ? (
-              <div className="text-center text-red-500 py-20">{error}</div>
+            ) : groupsError ? (
+              <div className="text-center text-red-500 py-20">{groupsError}</div>
+            ) : runningGroupsWithProduct.length === 0 ? (
+              <div className="text-center text-gray-500 py-20">No current running group buys found.</div>
             ) : (
-              <DealsGrid
-                deals={deals[activeTab]}
-                joinedDeals={joinedDeals}
-                onJoin={handleJoin}
-                groupMembers={groupMembers}
-              />
-
+              runningGroupsWithProduct.map(({ group, product }, index) =>
+                product ? (
+                  <motion.div
+                    key={group.gid || group.Gid || group.id || index}
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.1 * index }}
+                    className="mt-6"
+                  >
+                  <GroupBuyuSection
+                      userId={userData?.userId || userData?.id}
+                      product={product}
+                    />
+                  </motion.div>
+                ) : null // only render if product is available
+              )
             )}
           </motion.div>
         </AnimatePresence>

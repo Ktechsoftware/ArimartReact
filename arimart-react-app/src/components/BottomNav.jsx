@@ -5,14 +5,15 @@ import {
   HeartHandshake,
   Compass,
   LayoutList,
-  User
+  User,
+  Search
 } from "lucide-react";
 import { motion } from 'framer-motion';
 
 const navItems = [
   { path: "/home", label: "Home", icon: Home },
   { path: "/foryou", label: "For You", icon: HeartHandshake },
-  { path: "/explore", label: "Explore", icon: Compass },
+  { path: "/explore", label: "Search", icon: Search },
   { path: "/categories", label: "Categories", icon: LayoutList },
   { path: "/account", label: "Account", icon: User },
 ];

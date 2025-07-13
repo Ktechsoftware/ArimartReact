@@ -38,7 +38,22 @@ export const placeGroupOrder = createAsyncThunk('order/placeGroupOrder', async (
 export const trackOrder = createAsyncThunk('order/trackOrder', async (trackId, thunkAPI) => {
   try {
     const res = await API.get(`/order/track/${trackId}`);
-    return res.data;
+    console.log("Track order response:", res.data);
+    
+    // Handle different response structures
+    if (res.data && Array.isArray(res.data)) {
+      return res.data;
+    } else if (res.data && res.data.orders && Array.isArray(res.data.orders)) {
+      return res.data.orders;
+    } else if (res.data && res.data.data && Array.isArray(res.data.data)) {
+      return res.data.data;
+    } else if (res.data && typeof res.data === 'object') {
+      // If it's a single object, wrap it in an array
+      return [res.data];
+    } else {
+      console.warn("Unexpected response structure:", res.data);
+      return [];
+    }
   } catch (err) {
     console.error('Track order error:', err);
     return thunkAPI.rejectWithValue(err.response?.data || { message: 'Track failed' });
@@ -107,7 +122,7 @@ const orderSlice = createSlice({
     loading: false,
     error: null,
     orders: [],
-    track: null,
+    track: [], // Changed from null to empty array to handle multiple products
   },
   reducers: {
     clearOrderError: (state) => {
@@ -115,6 +130,9 @@ const orderSlice = createSlice({
     },
     clearOrders: (state) => {
       state.orders = [];
+    },
+    clearTrack: (state) => {
+      state.track = [];
     },
   },
   extraReducers: (builder) => {
@@ -159,18 +177,20 @@ const orderSlice = createSlice({
         state.error = action.payload?.message || 'Group order failed';
       })
 
-      // ✅ Track Order
+      // ✅ Track Order - Updated to handle multiple products
       .addCase(trackOrder.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(trackOrder.fulfilled, (state, action) => {
         state.loading = false;
-        state.track = action.payload;
+        state.track = action.payload || [];
+        console.log("Track data updated in state:", state.track);
       })
       .addCase(trackOrder.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || 'Track failed';
+        state.track = [];
       })
 
       // ✅ Order History
@@ -221,5 +241,5 @@ const orderSlice = createSlice({
   }
 });
 
-export const { clearOrderError, clearOrders } = orderSlice.actions;
+export const { clearOrderError, clearOrders, clearTrack } = orderSlice.actions;
 export default orderSlice.reducer;

@@ -16,6 +16,24 @@ export const fetchProducts = createAsyncThunk(
   }
 );
 
+// ✅ Load more products (append to existing products)
+export const loadMoreProducts = createAsyncThunk(
+  'products/loadMoreProducts',
+  async (params = {}, { rejectWithValue, getState }) => {
+    try {
+      const { products } = getState();
+      const nextPage = products.pagination.page + 1;
+      const queryParams = { ...params, page: nextPage };
+      const queryString = new URLSearchParams(queryParams).toString();
+      const url = `products${queryString ? `?${queryString}` : ''}`;
+      const response = await API.get(url);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
 // ✅ Fetch product by ID
 export const fetchProductById = createAsyncThunk(
   'products/fetchProductById',
@@ -122,6 +140,7 @@ const productsSlice = createSlice({
     items: [],
     currentProduct: null,
     loading: false,
+    loadingMore: false, // New state for load more
     error: null,
     imageUrls: {},
     imageLoading: {},
@@ -137,6 +156,7 @@ const productsSlice = createSlice({
       priceRange: { min: 0, max: 1000 },
       search: '',
     },
+    hasMore: true, // New state to track if more products are available
   },
   reducers: {
     setCurrentProduct: (state, action) => {
@@ -165,6 +185,11 @@ const productsSlice = createSlice({
       state.imageUrls = {};
       state.imageLoading = {};
     },
+    resetProducts: (state) => {
+      state.items = [];
+      state.pagination.page = 1;
+      state.hasMore = true;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -183,10 +208,35 @@ const productsSlice = createSlice({
             total: action.payload.totalCount,
             totalPages: action.payload.totalPages,
           };
+          state.hasMore = action.payload.currentPage < action.payload.totalPages;
         }
       })
       .addCase(fetchProducts.rejected, (state, action) => {
         state.loading = false;
+        state.error = action.payload;
+      })
+
+      // 🔄 Load More Products
+      .addCase(loadMoreProducts.pending, (state) => {
+        state.loadingMore = true;
+        state.error = null;
+      })
+      .addCase(loadMoreProducts.fulfilled, (state, action) => {
+        state.loadingMore = false;
+        const newProducts = action.payload.products || action.payload;
+        state.items = [...state.items, ...newProducts];
+        if (action.payload.currentPage) {
+          state.pagination = {
+            page: action.payload.currentPage,
+            limit: action.payload.pageSize,
+            total: action.payload.totalCount,
+            totalPages: action.payload.totalPages,
+          };
+          state.hasMore = action.payload.currentPage < action.payload.totalPages;
+        }
+      })
+      .addCase(loadMoreProducts.rejected, (state, action) => {
+        state.loadingMore = false;
         state.error = action.payload;
       })
 
@@ -308,6 +358,7 @@ export const {
   setPagination,
   clearProductsError,
   clearImageUrls,
+  resetProducts,
 } = productsSlice.actions;
 
 export default productsSlice.reducer;

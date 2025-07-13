@@ -43,7 +43,7 @@ const ConfettiPiece = () => {
   );
 };
 
-export default function OrderConfirmedModal({ isOpen, onClose, trackId }) {
+export default function OrderConfirmedModal({userData, isOpen, onClose, trackId }) {
   const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
@@ -53,6 +53,18 @@ export default function OrderConfirmedModal({ isOpen, onClose, trackId }) {
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
+
+  const tomorrow = new Date();
+tomorrow.setDate(tomorrow.getDate() + 1);
+const formattedDate = tomorrow.toLocaleDateString('en-IN', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+});
+
+const randomHour = Math.floor(Math.random() * 8) + 9; // 9 AM to 5 PM
+const formattedTime = `${randomHour}:00 ${randomHour < 12 ? 'AM' : 'PM'}`;
+
 
   if (!isOpen) return null;
 
@@ -141,28 +153,28 @@ export default function OrderConfirmedModal({ isOpen, onClose, trackId }) {
             />
             <div className="text-left">
               <p className="text-xs text-gray-400">Recipient</p>
-              <p className="text-sm font-medium dark:text-white text-gray-800">Jessica Smitt</p>
+              <p className="text-sm font-medium dark:text-white text-gray-800">{userData?.name}</p>
             </div>
           </div>
           <div>
             <p className="text-xs text-gray-400">Address</p>
-            <p className="text-sm font-medium dark:text-white text-gray-800">Hamptons, Suffolk County, NY</p>
+            <p className="text-sm font-medium dark:text-white text-gray-800">{userData?.adddress}</p>
           </div>
           <div className="flex justify-between">
             <div>
               <p className="text-xs text-gray-400">Delivery Date</p>
-              <p className="text-sm font-medium dark:text-white text-gray-800">22 December 2023</p>
+             <p className="text-sm font-medium dark:text-white text-gray-800">{formattedDate}</p>
             </div>
             <div>
               <p className="text-xs text-gray-400">Time</p>
-              <p className="text-sm font-medium dark:text-white   text-gray-800">10:00 PM</p>
+              <p className="text-sm font-medium dark:text-white text-gray-800">{formattedTime}</p>
             </div>
           </div>
         </motion.div>
          <p className="text-sm text-gray-500 mt-2">
             Your tracking ID is: <span className="font-semibold">{trackId}</span>
           </p>
-        <Link to={`/orders/tracking/${trackId}`} className="w-full">
+        <Link to={`/orders/track/${trackId}`} className="w-full">
           <motion.button
             onClick={onClose}
             className="w-full bg-orange-500 text-white py-2 rounded-full text-sm font-semibold hover:bg-orange-600 transition"

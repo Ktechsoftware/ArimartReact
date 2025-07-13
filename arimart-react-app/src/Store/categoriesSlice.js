@@ -24,7 +24,8 @@ export const fetchChildSubcategories = createAsyncThunk(
   'category/fetchChildSubcategories',
   async (subCategoryId) => {
     const response = await API.get(`/childsubcategory/by-subcategory/${subCategoryId}`);
-    return { subCategoryId, data: response.data };
+    console.log("child category : ", response.data);
+    return response.data;
   }
 );
 
@@ -33,46 +34,72 @@ const categorySlice = createSlice({
   initialState: {
     categories: [],
     subcategories: [],
-    childSubcategoriesMap: {}, // Store child subcategories by subcategory ID
-    loading: false,
+    childSubcategories: [],
+    childSubcategoriesMap: {},
+    loadingCategories: false,
+    loadingSubcategories: false,
+    loadingChildSubcategories: false,
+    error: null,
   },
-  reducers: {},
+
+  reducers: {
+    // Clear subcategories when category changes
+    clearSubcategories: (state) => {
+      state.subcategories = [];
+      state.childSubcategories = [];
+    },
+    // Clear child subcategories when subcategory changes
+    clearChildSubcategories: (state) => {
+      state.childSubcategories = [];
+    },
+  },
   extraReducers: (builder) => {
     builder
+      // Fetch Categories
       .addCase(fetchCategories.pending, (state) => {
-        state.loading = true;
+        state.loadingCategories = true;
+        state.error = null;
       })
       .addCase(fetchCategories.fulfilled, (state, action) => {
         state.categories = action.payload;
-        state.loading = false;
+        state.loadingCategories = false;
       })
-      .addCase(fetchCategories.rejected, (state) => {
-        state.loading = false;
+      .addCase(fetchCategories.rejected, (state, action) => {
+        state.loadingCategories = false;
+        state.error = action.error.message;
       })
 
+      // Fetch Subcategories
       .addCase(fetchSubcategories.pending, (state) => {
-        state.loading = true;
+        state.loadingSubcategories = true;
+        state.error = null;
+        state.childSubcategories = [];
       })
       .addCase(fetchSubcategories.fulfilled, (state, action) => {
         state.subcategories = action.payload;
-        state.loading = false;
+        state.loadingSubcategories = false;
       })
-      .addCase(fetchSubcategories.rejected, (state) => {
-        state.loading = false;
+      .addCase(fetchSubcategories.rejected, (state, action) => {
+        state.loadingSubcategories = false;
+        state.error = action.error.message;
       })
 
+      // Fetch Child Subcategories
       .addCase(fetchChildSubcategories.pending, (state) => {
-        state.loading = true;
+        state.loadingChildSubcategories = true;
+        state.error = null;
       })
       .addCase(fetchChildSubcategories.fulfilled, (state, action) => {
-        const { subCategoryId, data } = action.payload;
-        state.childSubcategoriesMap[subCategoryId] = data;
-        state.loading = false;
+        state.childSubcategories = action.payload;
+        state.loadingChildSubcategories = false;
       })
-      .addCase(fetchChildSubcategories.rejected, (state) => {
-        state.loading = false;
+      .addCase(fetchChildSubcategories.rejected, (state, action) => {
+        state.loadingChildSubcategories = false;
+        state.error = action.error.message;
       });
+
   },
 });
 
+export const { clearSubcategories, clearChildSubcategories } = categorySlice.actions;
 export default categorySlice.reducer;

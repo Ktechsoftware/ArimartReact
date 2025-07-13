@@ -65,8 +65,8 @@ export const fetchCartByUserAndGroup = createAsyncThunk(
     console.log(userId, groupId)
     try {
       const response = await API.get(`/cart/usergroup?userid=${userId}&groupid=${groupId}`);
-      console.log(response.data)
-      return Array.isArray(response.data) ? response.data : [];
+      console.log("Group response data : ",response.data.items)
+      return Array.isArray(response.data.items) ? response.data.items : [];
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
     }

@@ -163,7 +163,7 @@ export const GroupBuySection = ({ userId, product }) => {
     const referCode = referCodeData?.refercode;
 
     // Navigate to group buy page
-    navigate(`/group/join/${gid}${referCode ? `/ref=${referCode}` : ''}`);
+    navigate(`/group/join/${gid}${referCode ? `/${referCode}` : ''}`);
   };
 
   // ✅ ENHANCED: Early return if no gid or essential product data
@@ -265,7 +265,8 @@ export const GroupBuySection = ({ userId, product }) => {
         </div>
 
         {/* Center Section: Timer with Calendar Animation - Hidden on mobile when collapsed */}
-        {(!isMobile || expanded) && isGroupBuyActive && (
+        {/* Center Section: Timer or End Message */}
+        {(!isMobile || expanded) && (
           <motion.div
             className="flex items-center gap-1 bg-white/50 dark:bg-gray-800/50 px-2 py-1 rounded-lg border border-purple-200 dark:border-purple-700"
             initial={{ scale: 0.9, opacity: 0 }}
@@ -285,16 +286,28 @@ export const GroupBuySection = ({ userId, product }) => {
             >
               <Calendar className="w-3 h-3 text-purple-600 dark:text-purple-400" />
             </motion.div>
+
             <div className="flex gap-1 text-xs font-medium text-purple-800 dark:text-purple-200">
-              {timeLeft.days > 0 && (
-                <span>{timeLeft.days}d</span>
+              {isGroupBuyActive && timeLeft.days > 0 ? (
+                <>
+                  <span>{timeLeft.days}d</span>
+                  <span>{timeLeft.hours}h</span>
+                  <span>{timeLeft.minutes}m</span>
+                  <span>{timeLeft.seconds}s</span>
+                </>
+              ) : isGroupBuyActive ? (
+                <>
+                  <span>{timeLeft.hours}h</span>
+                  <span>{timeLeft.minutes}m</span>
+                  <span>{timeLeft.seconds}s</span>
+                </>
+              ) : (
+                <span>Group Buy End</span>
               )}
-              <span>{timeLeft.hours}h</span>
-              <span>{timeLeft.minutes}m</span>
-              <span>{timeLeft.seconds}s</span>
             </div>
           </motion.div>
         )}
+
 
         {/* Right Section: Join Button */}
         <div className="flex md:flex-col md:items-end items-center gap-2">

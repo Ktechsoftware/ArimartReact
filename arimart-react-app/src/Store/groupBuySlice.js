@@ -97,6 +97,25 @@ export const fetchGroupReferCodeByProduct = createAsyncThunk("group/fetchReferCo
   }
 });
 
+export const fetchCurrentRunningGroups = createAsyncThunk("group/fetchCurrentRunning", async (_, thunkAPI) => {
+  try {
+    const res = await API.get(`/group/current-running`);
+    console.log(res.data)
+    return res.data;
+  } catch (err) {
+    return thunkAPI.rejectWithValue(err.response?.data || "Failed to fetch current running groups");
+  }
+});
+
+export const fetchGroupStatus = createAsyncThunk("group/fetchStatus", async (gid, thunkAPI) => {
+  try {
+    const res = await API.get(`/group/status-short/${gid}`);
+    return { gid, status: res.data };
+  } catch (err) {
+    return thunkAPI.rejectWithValue(err.response?.data || "Failed to fetch group status");
+  }
+});
+
 // ---------------------- SLICE ----------------------
 
 const groupSlice = createSlice({
@@ -121,17 +140,12 @@ const groupSlice = createSlice({
 
     // Data
     allGroups: [],
-    groupsById: {}, // key = gid, value = group data
-    
-    // ✅ ENHANCED: Store members by GID
-    membersByGid: {}, // key = gid, value = members array
-    
-    // ✅ ENHANCED: Store refer codes by GID
-    referCodesByGid: {}, // key = gid, value = refer code data
-    
-    // ✅ ENHANCED: Store loading states by GID
-    loadingStatesByGid: {}, // key = gid, value = { isLoadingMembers, isLoadingReferCode }
-    
+    groupsById: {},
+    statusByGid: {},
+    membersByGid: {},
+    referCodesByGid: {},
+    loadingStatesByGid: {},
+    currentRunningGroups: [],
     myJoinedGroups: [],
     allReferCodes: [],
     currentReferCode: null,
@@ -235,23 +249,23 @@ const groupSlice = createSlice({
         state.isCreating = false;
         state.createSuccess = true;
         state.lastCreatedGroup = action.payload;
-        
+
         // Add to allGroups if it exists
         if (state.allGroups) {
           state.allGroups.unshift(action.payload);
         }
-        
+
         // Store in groupsById
         if (action.payload?.gid) {
           state.groupsById[action.payload.gid] = action.payload;
         }
-        
+
         // Auto-join: Add to myJoinedGroups
         if (state.myJoinedGroups && action.payload) {
           const isAlreadyJoined = state.myJoinedGroups.some(
             group => group.Gid === action.payload.gid || group.gid === action.payload.gid
           );
-          
+
           if (!isAlreadyJoined) {
             state.myJoinedGroups.unshift(action.payload);
           }
@@ -274,13 +288,13 @@ const groupSlice = createSlice({
         state.isJoining = false;
         state.joinSuccess = true;
         state.lastJoinedGroup = action.payload;
-        
+
         // Add to myJoinedGroups if not already there
         if (state.myJoinedGroups && action.payload) {
           const isAlreadyJoined = state.myJoinedGroups.some(
             group => group.Gid === action.payload.gid || group.gid === action.payload.gid
           );
-          
+
           if (!isAlreadyJoined) {
             state.myJoinedGroups.unshift(action.payload);
           }
@@ -303,14 +317,14 @@ const groupSlice = createSlice({
         state.isLeaving = false;
         state.leaveSuccess = true;
         state.lastLeftGroup = action.payload;
-        
+
         // Remove from myJoinedGroups
         if (state.myJoinedGroups) {
           state.myJoinedGroups = state.myJoinedGroups.filter(
             group => group.Gid !== action.payload.groupId && group.gid !== action.payload.groupId
           );
         }
-        
+
         // ✅ ENHANCED: Remove from membersByGid
         if (state.membersByGid[action.payload.groupId]) {
           state.membersByGid[action.payload.groupId] = state.membersByGid[action.payload.groupId].filter(
@@ -329,7 +343,7 @@ const groupSlice = createSlice({
       .addCase(fetchGroupMembers.pending, (state, action) => {
         state.isLoadingMembers = true;
         state.error = null;
-        
+
         // Set loading state for specific GID
         const gid = action.meta.arg;
         if (!state.loadingStatesByGid[gid]) {
@@ -340,10 +354,10 @@ const groupSlice = createSlice({
       .addCase(fetchGroupMembers.fulfilled, (state, action) => {
         const { groupId, members } = action.payload;
         state.isLoadingMembers = false;
-        
+
         // Store members by GID
         state.membersByGid[groupId] = members;
-        
+
         // Clear loading state for specific GID
         if (state.loadingStatesByGid[groupId]) {
           state.loadingStatesByGid[groupId].isLoadingMembers = false;
@@ -352,7 +366,7 @@ const groupSlice = createSlice({
       .addCase(fetchGroupMembers.rejected, (state, action) => {
         state.isLoadingMembers = false;
         state.error = action.payload;
-        
+
         // Clear loading state for specific GID
         const gid = action.meta.arg;
         if (state.loadingStatesByGid[gid]) {
@@ -395,7 +409,7 @@ const groupSlice = createSlice({
       .addCase(fetchGroupReferCodeById.pending, (state, action) => {
         state.isLoadingReferCodes = true;
         state.error = null;
-        
+
         // Set loading state for specific GID
         const gid = action.meta.arg;
         if (!state.loadingStatesByGid[gid]) {
@@ -406,10 +420,10 @@ const groupSlice = createSlice({
       .addCase(fetchGroupReferCodeById.fulfilled, (state, action) => {
         const { gid, referCode } = action.payload;
         state.isLoadingReferCodes = false;
-        
+
         // Store refer code by GID
         state.referCodesByGid[gid] = referCode;
-        
+
         // Clear loading state for specific GID
         if (state.loadingStatesByGid[gid]) {
           state.loadingStatesByGid[gid].isLoadingReferCode = false;
@@ -418,7 +432,7 @@ const groupSlice = createSlice({
       .addCase(fetchGroupReferCodeById.rejected, (state, action) => {
         state.isLoadingReferCodes = false;
         state.error = action.payload;
-        
+
         // Clear loading state for specific GID
         const gid = action.meta.arg;
         if (state.loadingStatesByGid[gid]) {
@@ -440,6 +454,45 @@ const groupSlice = createSlice({
         state.isLoadingReferCodes = false;
         state.error = action.payload;
       });
+    // for current running groups
+    builder
+      .addCase(fetchCurrentRunningGroups.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchCurrentRunningGroups.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.currentRunningGroups = action.payload;
+      })
+      .addCase(fetchCurrentRunningGroups.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      });
+    // ✅ Fetch group status by GID
+    builder
+      .addCase(fetchGroupStatus.pending, (state, action) => {
+        const gid = action.meta.arg;
+        if (!state.loadingStatesByGid[gid]) {
+          state.loadingStatesByGid[gid] = {};
+        }
+        state.loadingStatesByGid[gid].isLoadingStatus = true;
+      })
+      .addCase(fetchGroupStatus.fulfilled, (state, action) => {
+        const { gid, status } = action.payload;
+        state.statusByGid[gid] = status;
+
+        if (state.loadingStatesByGid[gid]) {
+          state.loadingStatesByGid[gid].isLoadingStatus = false;
+        }
+      })
+      .addCase(fetchGroupStatus.rejected, (state, action) => {
+        const gid = action.meta.arg;
+        if (state.loadingStatesByGid[gid]) {
+          state.loadingStatesByGid[gid].isLoadingStatus = false;
+        }
+        state.error = action.payload;
+      });
+
   },
 });
 

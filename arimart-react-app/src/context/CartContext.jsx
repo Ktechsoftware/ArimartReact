@@ -47,22 +47,40 @@ const initialState = {
   currentGroupId: null
 };
 
-const normalizeCartItem = (item) => ({
-  id: item.Id || item.id,
-  name: item.ProductName || item.productName || item.name,
-  price: item.Price || item.netprice || item.price,
-  image: item.Image || item.image,
-  categoryName: item.CategoryName || item.categoryName,
-  subcategoryName: item.SubcategoryName || item.subcategoryName,
-  quantity: item.Qty || item.quantity || 1,
-  groupId: item.GroupId || item.groupId || null,
-  gprice: item.gprice || item.GroupPrice || null,
-  originalItem: item
-});
+const normalizeCartItem = (item) => {
+  const groupPrice = parseFloat(item.gprice || item.GroupPrice || 0);
+  const hasGroupPrice = groupPrice > 0;
+  return {
+    id: item.Id || item.id,
+    name: item.ProductName || item.productName || item.name,
+    price: hasGroupPrice ? groupPrice : item.Price || item.netprice || item.price,
+    image: item.Image || item.image,
+    categoryName: item.CategoryName || item.categoryName,
+    subcategoryName: item.SubcategoryName || item.subcategoryName,
+    quantity: item.Qty || item.quantity || 1,
+    groupId: item.groupid || null,
+    gprice: item.gprice || item.GroupPrice || null,
+    originalItem: item
+  }
+}
 
-const calculateTotals = (items) => {
+// Separate calculation functions for regular and group carts
+const calculateRegularCartTotals = (items) => {
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const subtotal = items.reduce((sum, item) => {
+    const priceToUse = parseFloat(item.price) || 0;
+    return sum + (priceToUse * item.quantity);
+  }, 0);
+  return { totalItems, subtotal };
+};
+
+const calculateGroupCartTotals = (items) => {
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const subtotal = items.reduce((sum, item) => {
+    // For group cart, use gprice if available, otherwise fallback to regular price
+    const priceToUse = parseFloat(item.gprice) || parseFloat(item.price) || 0;
+    return sum + (priceToUse * item.quantity);
+  }, 0);
   return { totalItems, subtotal };
 };
 
@@ -70,7 +88,7 @@ function cartReducer(state, action) {
   switch (action.type) {
     case CART_ACTIONS.LOAD_REGULAR_CART: {
       const normalizedItems = action.payload.items.map(normalizeCartItem);
-      const { totalItems, subtotal } = calculateTotals(normalizedItems);
+      const { totalItems, subtotal } = calculateRegularCartTotals(normalizedItems);
       return {
         ...state,
         regularCartItems: normalizedItems,
@@ -80,7 +98,7 @@ function cartReducer(state, action) {
     }
     case CART_ACTIONS.LOAD_GROUP_CART: {
       const normalizedItems = action.payload.items.map(normalizeCartItem);
-      const { totalItems, subtotal } = calculateTotals(normalizedItems);
+      const { totalItems, subtotal } = calculateGroupCartTotals(normalizedItems);
       return {
         ...state,
         groupCartItems: normalizedItems,
@@ -101,7 +119,7 @@ function cartReducer(state, action) {
       } else {
         newItems = [...state.regularCartItems, newItem];
       }
-      const { totalItems, subtotal } = calculateTotals(newItems);
+      const { totalItems, subtotal } = calculateRegularCartTotals(newItems);
       return { ...state, regularCartItems: newItems, totalItems, subtotal };
     }
     case CART_ACTIONS.ADD_ITEM_GROUP: {
@@ -119,35 +137,39 @@ function cartReducer(state, action) {
       } else {
         newItems = [...state.groupCartItems, newItem];
       }
-      const { totalItems, subtotal } = calculateTotals(newItems);
+      const { totalItems, subtotal } = calculateGroupCartTotals(newItems);
       return { ...state, groupCartItems: newItems, groupTotalItems: totalItems, groupSubtotal: subtotal };
     }
     case CART_ACTIONS.UPDATE_QUANTITY_REGULAR: {
       const { id, quantity } = action.payload;
+      console.log("update data : ", id, quantity)
       const newItems = state.regularCartItems.map(item =>
         item.id === id ? { ...item, quantity: Math.max(1, quantity) } : item
       );
-      const { totalItems, subtotal } = calculateTotals(newItems);
+      console.log("new regular items : ", newItems)
+      const { totalItems, subtotal } = calculateRegularCartTotals(newItems);
       return { ...state, regularCartItems: newItems, totalItems, subtotal };
     }
     case CART_ACTIONS.UPDATE_QUANTITY_GROUP: {
       const { id, quantity, groupId } = action.payload;
+      console.log("Group update data : ", id, quantity, groupId)
       const newItems = state.groupCartItems.map(item =>
-        item.id === id && item.groupId === groupId ? { ...item, quantity: Math.max(1, quantity) } : item
+        item.id === id && item.originalItem.groupid === groupId ? { ...item, quantity: Math.max(1, quantity) } : item
       );
-      const { totalItems, subtotal } = calculateTotals(newItems);
+      console.log("new group items : ", newItems)
+      const { totalItems, subtotal } = calculateGroupCartTotals(newItems);
       return { ...state, groupCartItems: newItems, groupTotalItems: totalItems, groupSubtotal: subtotal };
     }
     case CART_ACTIONS.REMOVE_ITEM_REGULAR: {
       const id = action.payload;
       const newItems = state.regularCartItems.filter(item => item.id !== id);
-      const { totalItems, subtotal } = calculateTotals(newItems);
+      const { totalItems, subtotal } = calculateRegularCartTotals(newItems);
       return { ...state, regularCartItems: newItems, totalItems, subtotal };
     }
     case CART_ACTIONS.REMOVE_ITEM_GROUP: {
       const { id, groupId } = action.payload;
       const newItems = state.groupCartItems.filter(item => !(item.id === id && item.groupId === groupId));
-      const { totalItems, subtotal } = calculateTotals(newItems);
+      const { totalItems, subtotal } = calculateGroupCartTotals(newItems);
       return { ...state, groupCartItems: newItems, groupTotalItems: totalItems, groupSubtotal: subtotal };
     }
     case CART_ACTIONS.CLEAR_REGULAR_CART:
@@ -203,6 +225,7 @@ export function CartProvider({ children }) {
     dispatch({ type: CART_ACTIONS.SET_LOADING, payload: true });
     try {
       const cartItems = await reduxDispatch(fetchCartByUserAndGroup({ userId, groupId })).unwrap();
+      console.log("group info : ", cartItems)
       dispatch({ type: CART_ACTIONS.LOAD_GROUP_CART, payload: { items: cartItems } });
       dispatch({ type: CART_ACTIONS.SYNC_SUCCESS });
     } catch (error) {
@@ -231,6 +254,7 @@ export function CartProvider({ children }) {
             userId,
             productId: product.pdid || product.id,
             quantity,
+            name : product.productName,
             price: product.netprice || product.price,
             groupId
           };
@@ -246,13 +270,15 @@ export function CartProvider({ children }) {
         ...product,
         quantity
       };
+      console.log("added to cart : ", cartItem)
       dispatch({ type: CART_ACTIONS.ADD_ITEM_REGULAR, payload: cartItem });
-      toast.success(`${cartItem.name} added to cart`);
+      toast.success(`${cartItem.productName} added to cart`);
       if (userId) {
         try {
           const requestData = {
             userId,
             productId: product.pdid || product.id,
+            name : product.productName,
             quantity,
             price: product.netprice || product.price
           };
@@ -267,6 +293,7 @@ export function CartProvider({ children }) {
 
   // Update quantity
   const updateQuantity = async (id, quantity, groupId = null) => {
+    console.log("group id is : ", groupId)
     if (groupId) {
       dispatch({ type: CART_ACTIONS.UPDATE_QUANTITY_GROUP, payload: { id, quantity, groupId } });
     } else {
@@ -289,6 +316,7 @@ export function CartProvider({ children }) {
 
   // Remove item
   const removeFromCart = async (id, groupId = null) => {
+    console.log("remove cart data : ", id, groupId)
     if (groupId) {
       dispatch({ type: CART_ACTIONS.REMOVE_ITEM_GROUP, payload: { id, groupId } });
     } else {
@@ -301,7 +329,7 @@ export function CartProvider({ children }) {
           userId,
           cartItemId: id
         };
-        // console.log(requestData)
+        console.log("remove response : ", requestData)
         await reduxDispatch(removeFromCartRedux(requestData)).unwrap();
         dispatch({ type: CART_ACTIONS.SYNC_SUCCESS });
       } catch (error) {
@@ -373,27 +401,28 @@ export function CartProvider({ children }) {
   };
 
   const getCartItemInfo = (productId, groupId = null) => {
-  let item;
-  if (!groupId) {
-    // Regular cart
-    item = state.regularCartItems.find(
-      item =>
-        item.originalItem.pid === productId ||
-        item.originalItem.pdid === productId
-    );
-  } else {
-    // Group cart
-    item = state.groupCartItems.find(
-      item =>
-        (item.originalItem.pid === productId ||
-          item.originalItem.pdid === productId) &&
-        item.originalItem.groupId === groupId
-    );
-  }
-  return item
-    ? { cartItemId: item.id, quantity: item.quantity, item }
-    : null;
-};
+    let item;
+    if (!groupId) {
+      // Regular cart
+      item = state.regularCartItems.find(
+        item =>
+          item.originalItem.pid === productId ||
+          item.originalItem.pdid === productId
+      );
+    } else {
+      // Group cart
+      item = state.groupCartItems.find(
+        item =>
+          (item.originalItem.pid === productId ||
+            item.originalItem.pdid === productId) &&
+          item.originalItem.groupId === groupId
+      );
+      console.log("Group cart info", item)
+    }
+    return item
+      ? { cartItemId: item.id, quantity: item.quantity, item }
+      : null;
+  };
 
   // Context value
   const value = {

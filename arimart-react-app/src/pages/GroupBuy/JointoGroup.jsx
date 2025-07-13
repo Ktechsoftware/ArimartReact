@@ -1,5 +1,4 @@
 import React from 'react'
-import { GroupBuyPage } from '../../components/GroupBuying/GroupBuyPage'
 import Header from '../../components/Header/Header'
 import JoinGroupOrder from '../../components/GroupBuying/JoinGroupOrder'
 

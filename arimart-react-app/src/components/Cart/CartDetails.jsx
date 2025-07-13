@@ -1,13 +1,14 @@
 // CartDetails.jsx - Uses separated regularCartItems and groupCartItems from CartContext
 
-import { Trash2, Plus, Minus, RefreshCw } from 'lucide-react';
+import { Trash2, Plus, Minus, RefreshCw, Group, ShoppingBasket } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import PromoCodeInput from './PromoCodeInput';
 import EmptyCart from './EmptyCart';
 import { useCart } from '../../context/CartContext';
+import CheckoutConfirmModal from './CheckoutConfirmModal';
 
 export default function CartDetails() {
   const {
@@ -32,6 +33,8 @@ export default function CartDetails() {
   const [localLoading, setLocalLoading] = useState({});
   const [selectedTab, setSelectedTab] = useState("cart");
   const userId = useSelector((state) => state.auth.userData?.id);
+  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
+  const navigate = useNavigate();
   // cosnt [grpid, setgrpid] = useState();
 
   // Optionally, fetch both carts on mount (for authenticated users)
@@ -42,11 +45,11 @@ export default function CartDetails() {
   }, [isAuthenticated, userId]);
 
   const [activeGroupId, setActiveGroupId] = useState(currentGroupId);
+  console.log(groupCartItems)
   const handleTabSwitch = async (tab) => {
     setSelectedTab(tab);
     if (tab === "group") {
-      // You could supply a UI to select group, for now we'll use currentGroupId or demo value
-      let groupId = currentGroupId || activeGroupId || "20033";
+      let groupId = currentGroupId || activeGroupId;
       setCurrentGroup(groupId);
       setActiveGroupId(groupId);
       if (userId && groupId) {
@@ -70,8 +73,9 @@ export default function CartDetails() {
   const handleUpdateQuantity = async (item, delta) => {
     const newQuantity = Math.max(1, (item.quantity || 1) + delta);
     const itemId = item.id;
-    const itemGroupId = item.groupId || null;
 
+    const itemGroupId = item.originalItem.groupid || null;
+    console.log(itemId, itemGroupId, item)
     setLocalLoading(prev => ({ ...prev, [itemId]: true }));
     try {
       await updateQuantity(itemId, newQuantity, selectedTab === "group" ? itemGroupId : null);
@@ -105,6 +109,15 @@ export default function CartDetails() {
     }
   };
 
+  const handleModalCheckout = (type) => {
+    setCheckoutModalOpen(false);
+    if (type === "both") {
+      navigate("/checkout?cart=both");
+    } else if (type === "current") {
+      navigate(`/checkout?cart=${selectedTab}`); // "cart" or "group"
+    }
+  };
+
   if (loading && displayItems.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-10 space-y-4">
@@ -116,7 +129,7 @@ export default function CartDetails() {
   const generateProductLink = (categoryName, subcategoryName, productId) => {
     const marketParam = categoryName || "";
     const subcategoryParam = subcategoryName || "";
-    return `/category/${encodeURIComponent(marketParam)}/${encodeURIComponent(subcategoryParam)}/${productId}`;
+    return `/category/${encodeURIComponent(marketParam)}/${encodeURIComponent(subcategoryParam)}/product/${productId}`;
   };
 
   const renderCartItems = (cartItems, cartType) => {
@@ -129,9 +142,7 @@ export default function CartDetails() {
           exit={{ opacity: 0, y: -10 }}
           className="text-center py-10 text-gray-600 dark:text-gray-400"
         >
-          <img
-            src="/images/empty-group-cart.svg"
-            alt="Empty group cart"
+          <ShoppingBasket
             className="mx-auto mb-4 w-40 h-40 opacity-80"
           />
           <p className="text-lg font-semibold">Your group cart is empty</p>
@@ -229,14 +240,19 @@ export default function CartDetails() {
 
                   {cartType === "group" && item.groupId && (
                     <p className="text-xs text-blue-500 dark:text-blue-400 mb-1">
-                      Group Purchase • ID: {item.groupId}
-                      {item.gprice && <span> • Group Price: ₹{item.gprice}</span>}
+                      Group Code: {item.groupId}
+                      {item.gprice && <span></span>}
                     </p>
                   )}
 
                   <div className="flex items-center justify-between">
                     <p className="font-bold text-lg text-green-600 dark:text-green-400">
-                      ₹{Number(itemPrice).toFixed(2)}
+                      ₹{cartType === "group" && item.gprice ? item.gprice : item.price}
+                      {cartType === "group" && item.gprice && (
+                        <>
+                          &nbsp;
+                        </>
+                      )}
                     </p>
 
                     {/* Quantity Controls */}
@@ -286,9 +302,11 @@ export default function CartDetails() {
                   {/* Item subtotal */}
                   {item.quantity > 1 && (
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      ₹{item.price} × {item.quantity} = ₹{(item.price * item.quantity).toFixed(2)}
+                      ₹{cartType === "group" && item.gprice ? item.gprice : item.price} × {item.quantity} = ₹{((cartType === "group" && item.gprice ? item.gprice : item.price) * item.quantity).toFixed(2)}
                     </p>
                   )}
+
+
                 </div>
               </motion.div>
             );
@@ -341,7 +359,7 @@ export default function CartDetails() {
           </div>
 
           {/* Checkout Button */}
-          <Link to="/checkout" className="block mt-6">
+          {/* <Link to="/checkout" className="block mt-6">
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -357,7 +375,21 @@ export default function CartDetails() {
                 <span>Proceed to Checkout • ₹{total.toFixed(2)}</span>
               )}
             </motion.button>
-          </Link>
+          </Link> */}
+          <button
+            type="button"
+            onClick={() => setCheckoutModalOpen(true)}
+            className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-4 rounded-xl shadow-lg transition-all duration-200 flex items-center justify-center space-x-2"
+          >
+            Proceed to Checkout • ₹{total.toFixed(2)}
+          </button>
+          <CheckoutConfirmModal
+            isOpen={checkoutModalOpen}
+            onClose={() => setCheckoutModalOpen(false)}
+            onCheckoutBoth={() => handleModalCheckout("both")}
+            onCheckoutCurrent={() => handleModalCheckout("current")}
+            cartType={selectedTab}
+          />
 
           {/* Continue Shopping Link */}
           <Link
