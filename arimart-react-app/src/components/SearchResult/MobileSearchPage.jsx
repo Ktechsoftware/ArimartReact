@@ -1,206 +1,245 @@
+// MobileSearchPage.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchProducts } from '../../Store/productsSlice';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, Clock, Filter, ChevronDown } from 'lucide-react';
-import FilterSheet from '../Explore/FilterSheet';
+import {
+  getAutocompleteSuggestions,
+  clearAutocompleteSuggestions,
+  searchProducts
+} from '../../Store/searchSlice';
+import { Search, X, Clock, Package, Sparkles, Folder, FolderOpen, FileText, FileQuestion } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 const MobileSearchPage = () => {
   const dispatch = useDispatch();
-  const { items: products, loading } = useSelector((state) => state.products);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
+  const inputRef = useRef();
+
+  const {
+    autocompleteSuggestions,
+    autocompleteLoading,
+    autocompleteError,
+    results: searchResults,
+    suggestions: searchSuggestions,
+    loading: searchLoading,
+  } = useSelector((state) => state.search);
+
+  const [query, setQuery] = useState('');
   const [searchHistory, setSearchHistory] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
-  const searchInputRef = useRef(null);
 
-  // Filter options
-  const [priceRange, setPriceRange] = useState([0, 1000]);
-  const [selectedCategory, setSelectedCategory] = useState('');
-
-  // Load search history and products
   useEffect(() => {
     const history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
     setSearchHistory(history);
-    dispatch(fetchProducts());
-  }, [dispatch]);
+  }, []);
 
-  // Filter products based on search query
   useEffect(() => {
-    if (searchQuery.trim()) {
-      const filtered = products.filter(product => 
-        product?.productName?.toLowerCase().includes(searchQuery?.toLowerCase()) ||
-        product?.categoryName?.toLowerCase().includes(searchQuery?.toLowerCase())
-      );
-      setFilteredProducts(filtered);
+    if (query && query.trim().length >= 2) {
+      dispatch(getAutocompleteSuggestions(query.trim()));
+      dispatch(searchProducts({ query: query.trim(), pageSize: 5, page: 1 }));
     } else {
-      setFilteredProducts([]);
+      dispatch(clearAutocompleteSuggestions());
     }
-  }, [searchQuery, products]);
+  }, [query, dispatch]);
 
-  // Save to search history
-  const saveToHistory = (query) => {
-    if (!query.trim()) return;
-    
-    const updatedHistory = [
-      query,
-      ...searchHistory.filter(item => item !== query)
-    ].slice(0, 5);
-    
-    setSearchHistory(updatedHistory);
-    localStorage.setItem('searchHistory', JSON.stringify(updatedHistory));
+  const saveToHistory = (term) => {
+    const newHistory = [term, ...searchHistory.filter((item) => item !== term)].slice(0, 5);
+    setSearchHistory(newHistory);
+    localStorage.setItem('searchHistory', JSON.stringify(newHistory));
   };
 
-  // Handle search submission
-  const handleSearchSubmit = () => {
-    if (!searchQuery.trim()) return;
-    saveToHistory(searchQuery);
-    searchInputRef.current.blur();
+  const handleSelect = (term) => {
+    saveToHistory(term);
+    setQuery(term);
   };
 
-  // Clear search
-  const clearSearch = () => {
-    setSearchQuery('');
-    setFilteredProducts([]);
-    searchInputRef.current.focus();
+  const handleClear = () => {
+    setQuery('');
+    dispatch(clearAutocompleteSuggestions());
+    inputRef.current?.focus();
   };
 
-  // Recent search item click
-  const handleHistoryItemClick = (item) => {
-    setSearchQuery(item);
-    searchInputRef.current.focus();
+  const generateProductUrl = (product) => {
+    const cat = product.categoryName || 'unknown';
+    const sub = product.subcategoryName || 'unknown';
+    return `/category/${encodeURIComponent(cat)}/${encodeURIComponent(sub)}/product/${product.id}`;
   };
 
-  // Apply filters
-  const applyFilters = () => {
-    handleSearchSubmit();
-    setShowFilters(false);
+  const generateUrl = (suggestion) => {
+    switch (suggestion.type) {
+      case 'product':
+        return `/search?query=${encodeURIComponent(suggestion.text)}`;
+      case 'category':
+        return `/category/${encodeURIComponent(suggestion.categoryName || suggestion.text)}`;
+      case 'subcategory':
+        return `/category/${encodeURIComponent(suggestion.categoryName || suggestion.parentCategory || 'unknown')}/${encodeURIComponent(suggestion.subcategoryName || suggestion.text)}`;
+      default:
+        return `/search?query=${encodeURIComponent(suggestion.text)}`;
+    }
   };
 
+  const typeConfig = {
+    product: { name: 'Products', icon: <Package className="w-4 h-4" /> },
+    keyword: { name: 'Keywords', icon: <Search className="w-4 h-4" /> },
+    category: { name: 'Categories', icon: <Folder className="w-4 h-4" /> },
+    subcategory: { name: 'Subcategories', icon: <FolderOpen className="w-4 h-4" /> },
+    childcategory: { name: 'Child Categories', icon: <FileText className="w-4 h-4" /> },
+    autocomplete: { name: 'Suggestions', icon: <Sparkles className="w-4 h-4" /> },
+  };
+
+  const groupedSuggestions = autocompleteSuggestions.reduce((acc, suggestion) => {
+    const type = suggestion.type || 'other';
+    if (!acc[type]) acc[type] = [];
+    acc[type].push(suggestion);
+    return acc;
+  }, {});
+
+  const isLoading = autocompleteLoading || searchLoading;
+  const hasResults = searchResults.length > 0 || autocompleteSuggestions.length > 0;
 
   return (
-    <div className="h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
-      {/* Search Header */}
-      <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 p-4 shadow-sm">
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearchSubmit()}
-              placeholder="Search by name or category..."
-              className="block w-full pl-10 pr-12 py-2 border border-gray-200 dark:border-gray-700 rounded-full bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            {searchQuery && (
-              <button
-                onClick={clearSearch}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center"
-              >
-                <X className="h-5 w-5 text-gray-400" />
-              </button>
-            )}
-          </div>
-          <button
-            onClick={() => setShowFilters(true)}
-            className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
-          >
-            <Filter className="h-5 w-5" />
+    <div className="min-h-screen bg-white dark:bg-gray-900 p-4">
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search products..."
+          className="w-full pl-10 pr-10 py-2 rounded-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-sm focus:ring-2 focus:ring-blue-500"
+        />
+        {query && (
+          <button onClick={handleClear} className="absolute right-3 top-2.5">
+            <X className="h-5 w-5 text-gray-400" />
           </button>
-        </div>
+        )}
       </div>
 
-      {/* Main Content */}
-      <div className="h-[calc(100vh-72px)] overflow-y-auto pb-4">
-        {/* Show search history when input is empty */}
-        {!searchQuery && (
-          <div className="p-4">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">Recent Searches</h3>
-            {searchHistory.length > 0 ? (
-              <div className="space-y-2">
-                {searchHistory.map((item, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    onClick={() => handleHistoryItemClick(item)}
-                    className="flex items-center p-3 bg-white dark:bg-gray-800 rounded-lg shadow-xs cursor-pointer"
-                  >
-                    <Clock className="h-5 w-5 text-gray-400 mr-3" />
-                    <span className="text-gray-800 dark:text-gray-200">{item}</span>
-                  </motion.div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                No search history yet
-              </div>
-            )}
-          </div>
-        )}
+      {!query && (
+        <div>
+          <h3 className="text-gray-700 dark:text-white mb-2">Recent Searches</h3>
+          {searchHistory.length > 0 ? (
+            <div className="space-y-2">
+              {searchHistory.map((item, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  onClick={() => handleSelect(item)}
+                  className="flex items-center p-3 bg-gray-100 dark:bg-gray-800 rounded-lg cursor-pointer"
+                >
+                  <Clock className="h-5 w-5 text-gray-400 mr-3" />
+                  <span className="text-gray-800 dark:text-gray-200">{item}</span>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-gray-400 text-center py-8">No recent searches</div>
+          )}
+        </div>
+      )}
 
-        {/* Show real-time search results */}
-        {searchQuery && (
-          <div className="p-4">
-            {loading ? (
-              <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-              </div>
-            ) : filteredProducts.length > 0 ? (
-              <div className="space-y-3">
-                {filteredProducts.map((product) => (
-                  <motion.div
-                    key={product.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="p-3 bg-white dark:bg-gray-800 rounded-lg shadow-xs border border-gray-100 dark:border-gray-700"
-                  >
-                    <Link to={`/category/${encodeURIComponent(product.categoryName)}/${encodeURIComponent(product.subcategoryName)}/product/${product.id}`} className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-medium text-gray-800 dark:text-white">
-                          {product.productName}
-                        </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                          {product.categoryName}
-                        </p>
-                      </div>
-                      {/* <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-md overflow-hidden">
+      {query && (
+        <>
+          {isLoading ? (
+            <div className="text-center py-8 text-gray-400">Searching...</div>
+          ) : !hasResults ? (
+            <div className="text-center py-8 text-gray-400">
+              No suggestions found for "{query}"
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {searchResults.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2 text-sm font-medium text-gray-500 dark:text-gray-300 uppercase">
+                    <Package className="h-4 w-4" /> Products
+                  </div>
+                  <div className="space-y-2">
+                    {searchResults.map((product) => (
+                      <Link
+                        key={product.id}
+                        to={generateProductUrl(product)}
+                        onClick={() => saveToHistory(product.productName)}
+                        className="flex items-center bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm"
+                      >
                         {product.image && (
-                          <img 
+                          <img
                             src={`http://localhost:5015/Uploads/${product.image}`}
                             alt={product.productName}
-                            className="w-full h-full object-cover"
+                            className="w-10 h-10 rounded object-cover mr-3"
                           />
                         )}
-                      </div> */}
-                    </Link>
-                  </motion.div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                No results found for "{searchQuery}"
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-gray-800 dark:text-white truncate">
+                            {product.productName}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            {product.categoryName} › {product.subcategoryName}
+                          </div>
+                        </div>
+                        <div className="text-xs text-gray-600 dark:text-gray-300 ml-2">
+                          ₹{product.price}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-      {/* Filters Bottom Sheet */}
-      <AnimatePresence>
-        {showFilters && (
-          <>
-            <FilterSheet isOpen={showFilters} onClose={() => setShowFilters(false)} />
-          </>
-        )}
-      </AnimatePresence>
+              {searchSuggestions.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2 text-sm font-medium text-gray-500 dark:text-gray-300 uppercase">
+                    <Sparkles className="h-4 w-4" /> Related Searches
+                  </div>
+                  <div className="space-y-2">
+                    {searchSuggestions.map((s, i) => (
+                      <Link
+                        key={i}
+                        to={generateUrl(s)}
+                        onClick={() => handleSelect(s.text)}
+                        className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                      >
+                        <div className="text-sm text-gray-800 dark:text-white truncate">{s.text}</div>
+                        {s.matchCount > 0 && (
+                          <span className="text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded-full">
+                            {s.matchCount}
+                          </span>
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {Object.entries(groupedSuggestions).map(([type, group]) => (
+                <div key={type}>
+                  <div className="flex items-center gap-2 mb-2 text-sm font-medium text-gray-500 dark:text-gray-300 uppercase">
+                    {typeConfig[type]?.icon || <FileQuestion className="h-4 w-4" />}
+                    {typeConfig[type]?.name || type}
+                  </div>
+                  <div className="space-y-2">
+                    {group.map((s, idx) => (
+                      <Link
+                        key={idx}
+                        to={generateUrl(s)}
+                        onClick={() => handleSelect(s.text)}
+                        className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                      >
+                        <div className="text-sm text-gray-800 dark:text-white truncate">{s.text}</div>
+                        {s.matchCount > 0 && (
+                          <span className="text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded-full">
+                            {s.matchCount}
+                          </span>
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 };

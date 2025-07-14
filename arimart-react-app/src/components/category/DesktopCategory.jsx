@@ -92,7 +92,7 @@ export default function DesktopCategory() {
                   </div>
 
                   {hoveredCategory?.id === category.id && navSubcategories.length > 0 && (
-                    <div className="fixed inset-0 top-[7rem] bg-white/90 dark:bg-gray-900/95 backdrop-blur-lg z-[9998] overflow-y-auto transition-all duration-300 origin-top scale-y-0 opacity-0 group-hover:scale-y-100 group-hover:opacity-100">
+                    <div className="h-[30rem] max-w-6xl mx-auto fixed inset-0 top-[6.5rem] shadow-xl rounded-xl bg-white/90 dark:bg-gray-900/95 backdrop-blur-lg z-[9998] overflow-y-auto transition-all duration-300 origin-top scale-y-0 opacity-0 group-hover:scale-y-100 group-hover:opacity-100">
                       <div className="container mx-auto px-4 py-8">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                           <div className="md:col-span-1 space-y-2">

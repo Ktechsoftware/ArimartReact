@@ -51,11 +51,11 @@ const DesktopProducts = () => {
         }
     };
 
-    const scroll = (direction) => {
-        const container = carouselRef.current;
-        const scrollAmount = direction === 'left' ? -300 : 300;
-        container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-    };
+    // const scroll = (direction) => {
+    //     const container = carouselRef.current;
+    //     const scrollAmount = direction === 'left' ? -300 : 300;
+    //     container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    // };
 
     if (loading) {
         return <div className="flex justify-center items-center h-screen">

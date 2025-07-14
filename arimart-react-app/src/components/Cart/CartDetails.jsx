@@ -24,7 +24,6 @@ export default function CartDetails() {
     syncStatus,
     loadCartFromServer,
     loadGroupCart,
-    currentGroupId,
     setCurrentGroup,
     clearCurrentGroup
   } = useCart();
@@ -35,29 +34,41 @@ export default function CartDetails() {
   const userId = useSelector((state) => state.auth.userData?.id);
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
   const navigate = useNavigate();
-  // cosnt [grpid, setgrpid] = useState();
 
-  // Optionally, fetch both carts on mount (for authenticated users)
+  // Fetch both carts on mount (for authenticated users)
   useEffect(() => {
     if (isAuthenticated && userId) {
+      // Load regular cart
       loadCartFromServer();
+      // Load group cart
+      loadGroupCart();
     }
   }, [isAuthenticated, userId]);
 
-  const [activeGroupId, setActiveGroupId] = useState(currentGroupId);
-  console.log(groupCartItems)
+  // Handle tab-specific loading
+  useEffect(() => {
+    if (selectedTab === "group" && isAuthenticated && userId) {
+      if (groupCartItems.length === 0) {
+        loadGroupCart();
+      }
+    }
+  }, [selectedTab, isAuthenticated, userId]);
+
+  console.log("Group cart items:", groupCartItems);
+
   const handleTabSwitch = async (tab) => {
     setSelectedTab(tab);
+    
     if (tab === "group") {
-      let groupId = currentGroupId || activeGroupId;
-      setCurrentGroup(groupId);
-      setActiveGroupId(groupId);
-      if (userId && groupId) {
-        await loadGroupCart(groupId);
+      if (userId) {
+        try {
+          await loadGroupCart();
+        } catch (error) {
+          console.error('Failed to load group cart:', error);
+        }
       }
     } else {
       clearCurrentGroup();
-      setActiveGroupId(null);
     }
   };
 
@@ -73,12 +84,13 @@ export default function CartDetails() {
   const handleUpdateQuantity = async (item, delta) => {
     const newQuantity = Math.max(1, (item.quantity || 1) + delta);
     const itemId = item.id;
+    const groupId = selectedTab === "group" ? item.groupId : null;
 
-    const itemGroupId = item.originalItem.groupid || null;
-    console.log(itemId, itemGroupId, item)
+    console.log("Updating quantity:", itemId, "item:", item, "groupId:", groupId);
+
     setLocalLoading(prev => ({ ...prev, [itemId]: true }));
     try {
-      await updateQuantity(itemId, newQuantity, selectedTab === "group" ? itemGroupId : null);
+      await updateQuantity(itemId, newQuantity, groupId);
     } catch (error) {
       console.error('Update quantity failed:', error);
     } finally {
@@ -88,11 +100,13 @@ export default function CartDetails() {
 
   const handleRemoveItem = async (item) => {
     const itemId = item.id;
-    const itemGroupId = item.groupId || null;
+    const groupId = selectedTab === "group" ? item.groupId : null;
+
+    console.log("Removing item:", itemId, "groupId:", groupId);
 
     setLocalLoading(prev => ({ ...prev, [itemId]: true }));
     try {
-      await removeFromCart(itemId, selectedTab === "group" ? itemGroupId : null);
+      await removeFromCart(itemId, groupId);
     } catch (error) {
       console.error('Remove item failed:', error);
     } finally {
@@ -103,8 +117,8 @@ export default function CartDetails() {
   const handleSyncCart = async () => {
     if (isAuthenticated) {
       await loadCartFromServer();
-      if (selectedTab === "group" && activeGroupId) {
-        await loadGroupCart(activeGroupId);
+      if (selectedTab === "group") {
+        await loadGroupCart();
       }
     }
   };
@@ -126,6 +140,7 @@ export default function CartDetails() {
       </div>
     );
   }
+
   const generateProductLink = (categoryName, subcategoryName, productId) => {
     const marketParam = categoryName || "";
     const subcategoryParam = subcategoryName || "";

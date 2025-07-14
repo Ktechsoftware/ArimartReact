@@ -32,7 +32,7 @@ const hideBottomNavRoutes = ['/','/onboard', '/auth', '/faq','/privacypolicy','/
   return (
     <>
       <main className="mb-20">{children}</main>
-       {!shouldHideBottomNav && <BottomNav />}
+       {<BottomNav />}
     </>
   );
 }

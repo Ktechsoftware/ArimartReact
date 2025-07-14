@@ -41,7 +41,7 @@ export default function OrdersPage() {
       return a.localeCompare(b);
     });
   }, [orders]);
-
+  console.log("order data : ", orders)
   useEffect(() => {
     if (userId) {
       dispatch(getOrderHistory(userId));
@@ -49,37 +49,54 @@ export default function OrdersPage() {
   }, [dispatch, userId]);
 
   useEffect(() => {
+    if (!orders || orders.length === 0) return;
+
     const uniqueGroupIds = new Set();
 
     orders.forEach(order => {
-      if (order.groupid) {
-        uniqueGroupIds.add(order.groupid);
+      if (order.items && Array.isArray(order.items)) {
+        order.items.forEach(item => {
+          if (item.groupid !== null && item.groupid !== undefined) {
+            uniqueGroupIds.add(item.groupid);
+          }
+        });
       }
     });
 
     uniqueGroupIds.forEach(groupid => {
       dispatch(fetchGroupStatus(groupid));
     });
+
   }, [orders, dispatch, userId]);
 
-  // Fetch group status for group orders - FIXED: using 'groupid' instead of 'groupId'
+
   useEffect(() => {
-    if (orders && orders.length > 0) {
-      // Filter orders that have groupid (not null)
-      const groupOrders = orders.filter(order => order.groupid !== null && order.groupid !== undefined);
-      const uniqueGroupIds = [...new Set(groupOrders.map(order => order.groupid))];
+    if (!orders || orders.length === 0) return;
 
-      console.log("Found group orders:", groupOrders);
-      console.log("Unique group IDs:", uniqueGroupIds);
+    const uniqueGroupIds = new Set();
 
-      uniqueGroupIds.forEach(groupId => {
-        if (groupId && !statusByGid[groupId]) {
-          console.log("Fetching group status for group ID:", groupId);
-          dispatch(fetchGroupStatus(groupId));
-        }
+    orders.forEach(order => {
+      if (order.items && Array.isArray(order.items)) {
+        order.items.forEach(item => {
+          if (item.groupid !== null && item.groupid !== undefined) {
+            uniqueGroupIds.add(item.groupid);
+          }
+        });
+      }
+    });
+
+    const groupIdsToFetch = [...uniqueGroupIds].filter(
+      gid => gid && !statusByGid[gid]
+    );
+
+    if (groupIdsToFetch.length > 0) {
+      console.log("Group IDs to fetch:", groupIdsToFetch);
+      groupIdsToFetch.forEach(groupid => {
+        dispatch(fetchGroupStatus(groupid));
       });
     }
   }, [orders, dispatch, statusByGid]);
+
 
   // Clear error when component unmounts
   useEffect(() => {
@@ -103,8 +120,6 @@ export default function OrdersPage() {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
       });
     } catch (error) {
       return "Invalid date";
@@ -186,16 +201,22 @@ export default function OrdersPage() {
     }
   };
 
-  // Enhanced filtering logic to handle group orders - FIXED: using 'groupid'
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
       let orderStatus = order.status;
 
-      // Handle group orders - check if they should be in "Pending to share"
-      if (order.groupid !== null && order.groupid !== undefined) {
-        const groupStatus = statusByGid[order.groupid];
-        if (groupStatus && groupStatus.status === 'pending') {
-          orderStatus = 'Pending to share';
+      // Handle group orders - check if any item has groupid and should be in "Pending to share"
+      if (order.items && Array.isArray(order.items)) {
+        const hasGroupItems = order.items.some(item => item.groupid !== null && item.groupid !== undefined);
+        if (hasGroupItems) {
+          // Get the first groupid to check status
+          const firstGroupId = order.items.find(item => item.groupid !== null && item.groupid !== undefined)?.groupid;
+          if (firstGroupId) {
+            const groupStatus = statusByGid[firstGroupId];
+            if (groupStatus && groupStatus.status === 'pending') {
+              orderStatus = 'Pending to share';
+            }
+          }
         }
       }
 
@@ -206,20 +227,182 @@ export default function OrdersPage() {
     });
   }, [orders, activeTab, activeCategoryTab, statusByGid]);
 
-  // Count orders by status including group logic - FIXED: using 'groupid'
+  // Fixed count orders by status including group logic - using items array groupid
   const getOrderCount = (status) => {
     return orders.filter(order => {
       let orderStatus = order.status;
 
-      if (order.groupid !== null && order.groupid !== undefined) {
-        const groupStatus = statusByGid[order.groupid];
-        if (groupStatus && groupStatus.status === 'pending') {
-          orderStatus = 'Pending to share';
+      // Handle group orders - check if any item has groupid
+      if (order.items && Array.isArray(order.items)) {
+        const hasGroupItems = order.items.some(item => item.groupid !== null && item.groupid !== undefined);
+        if (hasGroupItems) {
+          // Get the first groupid to check status
+          const firstGroupId = order.items.find(item => item.groupid !== null && item.groupid !== undefined)?.groupid;
+          if (firstGroupId) {
+            const groupStatus = statusByGid[firstGroupId];
+            if (groupStatus && groupStatus.status === 'pending') {
+              orderStatus = 'Pending to share';
+            }
+          }
         }
       }
 
       return orderStatus === status;
     }).length;
+  };
+
+  // Fixed isGroupOrder function to check items array
+  const isGroupOrder = (order) => {
+    return (
+      order.items &&
+      Array.isArray(order.items) &&
+      order.items.some(item => item.groupid !== null && item.groupid !== undefined)
+    );
+  };
+
+  // Fixed getGroupId helper function
+  const getGroupId = (order) => {
+    if (order.items && Array.isArray(order.items)) {
+      const groupItem = order.items.find(item => item.groupid !== null && item.groupid !== undefined);
+      return groupItem?.groupid;
+    }
+    return null;
+  };
+
+  // Fixed getGroupCode helper function  
+  const getGroupCode = (order) => {
+    // You might need to add groupCode to your data structure or use groupid as code
+    const groupId = getGroupId(order);
+    return groupId ? `GROUP-${groupId}` : null;
+  };
+
+  const isGroupOrderItem = (item) => {
+    return item.groupid !== null && item.groupid !== undefined;
+  };
+
+  // ProductItem component for reusable item display
+  const ProductItem = ({ item, isGroupOrder }) => {
+    const groupStatus = isGroupOrder && item.groupid ? statusByGid[item.groupid] : null;
+
+    return (
+      <>
+        {/* Product Image */}
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          className="w-16 h-16 rounded-md bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 flex items-center justify-center flex-shrink-0 overflow-hidden relative"
+        >
+          {item.productImage ? (
+            <img
+              src={"http://localhost:5015/Uploads/" + item.productImage}
+              alt={item.productName}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <Package className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+          )}
+          {isGroupOrder && (
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
+              <Users className="w-2.5 h-2.5 text-white" />
+            </div>
+          )}
+        </motion.div>
+
+        {/* Product Details */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between mb-1">
+            <div className="flex-1">
+              <div className="flex gap-4">
+                <h3 className="font-medium text-gray-900 dark:text-white text-sm leading-tight line-clamp-2">
+                  {item.productName || 'Product Name N/A'}
+                </h3>
+
+                {/* Group Order Badge with specific group status */}
+                {isGroupOrder && item.groupid && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-full font-medium"
+                  >
+                    <Users className="w-2.5 h-2.5" />
+                    <span>{getGroupStatusText(item.groupid)}</span>
+                  </motion.div>
+                )}
+              </div>
+              {/* Category Tags */}
+              <div className="flex flex-wrap gap-1 mt-1 mb-1.5">
+                {[item.categoryName, item.subCategoryName, item.childCategoryName]
+                  .filter(Boolean)
+                  .map((cat, i) => (
+                    <span key={i} className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 text-[10px] rounded-full text-gray-600 dark:text-gray-300">
+                      {cat}
+                    </span>
+                  ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Price and Quantity */}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400">Price</p>
+              <p className="font-medium text-xs text-gray-900 dark:text-white">
+                ₹{item.deliveryprice?.toLocaleString() || 'N/A'}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400">Qty</p>
+              <p className="font-medium text-xs text-gray-900 dark:text-white">
+                {item.qty || 'N/A'}
+              </p>
+            </div>
+          </div>
+
+          {/* Group Status and Actions for each item */}
+          {isGroupOrder && groupStatus && item.groupid && (
+            <div className="mt-2 p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-100 dark:border-orange-900/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                  <span className="text-xs text-orange-700 dark:text-orange-300">
+                    {getGroupStatusText(item.groupid)}
+                  </span>
+                </div>
+                {groupStatus.status === 'pending' && (
+                  <div className="flex items-center gap-1">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const groupCode = `GROUP-${item.groupid}`;
+                        copyToClipboard(groupCode, 'code');
+                      }}
+                      className="text-xs px-2 py-1 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors flex items-center gap-1"
+                    >
+                      <Copy className="w-3 h-3" />
+                      Copy Code
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const groupCode = `GROUP-${item.groupid}`;
+                        shareGroup(groupCode, item.productName || 'Product');
+                      }}
+                      className="text-xs px-2 py-1 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors flex items-center gap-1"
+                    >
+                      <Share2 className="w-3 h-3" />
+                      Share
+                    </motion.button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </>
+    );
   };
 
   return (
@@ -383,13 +566,13 @@ export default function OrdersPage() {
 
               {/* Orders */}
               {filteredOrders.map((order, index) => {
-                // FIXED: Check for groupid instead of groupId
-                const isGroupOrder = order.groupid !== null && order.groupid !== undefined;
-                const groupStatus = isGroupOrder ? statusByGid[order.groupid] : null;
+                const isGroupOrderCheck = isGroupOrder(order);
+                const groupId = getGroupId(order);
+                const groupStatus = isGroupOrderCheck && groupId ? statusByGid[groupId] : null;
                 let displayStatus = order.status;
 
                 // Override status for pending group orders
-                if (isGroupOrder && groupStatus && groupStatus.status === 'pending') {
+                if (isGroupOrderCheck && groupStatus && groupStatus.status === 'pending') {
                   displayStatus = 'Pending to share';
                 }
 
@@ -402,156 +585,80 @@ export default function OrdersPage() {
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ type: "spring", stiffness: 300, delay: index * 0.03 }}
                     whileHover={{ y: -3 }}
-                    className="group p-4 rounded-lg bg-white dark:bg-gray-900 shadow-xs border border-gray-200 dark:border-gray-800 cursor-pointer hover:shadow-sm transition-all"
+                    className={`group p-4 rounded-lg bg-white dark:bg-gray-900 shadow-xs border cursor-pointer hover:shadow-sm transition-all ${isGroupOrderCheck
+                      ? 'border-orange-200 dark:border-orange-800/50 bg-gradient-to-r from-orange-50/30 to-white dark:from-orange-900/10 dark:to-gray-900'
+                      : 'border-gray-200 dark:border-gray-800'
+                      }`}
                     onClick={() => {
                       if (order.trackId) {
                         navigate("/orders/track/" + order.trackId)
                       }
                     }}
                   >
-                    <div className="flex items-start gap-3">
-                      {/* Product Image - Compact */}
-                      <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        className="w-16 h-16 rounded-md bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 flex items-center justify-center flex-shrink-0 overflow-hidden relative"
-                      >
-                        {order.productImage ? (
-                          <img
-                            src={"http://localhost:5015/Uploads/" + order.productImage}
-                            alt={order.productName}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <Package className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                        )}
-                        {isGroupOrder && (
-                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
-                            <Users className="w-2.5 h-2.5 text-white" />
-                          </div>
-                        )}
-                      </motion.div>
-
-                      <div className="flex-1 min-w-0">
-                        {/* Header - Compact */}
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-1.5">
-                              <h3 className="font-medium text-gray-900 dark:text-white text-base leading-tight line-clamp-1">
-                                {order.productName || 'Product Name N/A'}
-                              </h3>
-                              {isGroupOrder && (
-                                <span className="px-1.5 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-[10px] rounded-full font-medium">
-                                  GROUP
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <p className="text-xs text-gray-600 dark:text-gray-400">
-                                ID: {order.trackId || order.id?.slice(0, 8) || 'N/A'}
-                              </p>
-                              {order.trackId && (
-                                <span className="text-[10px] px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-full">
-                                  Trackable
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <motion.div
-                            whileHover={{ x: 2 }}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <ChevronRight className="text-gray-400" size={18} />
-                          </motion.div>
-                        </div>
-
-                        {/* Group Status - Compact */}
-                        {isGroupOrder && (
-                          <div className="mb-2 p-2 bg-orange-50 dark:bg-orange-900/20 rounded-md border border-orange-200 dark:border-orange-800">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-1.5">
-                                <Users className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
-                                <span className="text-xs font-medium text-orange-700 dark:text-orange-300">
-                                  Group: {getGroupStatusText(order.groupid)}
-                                </span>
-                              </div>
-                              {groupStatus?.status === 'pending' && (
-                                <div className="flex gap-1">
-                                  <motion.button
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      copyToClipboard(groupStatus.groupCode || '', 'code');
-                                    }}
-                                    className="p-1 bg-white dark:bg-gray-800 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                                  >
-                                    <Copy className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
-                                  </motion.button>
-                                  <motion.button
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      shareGroup(groupStatus.groupCode || '', order.productName || '');
-                                    }}
-                                    className="p-1 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors"
-                                  >
-                                    <Share2 className="w-3.5 h-3.5" />
-                                  </motion.button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Category Tags - Compact */}
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          {[order.categoryName, order.subCategoryName, order.childCategoryName]
-                            .filter(Boolean)
-                            .map((cat, i) => (
-                              <span key={i} className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-[10px] rounded-full text-gray-600 dark:text-gray-300">
-                                {cat}
-                              </span>
-                            ))}
-                        </div>
-
-                        {/* Order Details - Compact */}
-                        <div className="grid grid-cols-3 gap-2 mb-2">
-                          <div>
-                            <p className="text-[10px] text-gray-500 dark:text-gray-400">Price</p>
-                            <p className="font-medium text-sm text-gray-900 dark:text-white">
-                              ₹{order.deliveryprice?.toLocaleString() || 'N/A'}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-gray-500 dark:text-gray-400">Qty</p>
-                            <p className="font-medium text-sm text-gray-900 dark:text-white">
-                              {order.qty || 'N/A'}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-gray-500 dark:text-gray-400">Total</p>
-                            <p className="font-medium text-sm text-gray-900 dark:text-white">
-                              ₹{(order.deliveryprice * order.qty)?.toLocaleString() || 'N/A'}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Status and Date - Compact */}
-                        <div className="flex items-center justify-between gap-2">
-                          <motion.div
-                            whileHover={{ scale: 1.02 }}
-                            className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium w-fit ${getStatusColor(displayStatus)}`}
-                          >
-                            {getStatusIcon(displayStatus, 14)}
-                            <span>{displayStatus || 'Unknown'}</span>
-                          </motion.div>
-
-                          {order.addedDate && (
-                            <div className="flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400">
-                              <Clock className="w-3 h-3" />
-                              <span>{formatDate(order.addedDate, true)}</span>
-                            </div>
+                    <div className="flex flex-col gap-3">
+                      {/* Order header with tracking info and group indicator */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                            {order.trackId || order.id?.slice(0, 8) || 'N/A'}
+                          </p>
+                          {order.trackId && (
+                            <span className="text-[10px] px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-full">
+                              Trackable
+                            </span>
                           )}
                         </div>
+                        <div className="flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400">
+                          <Clock className="w-3 h-3" />
+                          <span>{formatDate(order.orderDate || order.addedDate, true)}</span>
+                        </div>
+                      </div>
+
+                      {/* Items list */}
+                      <div className="flex flex-col gap-3">
+                        {order.items?.length === 1 ? (
+                          // Single item display
+                          <div className="flex items-start gap-3">
+                            <ProductItem
+                              item={order.items[0]}
+                              isGroupOrder={isGroupOrderItem(order.items[0])}
+                            />
+                          </div>
+                        ) : (
+                          // Multiple items display
+                          order.items?.map((item, itemIndex) => (
+                            <div key={item.id} className="flex items-start gap-3 border-b border-gray-100 dark:border-gray-800 pb-3 last:border-0 last:pb-0">
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 mr-1">
+                                {itemIndex + 1}.
+                              </div>
+                              <ProductItem
+                                item={item}
+                                isGroupOrder={isGroupOrderItem(item)}
+                              />
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      {/* Order footer with summary and status */}
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800">
+                        <div className="text-sm">
+                          <span className="text-gray-500 dark:text-gray-400 mr-1">Total:</span>
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            ₹{order.totalAmount?.toLocaleString() || 'N/A'}
+                          </span>
+                          <span className="text-gray-500 dark:text-gray-400 text-xs ml-1.5">
+                            ({order.totalItems || order.items?.length || 0} items)
+                          </span>
+                        </div>
+
+                        <motion.div
+                          whileHover={{ scale: 1.02 }}
+                          className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium w-fit ${getStatusColor(displayStatus)}`}
+                        >
+                          {getStatusIcon(displayStatus)}
+                          <span>{displayStatus || 'Unknown'}</span>
+                        </motion.div>
                       </div>
                     </div>
                   </motion.div>
@@ -594,7 +701,7 @@ export default function OrdersPage() {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2"
+            className="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 py-2 rounded-lg shadow-lg flex items-center gap-2"
           >
             <CheckCircle2 className="w-4 h-4" />
             <span>

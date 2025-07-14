@@ -115,7 +115,7 @@ export default function AppRoutes() {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -10 }}
         >
-          <ResponsiveLayout hideBottomNav={shouldHideBottomNav}>
+          <ResponsiveLayout>
             <ScrollToTop />
             <Routes>
               <Route path="/" element={<Home />} />

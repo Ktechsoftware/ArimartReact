@@ -9,15 +9,17 @@ import walletReducer from './walletSlice';
 import wishlistReducer from './wishlistSlice';
 import groupReducer from './groupBuySlice'; // �� Import your NEW slice
 import ratingReducer, { ratingApi } from './ratingSlice';
+import searchReducer from './searchSlice'
 
 const store = configureStore({
   reducer: {
     auth: authReducer,
-    products: productsReducer, // ← Use your NEW slice instead
+    products: productsReducer,
     category: categoryReducer,
     order: orderReducer,
     productDetail: productDetailReducer,
     cart: cartReducer,
+    search : searchReducer,
     wallet: walletReducer,
     wishlist: wishlistReducer,
     group: groupReducer,

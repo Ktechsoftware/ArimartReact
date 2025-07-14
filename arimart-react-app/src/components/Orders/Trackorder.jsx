@@ -24,27 +24,38 @@ const Trackorder = () => {
     const { statusByGid = {} } = groupState || {};
     console.log(statusByGid)
 
-    
+
     // Transform tracking data to products array
-    const products = trackingData.map(item => ({
-        id: item.productDetails?.id || item.id,
-        name: item.productDetails?.name || item.name,
+    // Transform tracking data to products array
+    const products = trackingData[0]?.items?.map(item => ({
+        id: item.id, // Using the item's own ID (20092)
+        name: item.productDetails?.name || 'Unknown Product',
         groupid: item.groupid,
-        image: item.productDetails?.image || item.image,
-        description: item.productDetails?.description || item.description,
-        price: item.productDetails?.price || item.price,
-        quantity: item.qty || item.quantity,
-        category: item.category?.name || item.categoryName,
-        subcategory: item.subCategory?.name || item.subcategoryName,
-        orderid: item.id,
-        // Keep track of individual item tracking info
+        image: item.productDetails?.image,
+        description: item.productDetails?.description,
+        price: item.deliveryprice, // Using deliveryprice (29)
+        quantity: item.qty, // Using qty (1)
+        category: item.category?.name, // "Mobiles & Tablets"
+        subcategory: item.subCategory?.name, // "Power Banks"
+        childCategory: item.childCategory?.name, // "Business Laptops"
+        orderid: item.id, // 20092
+        pdid: item.pdid, // 13
+        productId: item.productDetails?.id, // 9
+        // Tracking information
         trackingInfo: {
-            status: item.status,
+            status: item.status, // "Placed"
             dassignidTime: item.dassignidTime,
             dvendorpickupTime: item.dvendorpickupTime,
             shipOrderidTime: item.shipOrderidTime,
             ddeliverredidTime: item.ddeliverredidTime,
-            addedDate: item.addedDate
+            addedDate: trackingData[0].orderDate // "2025-07-12T12:06:11.027"
+        },
+        // Order-level information
+        orderInfo: {
+            trackId: trackingData[0].trackId, // "ORD-20250712120611026-09E519"
+            overallStatus: trackingData[0].overallStatus, // "Placed"
+            totalAmount: trackingData[0].totalAmount, // 29
+            totalItems: trackingData[0].totalItems // 1
         }
     })) || [];
 
@@ -83,19 +94,19 @@ const Trackorder = () => {
         return groupStatus.status;
     };
 
-    
-let overridePlacedStatus = false;
-if (products[0]?.groupid) {
-  const groupStatus = statusByGid[products[0].groupid];
-  if (groupStatus?.status === 'pending') {
-    overridePlacedStatus = true;
-  }
-}
+
+    let overridePlacedStatus = false;
+    if (products[0]?.groupid) {
+        const groupStatus = statusByGid[products[0].groupid];
+        if (groupStatus?.status === 'pending') {
+            overridePlacedStatus = true;
+        }
+    }
     // Use the first item's tracking info for the timeline (assuming all items in same order have same tracking)
     const firstItemTrackingInfo = products[0]?.trackingInfo;
 
     const currentTrack = {
-       Placed: overridePlacedStatus ? null : (firstItemTrackingInfo?.status || firstItemTrackingInfo?.addedDate),
+        Placed: overridePlacedStatus ? null : (firstItemTrackingInfo?.status || firstItemTrackingInfo?.addedDate),
         Assigned: firstItemTrackingInfo?.dassignidTime,
         "Picked Up": firstItemTrackingInfo?.dvendorpickupTime,
         Shipped: firstItemTrackingInfo?.shipOrderidTime,

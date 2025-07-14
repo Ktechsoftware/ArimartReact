@@ -1,4 +1,4 @@
-// CartContext.jsx - Separate regular and group carts, context API
+// CartContext.jsx - Fixed version with proper group cart persistence
 
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
@@ -33,6 +33,27 @@ const CART_ACTIONS = {
   CLEAR_CURRENT_GROUP: 'CLEAR_CURRENT_GROUP'
 };
 
+// Helper function to get/set currentGroupId from memory storage
+const getStoredGroupId = () => {
+  try {
+    return window.cartGroupId || null;
+  } catch (error) {
+    return null;
+  }
+};
+
+const setStoredGroupId = (groupId) => {
+  try {
+    if (groupId) {
+      window.cartGroupId = groupId;
+    } else {
+      delete window.cartGroupId;
+    }
+  } catch (error) {
+    console.warn('Failed to store group ID');
+  }
+};
+
 const initialState = {
   regularCartItems: [],
   groupCartItems: [],
@@ -44,7 +65,7 @@ const initialState = {
   error: null,
   syncStatus: 'idle',
   lastSyncTime: null,
-  currentGroupId: null
+  currentGroupId: getStoredGroupId() // Initialize from stored value
 };
 
 const normalizeCartItem = (item) => {
@@ -58,7 +79,7 @@ const normalizeCartItem = (item) => {
     categoryName: item.CategoryName || item.categoryName,
     subcategoryName: item.SubcategoryName || item.subcategoryName,
     quantity: item.Qty || item.quantity || 1,
-    groupId: item.groupid || null,
+    groupId: item.groupid || item.groupId || null,
     gprice: item.gprice || item.GroupPrice || null,
     originalItem: item
   }
@@ -154,7 +175,7 @@ function cartReducer(state, action) {
       const { id, quantity, groupId } = action.payload;
       console.log("Group update data : ", id, quantity, groupId)
       const newItems = state.groupCartItems.map(item =>
-        item.id === id && item.originalItem.groupid === groupId ? { ...item, quantity: Math.max(1, quantity) } : item
+        item.id === id && item.groupId === groupId ? { ...item, quantity: Math.max(1, quantity) } : item
       );
       console.log("new group items : ", newItems)
       const { totalItems, subtotal } = calculateGroupCartTotals(newItems);
@@ -185,6 +206,8 @@ function cartReducer(state, action) {
     case CART_ACTIONS.SYNC_FAILURE:
       return { ...state, syncStatus: 'error', error: action.payload };
     case CART_ACTIONS.SET_CURRENT_GROUP:
+      // Store the group ID for persistence
+      setStoredGroupId(action.payload);
       return { ...state, currentGroupId: action.payload };
     case CART_ACTIONS.CLEAR_CURRENT_GROUP:
       return { ...state, currentGroupId: null };
@@ -220,22 +243,31 @@ export function CartProvider({ children }) {
   };
 
   // Load group cart from server for a specific groupId
-  const loadGroupCart = async (groupId) => {
-    if (!userId || !groupId) return;
-    dispatch({ type: CART_ACTIONS.SET_LOADING, payload: true });
+  const loadGroupCart = async () => {
+    if (!userId) return;
+
     try {
-      const cartItems = await reduxDispatch(fetchCartByUserAndGroup({ userId, groupId })).unwrap();
-      console.log("group info : ", cartItems)
-      dispatch({ type: CART_ACTIONS.LOAD_GROUP_CART, payload: { items: cartItems } });
+      dispatch({ type: CART_ACTIONS.SET_LOADING, payload: true }); // Fix: use SET_LOADING instead of SYNC_START
+      const result = await reduxDispatch(
+        fetchCartByUserAndGroup({ userId })
+      ).unwrap();
+
+      dispatch({
+        type: CART_ACTIONS.LOAD_GROUP_CART,
+        payload: { items: result } // Fix: wrap result in items object
+      });
       dispatch({ type: CART_ACTIONS.SYNC_SUCCESS });
     } catch (error) {
-      dispatch({ type: CART_ACTIONS.SET_ERROR, payload: error.message || 'Unknown error' });
-      dispatch({ type: CART_ACTIONS.SYNC_FAILURE, payload: error.message || 'Unknown error' });
+      dispatch({
+        type: CART_ACTIONS.SYNC_FAILURE,
+        payload: error.message
+      });
       toast.error('Failed to load group cart');
     } finally {
       dispatch({ type: CART_ACTIONS.SET_LOADING, payload: false });
     }
   };
+
 
   // Add item to regular or group cart
   const addToCart = async (product, quantity = 1, groupId = null) => {
@@ -254,7 +286,7 @@ export function CartProvider({ children }) {
             userId,
             productId: product.pdid || product.id,
             quantity,
-            name : product.productName,
+            name: product.productName,
             price: product.netprice || product.price,
             groupId
           };
@@ -278,7 +310,7 @@ export function CartProvider({ children }) {
           const requestData = {
             userId,
             productId: product.pdid || product.id,
-            name : product.productName,
+            name: product.productName,
             quantity,
             price: product.netprice || product.price
           };
@@ -293,12 +325,20 @@ export function CartProvider({ children }) {
 
   // Update quantity
   const updateQuantity = async (id, quantity, groupId = null) => {
-    console.log("group id is : ", groupId)
+    // If no groupId is passed, check if the item exists in group cart
+    if (!groupId) {
+      const groupItem = state.groupCartItems.find(item => item.id === id);
+      if (groupItem) {
+        groupId = groupItem.groupId;
+      }
+    }
+
     if (groupId) {
       dispatch({ type: CART_ACTIONS.UPDATE_QUANTITY_GROUP, payload: { id, quantity, groupId } });
     } else {
       dispatch({ type: CART_ACTIONS.UPDATE_QUANTITY_REGULAR, payload: { id, quantity } });
     }
+
     if (userId) {
       try {
         const requestData = {
@@ -316,20 +356,28 @@ export function CartProvider({ children }) {
 
   // Remove item
   const removeFromCart = async (id, groupId = null) => {
-    console.log("remove cart data : ", id, groupId)
+    // If no groupId is passed, check if the item exists in group cart
+    if (!groupId) {
+      const groupItem = state.groupCartItems.find(item => item.id === id);
+      if (groupItem) {
+        groupId = groupItem.groupId;
+      }
+    }
+
     if (groupId) {
       dispatch({ type: CART_ACTIONS.REMOVE_ITEM_GROUP, payload: { id, groupId } });
     } else {
       dispatch({ type: CART_ACTIONS.REMOVE_ITEM_REGULAR, payload: id });
     }
+
     toast.success('Item removed from cart');
+
     if (userId) {
       try {
         const requestData = {
           userId,
           cartItemId: id
         };
-        console.log("remove response : ", requestData)
         await reduxDispatch(removeFromCartRedux(requestData)).unwrap();
         dispatch({ type: CART_ACTIONS.SYNC_SUCCESS });
       } catch (error) {
@@ -345,6 +393,7 @@ export function CartProvider({ children }) {
     } else {
       dispatch({ type: CART_ACTIONS.CLEAR_REGULAR_CART });
     }
+
     if (userId) {
       try {
         const requestData = { userId };
@@ -358,20 +407,20 @@ export function CartProvider({ children }) {
     }
   };
 
-  // Set / clear group context
+
   const setCurrentGroup = (groupId) => {
     dispatch({ type: CART_ACTIONS.SET_CURRENT_GROUP, payload: groupId });
   };
+
   const clearCurrentGroup = () => {
     dispatch({ type: CART_ACTIONS.CLEAR_CURRENT_GROUP });
   };
 
-  // On login, fetch regular cart
   useEffect(() => {
-    if (userId) {
-      loadCartFromServer();
+    if (userId && state.currentGroupId) {
+      loadGroupCart();
     }
-  }, [userId]);
+  }, [state.currentGroupId, userId]);
 
   // On logout, clear all
   useEffect(() => {
@@ -390,6 +439,7 @@ export function CartProvider({ children }) {
       return !!state.groupCartItems.find(item => item.id === id && item.groupId === groupId);
     }
   };
+
   const getItemQuantity = (id, groupId = null) => {
     if (!groupId) {
       const item = state.regularCartItems.find(item => item.id === id);
@@ -415,7 +465,7 @@ export function CartProvider({ children }) {
         item =>
           (item.originalItem.pid === productId ||
             item.originalItem.pdid === productId) &&
-          item.originalItem.groupId === groupId
+          item.groupId === groupId
       );
       console.log("Group cart info", item)
     }

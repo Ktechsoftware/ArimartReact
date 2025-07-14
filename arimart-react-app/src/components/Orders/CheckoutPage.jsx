@@ -98,42 +98,61 @@ export default function CheckoutPage() {
 
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const handlecheckoutCart = async () => {
-    if (selectedPayment.id !== 'cod') {
-      navigate('/checkout/payment');
-      return;
-    }
-    setIsProcessing(true);
-    const processingTimer = setTimeout(() => {
-      setIsProcessing(false);
-    }, 6000); // Minimum 6 seconds loader
-    try {
-      const cartIds = items.map(item => item.id).join(',');
-      const payload = {
-        Addid: cartIds,
-        Userid: userId,
-        Sipid: "0"
-      };
+ const handlecheckoutCart = async () => {
+  if (selectedPayment.id !== 'cod') {
+    navigate('/checkout/payment');
+    return;
+  }
+  
+  setIsProcessing(true);
+  const processingTimer = setTimeout(() => {
+    setIsProcessing(false);
+  }, 6000);
+  
+  try {
+    const cartIds = items.map(item => item.id).join(',');
+    
+    // Detect if this is a group order by checking if items have groupId
+    const isGroupOrder = items.some(item => item.groupId || item.groupid);
+    const groupId = isGroupOrder ? (items[0].groupId || items[0].groupid) : null;
+    
+    const payload = {
+      Addid: cartIds,
+      Userid: userId,
+      Sipid: "0"
+    };
 
-      const res = await dispatch(checkoutCart(payload)).unwrap();
-      clearTimeout(processingTimer);
-      const trackId = res.orderid;
-      if (!trackId) {
-        throw new Error("Invalid response: Track ID missing");
-      }
-
-      setLatestTrackId(trackId);
-      setShowModal(true);
-      clearCart();
-      toast.success("Order placed successfully!");
-    } catch (err) {
-      clearTimeout(processingTimer);
-      console.error("Checkout failed:", err);
-      toast.error(err.message || "Checkout failed");
-    } finally {
-      setIsProcessing(false);
+    if (groupId) {
+      payload.groupId = groupId;
     }
-  };
+
+    const res = await dispatch(checkoutCart(payload)).unwrap();
+    clearTimeout(processingTimer);
+    const trackId = res.orderid;
+    
+    if (!trackId) {
+      throw new Error("Invalid response: Track ID missing");
+    }
+
+    setLatestTrackId(trackId);
+    setShowModal(true);
+    
+    // Clear the appropriate cart
+    if (groupId) {
+      await clearCart({ groupId });
+    } else {
+      await clearCart();
+    }
+    
+    toast.success("Order placed successfully!");
+  } catch (err) {
+    clearTimeout(processingTimer);
+    console.error("Checkout failed:", err);
+    toast.error(err.message || "Checkout failed");
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
   // ⏹️ Determine subtotal dynamically based on cartType
   let displaySubtotal = 0;
