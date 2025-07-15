@@ -432,11 +432,11 @@ export function CartProvider({ children }) {
   }, [userId, isAuthenticated]);
 
   const isItemInCart = (id, groupId = null) => {
-    console.log(groupId, state.regularCartItems)
     if (!groupId) {
       return !!state.regularCartItems.find(item => item.id === id);
     } else {
-      return !!state.groupCartItems.find(item => item.id === id && item.groupId === groupId);
+      console.log("check cart items : ",groupId,id, state.groupCartItems) 
+      return !!state.groupCartItems.find(item => item.originalItem.pdid === id && item.groupId == groupId);
     }
   };
 

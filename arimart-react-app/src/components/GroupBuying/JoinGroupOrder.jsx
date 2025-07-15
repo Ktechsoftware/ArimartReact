@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import {
@@ -33,9 +33,10 @@ import {
 import { useCart } from '../../context/CartContext';
 
 const JoinGroupOrder = () => {
+    const navigate = useNavigate();
     const { groupid, grouprefercode } = useParams();
     const userData = useSelector((state) => state.auth.userData);
-    const { addToCart, setCurrentGroup } = useCart();
+    const { addToCart, setCurrentGroup, isItemInCart } = useCart();
     const dispatch = useDispatch();
     const [timeLeft, setTimeLeft] = useState(null);
     const [copiedCode, setCopiedCode] = useState(false);
@@ -162,7 +163,8 @@ const JoinGroupOrder = () => {
             setQuantity(newQuantity);
         }
     };
-console.log(group)
+    // console.log(group)
+    const isProductInCart = group?.pdid ? isItemInCart(group.pdid, groupid) : false;
     // Handle add to cart
     const handleAddToCart = () => {
         if (quantity < 1) {
@@ -183,7 +185,12 @@ console.log(group)
         };
 
         addToCart(cartItem, quantity, groupid);
-        // toast.success(`${quantity} item(s) added to cart!`);
+        toast.success(`${quantity} item(s) added to cart!`);
+    };
+
+    // Handle go to cart
+    const handleGoToCart = () => {
+        navigate('/cart');
     };
 
     // Handle join success
@@ -336,68 +343,98 @@ console.log(group)
         } else if (isUserInCurrentGroup) {
             return (
                 <div className="flex flex-col sm:flex-row items-stretch gap-3 pt-4">
-                    {/* Quantity Controller + Add to Cart */}
-                    <div className="flex items-stretch flex-1 gap-2">
-                        {/* Quantity Controller - Stacked on small screens */}
-                        <div className="flex items-center border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                            <button
-                                className="px-3 py-2 sm:px-2.5 sm:py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                onClick={() => handleQuantityChange(quantity - 1)}
-                                disabled={quantity <= 1}
+                    {isProductInCart ? (
+                        // Enhanced "Go to Cart" button with clear messaging
+                        <div className="w-full flex flex-col gap-2">
+                            <div className="flex items-center justify-center gap-2 py-2 px-4 bg-green-50 dark:bg-emerald-900/20 rounded-lg border border-green-200 dark:border-emerald-800">
+                                <CheckCircle className="w-5 h-5 text-green-600 dark:text-emerald-400" />
+                                <span className="text-sm font-medium text-green-700 dark:text-emerald-200">
+                                    This item is already in your Group Cart
+                                </span>
+                            </div>
+
+                            <motion.button
+                                onClick={handleGoToCart}
+                                className="w-full py-3 rounded-lg font-medium shadow-sm transition-all duration-200 
+                    bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700
+                    focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
                             >
-                                <Minus className="w-4 h-4" />
-                            </button>
-                            <span className="px-4 py-2 sm:px-3 sm:py-1.5 text-sm font-medium text-gray-900 dark:text-white min-w-[2.5rem] text-center border-x border-gray-200 dark:border-gray-700">
-                                {quantity}
-                            </span>
-                            <button
-                                className="px-3 py-2 sm:px-2.5 sm:py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                                onClick={() => handleQuantityChange(quantity + 1)}
-                            >
-                                <Plus className="w-4 h-4" />
-                            </button>
+                                <div className="flex items-center justify-center gap-2">
+                                    <ShoppingCart className="w-5 h-5" />
+                                    <span className="whitespace-nowrap">Go to Group Cart</span>
+                                    <ArrowRight className="w-4 h-4 ml-1" />
+                                </div>
+                            </motion.button>
                         </div>
+                    ) : (
+                        // Original controls when product is not in cart
+                        <>
+                            {/* Quantity Controller + Add to Cart */}
+                            <div className="flex items-stretch flex-1 gap-2">
+                                {/* Quantity Controller - Stacked on small screens */}
+                                <div className="flex items-center border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                                    <button
+                                        className="px-3 py-2 sm:px-2.5 sm:py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        onClick={() => handleQuantityChange(quantity - 1)}
+                                        disabled={quantity <= 1}
+                                    >
+                                        <Minus className="w-4 h-4" />
+                                    </button>
+                                    <span className="px-4 py-2 sm:px-3 sm:py-1.5 text-sm font-medium text-gray-900 dark:text-white min-w-[2.5rem] text-center border-x border-gray-200 dark:border-gray-700">
+                                        {quantity}
+                                    </span>
+                                    <button
+                                        className="px-3 py-2 sm:px-2.5 sm:py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                                        onClick={() => handleQuantityChange(quantity + 1)}
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                    </button>
+                                </div>
 
-                        {/* Add to Cart Button - Full width on mobile */}
-                        <motion.button
-                            onClick={handleAddToCart}
-                            className="flex-1 py-3 sm:py-2.5 rounded-lg font-medium shadow-sm transition-all duration-200 
-                     bg-gradient-to-r from-purple-600 to-blue-600 text-white 
-                     hover:from-purple-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2
+                                {/* Add to Cart Button - Full width on mobile */}
+                                <motion.button
+                                    onClick={handleAddToCart}
+                                    className="flex-1 py-3 sm:py-2.5 rounded-lg font-medium shadow-sm transition-all duration-200 
+                        bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700
+                        focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2
+                        disabled:opacity-50 disabled:cursor-not-allowed"
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                >
+                                    <div className="flex items-center justify-center gap-1.5">
+                                        <ShoppingBag className="w-4 h-4" />
+                                        <span className="whitespace-nowrap">Add to Group Cart</span>
+                                    </div>
+                                </motion.button>
+                            </div>
+
+                            {/* Leave Group Button - Full width on mobile */}
+                            <motion.button
+                                onClick={handleLeaveGroup}
+                                disabled={isLeaving}
+                                className="py-3 sm:py-2.5 px-4 border border-red-500/50 text-red-600 dark:text-red-400 
+                     hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg font-medium 
+                     transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2
                      disabled:opacity-50 disabled:cursor-not-allowed"
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                        >
-                            <div className="flex items-center justify-center gap-1.5">
-                                <ShoppingBag className="w-4 h-4" />
-                                <span className="whitespace-nowrap">Add to Group Cart</span>
-                            </div>
-                        </motion.button>
-                    </div>
-
-                    {/* Leave Group Button - Full width on mobile */}
-                    <motion.button
-                        onClick={handleLeaveGroup}
-                        disabled={isLeaving}
-                        className="py-3 sm:py-2.5 px-4 border border-red-500/50 text-red-600 dark:text-red-400 
-                 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg font-medium 
-                 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2
-                 disabled:opacity-50 disabled:cursor-not-allowed"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                    >
-                        {isLeaving ? (
-                            <div className="flex items-center justify-center gap-1.5">
-                                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-red-500"></div>
-                                <span>Leaving...</span>
-                            </div>
-                        ) : (
-                            <div className="flex items-center justify-center gap-1.5">
-                                <LogOut className="w-4 h-4" />
-                                <span>Leave Group</span>
-                            </div>
-                        )}
-                    </motion.button>
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                            >
+                                {isLeaving ? (
+                                    <div className="flex items-center justify-center gap-1.5">
+                                        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-red-500"></div>
+                                        <span>Leaving...</span>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center justify-center gap-1.5">
+                                        <LogOut className="w-4 h-4" />
+                                        <span>Leave Group</span>
+                                    </div>
+                                )}
+                            </motion.button>
+                        </>
+                    )}
                 </div>
             );
         } else {

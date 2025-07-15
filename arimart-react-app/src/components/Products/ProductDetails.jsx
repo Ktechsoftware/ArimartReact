@@ -150,38 +150,51 @@ setIsCelebrating(true);
 
   const showQuantityControls = (itemInCart && itemQuantity > 0) || optimisticInCart;
 
-  const handleIncrease = async () => {
-    const cartItemId = getCartItemInfo(product.id);
-    if (!cartItemId) return toast.error("Cart item not found");
+  // Fixed quantity handler functions for ProductDetails component
+
+const handleIncrease = async () => {
+  const cartItemInfo = getCartItemInfo(product.id);
+  if (!cartItemInfo) return toast.error("Cart item not found");
+  
+  try {
+    // Pass the cart item ID (not the whole object) and new quantity
+    await updateQuantity(cartItemInfo.cartItemId, cartItemInfo.quantity + 1);
+    toast.success("Quantity updated");
+  } catch (error) {
+    console.error("Error updating quantity:", error);
+    toast.error("Failed to update quantity");
+  }
+};
+
+const handleDecrease = async () => {
+  const cartItemInfo = getCartItemInfo(product.id);
+  if (!cartItemInfo) return toast.error("Cart item not found");
+  
+  if (cartItemInfo.quantity > 1) {
     try {
-      await updateQuantity(cartItemId, itemQuantity + 1);
+      // Pass the cart item ID (not the whole object) and new quantity
+      await updateQuantity(cartItemInfo.cartItemId, cartItemInfo.quantity - 1);
+      toast.success("Quantity updated");
     } catch (error) {
+      console.error("Error updating quantity:", error);
       toast.error("Failed to update quantity");
     }
-  };
+  }
+};
 
-  const handleDecrease = async () => {
-    const cartItemId = getCartItemInfo(product.id);
-    if (!cartItemId) return toast.error("Cart item not found");
-    if (itemQuantity > 1) {
-      try {
-        await updateQuantity(cartItemId, itemQuantity - 1);
-      } catch (error) {
-        toast.error("Failed to update quantity");
-      }
-    }
-  };
-
-  const handleRemove = async () => {
-    const cartItemId = getCartItemInfo(product.id);
-    if (!cartItemId) return toast.error("Cart item not found");
-    try {
-      await removeFromCart(cartItemId);
-      toast.success("Item removed from cart");
-    } catch (error) {
-      toast.error("Failed to remove item from cart");
-    }
-  };
+const handleRemove = async () => {
+  const cartItemInfo = getCartItemInfo(product.id);
+  if (!cartItemInfo) return toast.error("Cart item not found");
+  
+  try {
+    // Pass only the cart item ID (not the whole object)
+    await removeFromCart(cartItemInfo.cartItemId);
+    toast.success("Item removed from cart");
+  } catch (error) {
+    console.error("Error removing from cart:", error);
+    toast.error("Failed to remove item from cart");
+  }
+};
 
   const handleCreateGroup = async () => {
     const userId = userData?.userId || userData?.id;
@@ -561,7 +574,7 @@ setIsCelebrating(true);
         >
           <div className="flex items-center justify-center gap-4 max-w-md mx-auto">
             <AnimatePresence mode="wait">
-              {itemInCart && itemQuantity > 0 ? (
+              {showQuantityControls ? (
                 <motion.div
                   key="quantity-controls"
                   initial={{ opacity: 0, scale: 0.8 }}

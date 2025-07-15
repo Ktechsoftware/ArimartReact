@@ -10,6 +10,8 @@ import wishlistReducer from './wishlistSlice';
 import groupReducer from './groupBuySlice'; // �� Import your NEW slice
 import ratingReducer, { ratingApi } from './ratingSlice';
 import searchReducer from './searchSlice'
+import filterReducer from './filterSlice'
+import topOrdersReducer from './Tops/topOrdersSlice'
 
 const store = configureStore({
   reducer: {
@@ -21,6 +23,8 @@ const store = configureStore({
     cart: cartReducer,
     search : searchReducer,
     wallet: walletReducer,
+    topOrders : topOrdersReducer,
+    filters : filterReducer,
     wishlist: wishlistReducer,
     group: groupReducer,
     rating: ratingReducer,

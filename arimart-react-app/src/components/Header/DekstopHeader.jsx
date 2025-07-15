@@ -1,4 +1,4 @@
-import { ShoppingCart, Search, ChevronDown, User, ClockAlertIcon, GroupIcon } from "lucide-react";
+import { ShoppingCart, Search, ChevronDown, User, ClockAlertIcon, GroupIcon, Bell } from "lucide-react";
 import logo from '../../assets/images/logo.png';
 import { motion } from "framer-motion";
 import { useState } from "react";
@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { SearchDropdown } from "./SearchDropdown";
 import { useCart } from "../../context/CartContext";
 import CartIcon from "../common/CartIcon";
+import NotificationDropdown from "../ui/NotificationDropdown";
 
 
 export default function DesktopHeader() {
@@ -168,21 +169,24 @@ export default function DesktopHeader() {
                 </motion.button>
               </Link>
             ) : (
-              <Link to="/account">
-                <motion.button
-                  className="flex items-center gap-1 text-sm text-black dark:text-white"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <UserCircle className="w-5 h-5" />
-                  My Account
-                </motion.button>
-              </Link>
+              <>
+                <NotificationDropdown/>
+                <Link to="/account">
+                  <motion.button
+                    className="flex items-center gap-1 text-sm text-black dark:text-white"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <UserCircle className="w-5 h-5" />
+                    My Account
+                  </motion.button>
+                </Link>
+              </>
             )}
             <CartIcon show={true} />
           </div>
         </div>
-      </header>
+      </header> 
       <DesktopCategory />
     </>
   );

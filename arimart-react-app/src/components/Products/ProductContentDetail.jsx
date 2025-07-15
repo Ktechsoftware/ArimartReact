@@ -43,7 +43,7 @@ export default function ProductContentDetail() {
   const cartItem = product ? getCartItemInfo(product.id) : null;
   const itemInCart = !!cartItem;
   const itemQuantity = cartItem ? cartItem.quantity : 1;
-  console.log("cart quantity : ", itemQuantity)
+  // console.log("cart quantity : ", itemQuantity)
   // Demo images for left side
   const demoImages = [
     "http://localhost:5015/Uploads/" + product?.image || '/placeholder-image.jpg',
@@ -160,39 +160,52 @@ export default function ProductContentDetail() {
 
   const showQuantityControls = (itemInCart && itemQuantity > 0) || optimisticInCart;
 
-  const handleIncrease = async () => {
-    const cartItemId = getCartItemInfo(product.id); // or pass groupId if needed
-    if (!cartItemId) return toast.error("Cart item not found");
+  // Fixed quantity handler functions for ProductDetails component
+
+const handleIncrease = async () => {
+  const cartItemInfo = getCartItemInfo(product.id);
+  if (!cartItemInfo) return toast.error("Cart item not found");
+  
+  try {
+    // Pass the cart item ID (not the whole object) and new quantity
+    await updateQuantity(cartItemInfo.cartItemId, cartItemInfo.quantity + 1);
+    toast.success("Quantity updated");
+  } catch (error) {
+    console.error("Error updating quantity:", error);
+    toast.error("Failed to update quantity");
+  }
+};
+
+const handleDecrease = async () => {
+  const cartItemInfo = getCartItemInfo(product.id);
+  if (!cartItemInfo) return toast.error("Cart item not found");
+  
+  if (cartItemInfo.quantity > 1) {
     try {
-      await updateQuantity(cartItemId, itemQuantity + 1); // use cartItemId here
+      // Pass the cart item ID (not the whole object) and new quantity
+      await updateQuantity(cartItemInfo.cartItemId, cartItemInfo.quantity - 1);
+      toast.success("Quantity updated");
     } catch (error) {
+      console.error("Error updating quantity:", error);
       toast.error("Failed to update quantity");
     }
-  };
+  }
+};
 
-  const handleDecrease = async () => {
-    const cartItemId = getCartItemInfo(product.id); // or pass groupId if needed
-    if (!cartItemId) return toast.error("Cart item not found");
-    if (itemQuantity > 1) {
-      try {
-        await updateQuantity(cartItemId, itemQuantity - 1);
-      } catch (error) {
-        toast.error("Failed to update quantity");
-      }
-    }
-  };
+const handleRemove = async () => {
+  const cartItemInfo = getCartItemInfo(product.id);
+  if (!cartItemInfo) return toast.error("Cart item not found");
+  
+  try {
+    // Pass only the cart item ID (not the whole object)
+    await removeFromCart(cartItemInfo.cartItemId);
+    toast.success("Item removed from cart");
+  } catch (error) {
+    console.error("Error removing from cart:", error);
+    toast.error("Failed to remove item from cart");
+  }
+};
 
-  const handleRemove = async () => {
-    const cartItemId = getCartItemInfo(product.id);
-    console.log(cartItemId)
-    if (!cartItemId) return toast.error("Cart item not found");
-    try {
-      await removeFromCart(cartItemId);
-      toast.success("Item removed from cart");
-    } catch (error) {
-      toast.error("Failed to remove item from cart");
-    }
-  };
 
   const handleCreateGroup = async () => {
     const userId = userData?.userId || userData?.id;

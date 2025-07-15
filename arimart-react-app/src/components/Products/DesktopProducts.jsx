@@ -1,111 +1,113 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
-import DProductCard from './DProductcards';
-import API from '../../api';
 import ProductCard from './ProductCard';
+import {
+  searchProducts,
+  loadMoreSearchResults,
+} from '../../Store/searchSlice';
 
 const DesktopProducts = () => {
-    const [allProducts, setAllProducts] = useState([]);
-    const [searchResults, setSearchResults] = useState([]);
-    const [isSearching, setIsSearching] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const carouselRef = useRef(null);
-    const location = useLocation();
+  const dispatch = useDispatch();
+  const location = useLocation();
+  const query = new URLSearchParams(location.search).get('query');
 
-    const query = new URLSearchParams(location.search).get('query');
+  const {
+    results,
+    loading,
+    error,
+    hasMore,
+    pagination,
+  } = useSelector((state) => state.search);
 
-    useEffect(() => {
-        if (query) {
-            setIsSearching(true);
-            fetchSearchResults(query);
-        } else {
-            setIsSearching(false);
-            fetchAllProducts();
-        }
-    }, [query]);
+  const { selectedFilters } = useSelector((state) => state.filters);
 
-    const fetchAllProducts = async () => {
-        try {
-            setLoading(true);
-            const res = await API.get('/products');
-            setAllProducts(res.data);
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
+  // 👇 Helper to build filter request
+  const getSearchParamsFromFilters = (filters) => {
+    const params = {};
 
-    const fetchSearchResults = async (query) => {
-        try {
-            setLoading(true);
-            const res = await API.get(`/products/search?query=${query}`);
-            setSearchResults(res.data);
-            console.log("Search Results:", res.data);
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // const scroll = (direction) => {
-    //     const container = carouselRef.current;
-    //     const scrollAmount = direction === 'left' ? -300 : 300;
-    //     container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-    // };
-
-    if (loading) {
-        return <div className="flex justify-center items-center h-screen">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-        </div>
+    // Handle price range
+    if (filters.priceRanges && filters.priceRanges.length > 0) {
+      const selected = filters.priceRanges[0]; // "0-50"
+      const [min, max] = selected.split('-');
+      params.priceMin = parseFloat(min);
+      params.priceMax = parseFloat(max);
     }
 
-    if (error) {
-        return <div className="p-8 text-red-500">Error: {error}</div>;
+    // Add more filters (discountRanges, brands, etc.) here if needed
+
+    return params;
+  };
+
+  // ✅ Final useEffect to trigger search based on query + filters
+  useEffect(() => {
+    if (query) {
+      const filterParams = getSearchParamsFromFilters(selectedFilters);
+      console.log('Selected Filters:', selectedFilters);
+      console.log('Filter Params:', filterParams);
+
+      dispatch(searchProducts({
+        query,
+        page: 1,
+        pageSize: 12,
+        ...filterParams,
+      }));
     }
+  }, [query, selectedFilters]);
 
-    const productsToDisplay = isSearching ? searchResults : allProducts;
+  const handleLoadMore = () => {
+    if (hasMore && !loading) {
+      dispatch(loadMoreSearchResults({ query }));
+    }
+  };
 
-    return (
-        <div className="py-8 px-4 bg-white dark:bg-gray-900">
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white">
-                    {isSearching
-                        ? `Search Results for "${query}"`
-                        : "All Products"}
-                </h2>
-            </div>
+  const displayTitle = query
+    ? `Search Results for "${query}"`
+    : 'All Products';
 
-            {productsToDisplay.length === 0 ? (
-                <p className="text-center text-gray-500 dark:text-gray-400">No products found.</p>
-            ) : (
-                <div className="relative group">
-                    {/* <button
-                        onClick={() => scroll('left')}
-                        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white dark:bg-gray-800 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    >
-                        <ChevronLeftIcon className="text-gray-700 dark:text-gray-300 text-xl" />
-                    </button>
+  return (
+    <div className="py-8 px-4 bg-white dark:bg-gray-900">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold text-gray-800 dark:text-white">
+          {displayTitle}
+        </h2>
+      </div>
 
-                    <button
-                        onClick={() => scroll('right')}
-                        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white dark:bg-gray-800 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    >
-                        <ChevronRightIcon className="text-gray-700 dark:text-gray-300 text-xl" />
-                    </button> */}
-
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 md:p-4">
-                        {productsToDisplay.products.map((product) => (
-                            <ProductCard key={product.id} product={product} />
-                        ))}
-                    </div>
-                </div>
-            )}
+      {loading && pagination.page === 1 && (
+        <div className="flex justify-center items-center h-40">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
         </div>
-    );
+      )}
+
+      {error && (
+        <div className="p-4 text-red-500 text-center">
+          Error: {error}
+        </div>
+      )}
+
+      {results.length === 0 && !loading && (
+        <p className="text-center text-gray-500 dark:text-gray-400">No products found.</p>
+      )}
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 md:p-4">
+        {results.map((product) => (
+          <ProductCard key={product.id} product={product} />
+        ))}
+      </div>
+
+      {hasMore && (
+        <div className="flex justify-center mt-6">
+          <button
+            onClick={handleLoadMore}
+            disabled={loading}
+            className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
+          >
+            {loading ? 'Loading...' : 'Load More'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default DesktopProducts;
