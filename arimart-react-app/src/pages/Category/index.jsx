@@ -7,7 +7,7 @@ import MobileCategoryLayout from '../../components/category/CategoryLayout'
 function Categoryindex() {
   return (
     <div className='mb-20'>
-       <Header title={"Category"} setbaricon={false}  setcarticon={false}/>
+       <Header title={"Category"} setbaricon={false}/>
         <MobileCategoryLayout/>
         <Outlet/>
     </div>

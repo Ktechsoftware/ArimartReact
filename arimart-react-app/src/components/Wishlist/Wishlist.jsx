@@ -3,6 +3,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchWishlist } from '../../Store/wishlistSlice';
 import EmptyWishlist from './EmptyWishlist';
 import DProductCard from '../Products/DProductcards';
+import ProductCardFullWidth from '../Products/ProductCardResponsive';
+import ProductCardResponsive from '../Products/ProductCardResponsive';
 
 const Wishlist = () => {
   const dispatch = useDispatch();
@@ -16,7 +18,7 @@ const Wishlist = () => {
   }, [dispatch, userData?.id]);
 
   if (loading) return <p className="text-center py-10">Loading wishlist...</p>;
-  if (error) return <p className="text-center text-red-600">{error}</p>;
+  // if (error) return <p className="text-center text-red-600">{error}</p>;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
@@ -25,9 +27,9 @@ const Wishlist = () => {
       {items.length === 0 ? (
         <EmptyWishlist />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
           {items.map((product) => (
-            <DProductCard key={product.id} product={product} />
+            <ProductCardResponsive key={product.id} product={product} />
           ))}
         </div>
       )}

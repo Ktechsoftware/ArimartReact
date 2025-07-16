@@ -1,4 +1,4 @@
-// CartContext.jsx - Fixed version with proper group cart persistence
+// CartContext.jsx - Fixed version with proper cart restoration on reload
 
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
@@ -65,7 +65,8 @@ const initialState = {
   error: null,
   syncStatus: 'idle',
   lastSyncTime: null,
-  currentGroupId: getStoredGroupId() // Initialize from stored value
+  currentGroupId: getStoredGroupId(),
+  isInitialized: false // Track if cart has been initialized
 };
 
 const normalizeCartItem = (item) => {
@@ -114,7 +115,8 @@ function cartReducer(state, action) {
         ...state,
         regularCartItems: normalizedItems,
         totalItems,
-        subtotal
+        subtotal,
+        isInitialized: true
       };
     }
     case CART_ACTIONS.LOAD_GROUP_CART: {
@@ -210,6 +212,7 @@ function cartReducer(state, action) {
       setStoredGroupId(action.payload);
       return { ...state, currentGroupId: action.payload };
     case CART_ACTIONS.CLEAR_CURRENT_GROUP:
+      setStoredGroupId(null);
       return { ...state, currentGroupId: null };
     default:
       return state;
@@ -227,15 +230,23 @@ export function CartProvider({ children }) {
 
   // Load regular cart from server
   const loadCartFromServer = async () => {
-    if (!userId) return;
+    if (!userId) {
+      // If no user, mark as initialized with empty cart
+      dispatch({ type: CART_ACTIONS.LOAD_REGULAR_CART, payload: { items: [] } });
+      return;
+    }
+
     dispatch({ type: CART_ACTIONS.SET_LOADING, payload: true });
     try {
       const cartItems = await reduxDispatch(fetchCartByUserId(userId)).unwrap();
-      dispatch({ type: CART_ACTIONS.LOAD_REGULAR_CART, payload: { items: cartItems } });
+      dispatch({ type: CART_ACTIONS.LOAD_REGULAR_CART, payload: { items: cartItems || [] } });
       dispatch({ type: CART_ACTIONS.SYNC_SUCCESS });
     } catch (error) {
+      console.error('Error loading cart:', error);
       dispatch({ type: CART_ACTIONS.SET_ERROR, payload: error.message || 'Unknown error' });
       dispatch({ type: CART_ACTIONS.SYNC_FAILURE, payload: error.message || 'Unknown error' });
+      // Still mark as initialized even on error
+      dispatch({ type: CART_ACTIONS.LOAD_REGULAR_CART, payload: { items: [] } });
       toast.error('Failed to load cart from server');
     } finally {
       dispatch({ type: CART_ACTIONS.SET_LOADING, payload: false });
@@ -247,27 +258,32 @@ export function CartProvider({ children }) {
     if (!userId) return;
 
     try {
-      dispatch({ type: CART_ACTIONS.SET_LOADING, payload: true }); // Fix: use SET_LOADING instead of SYNC_START
+      dispatch({ type: CART_ACTIONS.SET_LOADING, payload: true });
       const result = await reduxDispatch(
         fetchCartByUserAndGroup({ userId })
       ).unwrap();
 
       dispatch({
         type: CART_ACTIONS.LOAD_GROUP_CART,
-        payload: { items: result } // Fix: wrap result in items object
+        payload: { items: result || [] }
       });
       dispatch({ type: CART_ACTIONS.SYNC_SUCCESS });
     } catch (error) {
+      console.error('Error loading group cart:', error);
       dispatch({
         type: CART_ACTIONS.SYNC_FAILURE,
         payload: error.message
+      });
+      // Load empty group cart on error
+      dispatch({
+        type: CART_ACTIONS.LOAD_GROUP_CART,
+        payload: { items: [] }
       });
       toast.error('Failed to load group cart');
     } finally {
       dispatch({ type: CART_ACTIONS.SET_LOADING, payload: false });
     }
   };
-
 
   // Add item to regular or group cart
   const addToCart = async (product, quantity = 1, groupId = null) => {
@@ -407,7 +423,6 @@ export function CartProvider({ children }) {
     }
   };
 
-
   const setCurrentGroup = (groupId) => {
     dispatch({ type: CART_ACTIONS.SET_CURRENT_GROUP, payload: groupId });
   };
@@ -416,8 +431,22 @@ export function CartProvider({ children }) {
     dispatch({ type: CART_ACTIONS.CLEAR_CURRENT_GROUP });
   };
 
+  // Initialize cart when user authentication changes
+  useEffect(() => {
+    if (isAuthenticated && userId && !state.isInitialized) {
+      console.log('Loading cart from server...');
+      loadCartFromServer();
+    } else if (!isAuthenticated && !state.isInitialized) {
+      console.log('No user, initializing empty cart...');
+      // Initialize empty cart for non-authenticated users
+      dispatch({ type: CART_ACTIONS.LOAD_REGULAR_CART, payload: { items: [] } });
+    }
+  }, [isAuthenticated, userId, state.isInitialized]);
+
+  // Load group cart when currentGroupId changes
   useEffect(() => {
     if (userId && state.currentGroupId) {
+      console.log('Loading group cart for group:', state.currentGroupId);
       loadGroupCart();
     }
   }, [state.currentGroupId, userId]);
@@ -425,6 +454,7 @@ export function CartProvider({ children }) {
   // On logout, clear all
   useEffect(() => {
     if (!userId && isAuthenticated === false) {
+      console.log('User logged out, clearing cart...');
       dispatch({ type: CART_ACTIONS.CLEAR_REGULAR_CART });
       dispatch({ type: CART_ACTIONS.CLEAR_GROUP_CART });
       dispatch({ type: CART_ACTIONS.CLEAR_CURRENT_GROUP });
@@ -490,6 +520,7 @@ export function CartProvider({ children }) {
     syncStatus: state.syncStatus,
     lastSyncTime: state.lastSyncTime,
     currentGroupId: state.currentGroupId,
+    isInitialized: state.isInitialized,
     // Actions
     addToCart,
     updateQuantity,

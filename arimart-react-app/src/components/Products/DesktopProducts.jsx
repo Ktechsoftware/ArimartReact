@@ -43,8 +43,6 @@ const DesktopProducts = () => {
   useEffect(() => {
     if (query) {
       const filterParams = getSearchParamsFromFilters(selectedFilters);
-      console.log('Selected Filters:', selectedFilters);
-      console.log('Filter Params:', filterParams);
 
       dispatch(searchProducts({
         query,
@@ -63,7 +61,7 @@ const DesktopProducts = () => {
 
   const displayTitle = query
     ? `Search Results for "${query}"`
-    : 'All Products';
+    : 'Popular Products';
 
   return (
     <div className="py-8 px-4 bg-white dark:bg-gray-900">

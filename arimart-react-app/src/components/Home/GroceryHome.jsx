@@ -17,6 +17,7 @@ import HorizontalCategoryBar from "../category/HorizontalCategoryBar";
 import { DeliveryInfo } from "../ui/DeliveryInfo";
 import DealAlert from "../GroupBuying/DealAlert";
 import DProductCard from "../Products/DProductcards";
+import EcommerceHomepage from "./EcommerceHomepage";
 
 const categories = [
   { label: "Vegetable", color: "bg-purple-100", icon: "🥦" },
@@ -94,14 +95,7 @@ export default function GroceryHome() {
       <MainPage />
       {/* <DealAlert/> */}
       <HotDealsCarousel />
-
-      <Categories />
-      <div className="relative overflow-hidden sm:px-6 md:px-8">
-
-        {/* Special Offers */}
-        {/* <h2 className="text-xl md:text-3xl font-bold text-base mb-2">Special Offers</h2> */}
-        <DesktopProducts/>
-      </div>
+      <EcommerceHomepage/>
       <FilterSheet isOpen={showFilter} onClose={() => setShowFilter(false)} />
       <div className="flex mx-auto">
         <img src="https://m.media-amazon.com/images/G/31/img18/Fresh/Oct20/UNREC/1500x150_strip.jpg" alt="Special Offer" className="w-full mx-auto object-cover rounded-lg" />

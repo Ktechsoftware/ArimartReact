@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import DesktopProducts from '../Products/DesktopProducts';
 import { useParams, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchSubcategories, fetchChildSubcategories } from '../../Store/categoriesSlice';
-import CategoryGrid from './CategoryGrid';
+import { fetchSubcategories } from '../../Store/categoriesSlice';
+import { fetchSubcategoryproducts } from '../../Store/productsSlice';
+import SubcategoryProductSlider from './SubcategoryProductSlider';
 
 const SubCategoriesPage = ({ mainCategory, categoryid }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -12,45 +12,34 @@ const SubCategoriesPage = ({ mainCategory, categoryid }) => {
   const formattedMarket = market ? market.charAt(0).toUpperCase() + market.slice(1) : '';
 
   const dispatch = useDispatch();
-  const { subcategories, childSubcategoriesMap } = useSelector(state => state.category);
-  const [expandedSubcategories, setExpandedSubcategories] = useState(new Set());
-
-  console.log("Market:", market);
-  
-  useEffect(() => {
-    // Only fetch subcategories for this specific category
-    dispatch(fetchSubcategories(categoryid || 1));
-  }, [categoryid, dispatch]);
-
-  console.log("Subcategories for category:", categoryid, subcategories);
-
-  const handleSubcategoryClick = (subcategory) => {
-    const subcategoryId = subcategory.id;
-    
-    // Toggle expanded state
-    setExpandedSubcategories(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(subcategoryId)) {
-        newSet.delete(subcategoryId);
-      } else {
-        newSet.add(subcategoryId);
-        // Fetch child subcategories if not already expanded
-        dispatch(fetchChildSubcategories(subcategoryId));
-      }
-      return newSet;
-    });
-  };
-
-  // Clear expanded subcategories when category changes
-  useEffect(() => {
-    setExpandedSubcategories(new Set());
-  }, [categoryid]);
+  const { subcategories } = useSelector(state => state.category);
+  const { subcategoryProducts = {}, loading } = useSelector(state => state.products);
 
   useEffect(() => {
     setIsLoading(true);
-    const timer = setTimeout(() => setIsLoading(false), 500);
-    return () => clearTimeout(timer);
-  }, [categoryid]);
+    dispatch(fetchSubcategories(categoryid || 1)).finally(() => {
+      setIsLoading(false);
+    });
+  }, [categoryid, dispatch]);
+
+  useEffect(() => {
+    // Fetch products for all subcategories when they load
+    if (subcategories.length > 0) {
+      subcategories.forEach(subcategory => {
+        dispatch(fetchSubcategoryproducts(subcategory.id));
+      });
+    }
+  }, [subcategories, dispatch]);
+
+  const scrollToSection = (sectionId) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
@@ -78,55 +67,65 @@ const SubCategoriesPage = ({ mainCategory, categoryid }) => {
           </ol>
         </nav>
 
-        {/* Banner */}
-        <div className="w-full mb-8 relative rounded-xl overflow-hidden shadow-md">
+        {/* Banner Section */}
+        <section id="banner" className="w-full mb-8 relative rounded-xl overflow-hidden shadow-md">
           <div className="aspect-[3/1] bg-gradient-to-r from-primary-500 to-primary-700 flex items-center justify-center">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-center p-6">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">{formattedMarket}</h2>
               <p className="text-white/90 text-lg">Shop the best deals on {formattedMarket.toLowerCase()} products</p>
             </motion.div>
           </div>
-        </div>
+        </section>
 
-        {/* Additional banners */}
-        <div className="w-full mb-6 relative">
-          <img src='https://m.media-amazon.com/images/G/31/img24/Fresh/April/Pc_6.jpg' alt='Category banner' className='w-full h-auto object-cover rounded-lg' />
-          <img src='https://m.media-amazon.com/images/G/31/img24/Fresh/June/V1/PC/100_CASHBACK-STRIPE_PC.jpg' alt='Category banner' className='w-full h-auto object-cover rounded-lg' />
-        </div>
+        {/* Subcategories with Products */}
+        <section id="subcategories" className="space-y-12">
+          {isLoading ? (
+            <div className="space-y-8">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="space-y-4">
+                  <div className="h-8 bg-gray-200 dark:bg-gray-800 rounded-full w-1/3 animate-pulse"></div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {[...Array(5)].map((_, j) => (
+                      <div key={j} className="bg-gray-200 dark:bg-gray-800 h-64 rounded-xl animate-pulse"></div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            subcategories.map((subcategory) => (
+              <motion.div 
+                key={subcategory.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="group"
+              >
+                <div className="mb-6 text-center">
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2 relative inline-block">
+                    <span className="relative z-10 px-4 bg-gray-50 dark:bg-gray-900">
+                      {subcategory.subcategoryName || subcategory.name}
+                    </span>
+                    <span className="absolute left-0 right-0 top-1/2 h-px bg-gray-200 dark:bg-gray-700 transform -translate-y-1/2 z-0"></span>
+                  </h2>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Explore our {subcategory.subcategoryName || subcategory.name} collection
+                  </p>
+                </div>
 
-        {/* Header */}
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">{formattedMarket} Categories</h1>
-          <p className="text-gray-600 dark:text-gray-400">Browse through our wide range of {formattedMarket.toLowerCase()} products</p>
-        </motion.div>
-
-        {/* Subcategories with Child Categories */}
-        {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {[...Array(12)].map((_, i) => (
-              <motion.div key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }} className="bg-gray-200 dark:bg-gray-800 h-32 rounded-xl animate-pulse"></motion.div>
-            ))}
-          </div>
-        ) : (
-          <>
-            {subcategories.map((subcategory, i) => (
-              <div key={subcategory.id} className="mb-10">
-                <CategoryGrid
-                  title={subcategory.subcategoryName || subcategory.name}
-                  subcategoryid={subcategory.id}
-                  items={subcategory.childSubcategories || []}
-                  onClickItem={(child) => console.log("Child clicked:", child)}
-                  onToggleExpand={() => handleSubcategoryClick(subcategory)}
-                  isExpanded={expandedSubcategories.has(subcategory.id)}
-                  childSubcategories={childSubcategoriesMap?.[subcategory.id] || []}
-                />
-              </div>
-            ))}
-
-            {/* Products */}
-            <DesktopProducts />
-          </>
-        )}
+                {loading ? (
+                  <div className="flex justify-center items-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+                  </div>
+                ) : (
+                  <SubcategoryProductSlider 
+                    products={subcategoryProducts[subcategory.id]?.products || []} 
+                  />
+                )}
+              </motion.div>
+            ))
+          )}
+        </section>
       </div>
     </div>
   );

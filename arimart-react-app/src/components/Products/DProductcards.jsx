@@ -18,7 +18,7 @@ const DProductCard = ({ product }) => {
   // console.log("product", product);
 
   // Cart context
-  const { addToCart, isItemInCart, getItemQuantity,getCartItemInfo } = useCart();
+  const { addToCart, isItemInCart, getItemQuantity, getCartItemInfo } = useCart();
 
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
@@ -35,19 +35,19 @@ const DProductCard = ({ product }) => {
   const weight = product?.wweight || product?.weight || '';
   const availability = product?.isAvl || product?.availability || 'In Stock';
 
- const cartItem = product ? getCartItemInfo(product.id) : null;
+  const cartItem = product ? getCartItemInfo(product.id) : null;
   const itemInCart = !!cartItem;
   const itemQuantity = cartItem ? cartItem.quantity : 0;
-const imageUrl = imageUrls?.[productId] || product?.image || '/placeholder-image.jpg';
-const isLoading = !!(productId && imageLoading?.[productId]);
+  const imageUrl = imageUrls?.[productId] || product?.image || '/placeholder-image.jpg';
+  const isLoading = !!(productId && imageLoading?.[productId]);
 
-useEffect(() => {
-  if (productId && !imageUrls?.[productId] && !imageLoading?.[productId]) {
-    dispatch(fetchProductImageUrl(productId));
-  }
-}, [dispatch, productId, imageUrls, imageLoading]);
+  useEffect(() => {
+    if (productId && !imageUrls?.[productId] && !imageLoading?.[productId]) {
+      dispatch(fetchProductImageUrl(productId));
+    }
+  }, [dispatch, productId, imageUrls, imageLoading]);
 
-const generateimageurl = () => imageUrl;
+  const generateimageurl = () => imageUrl;
 
   // Check if product is in wishlist
   useEffect(() => {
@@ -157,8 +157,8 @@ const generateimageurl = () => imageUrl;
         ) : (
           <Heart
             className={`w-4 h-4 ${isWishlisted
-                ? "fill-red-500 stroke-red-500"
-                : "stroke-gray-500 hover:stroke-red-400"
+              ? "fill-red-500 stroke-red-500"
+              : "stroke-gray-500 hover:stroke-red-400"
               }`}
           />
         )}
@@ -240,28 +240,35 @@ const generateimageurl = () => imageUrl;
 
       {/* Add to Cart Button */}
       <motion.button
-        whileHover={{ scale: itemInCart ? 1 : 1.1 }}
-        whileTap={{ scale: 0.9 }}
+        whileHover={{ scale: itemInCart ? 1 : 1.05 }}
+        whileTap={{ scale: 0.95 }}
         onClick={handleAddToCart}
         disabled={isAddingToCart}
-        className={`absolute bottom-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-200 ${itemInCart
+        className={`w-full py-2 rounded-md flex items-center justify-center gap-2 transition-all duration-200 ${itemInCart
             ? 'bg-green-500 hover:bg-green-600'
             : 'bg-orange-500 hover:bg-orange-600'
           } ${isAddingToCart ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
         {isAddingToCart ? (
-          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          <>
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            Adding...
+          </>
         ) : itemInCart ? (
-          <div className="flex flex-col items-center relative">
+          <div className="flex items-center gap-2">
             <Check className="text-white w-4 h-4" />
+            <span>Added to Cart</span>
             {itemQuantity > 1 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center min-w-[1rem] min-h-[1rem]">
+              <span className="bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[1.25rem]">
                 {itemQuantity > 99 ? '99+' : itemQuantity}
               </span>
             )}
           </div>
         ) : (
-          <Plus className="text-white w-4 h-4" />
+          <>
+            <Plus className="text-white w-4 h-4" />
+            <span>Add to Cart</span>
+          </>
         )}
       </motion.button>
     </motion.div>

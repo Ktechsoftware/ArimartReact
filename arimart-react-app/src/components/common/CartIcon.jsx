@@ -7,14 +7,31 @@ import { useCart } from "../../context/CartContext";
 export default function CartIcon({ show = true, showGroupCart = true }) {
   const cartIconRef = useRef(null);
   const [isHovering, setIsHovering] = useState(false);
-  const { 
-    totalItems, 
-    groupTotalItems, 
-    loading, 
-    currentGroupId 
+  const {
+    totalItems,
+    groupTotalItems,
+    loading,
+    currentGroupId,
+    regularCartItems,
+    groupCartItems
   } = useCart();
 
-  if (!show) return null;
+  // Debug logs
+  console.log("CartIcon Debug:", {
+    show,
+    showGroupCart,
+    totalItems,
+    groupTotalItems,
+    loading,
+    currentGroupId,
+    regularCartItemsCount: regularCartItems?.length || 0,
+    groupCartItemsCount: groupCartItems?.length || 0
+  });
+
+  if (!show) {
+    console.log("CartIcon hidden because show=false");
+    return null;
+  }
 
   // Calculate if we should show separate indicators
   const shouldShowSeparate = showGroupCart && totalItems > 0 && groupTotalItems > 0 && !currentGroupId;
@@ -30,7 +47,10 @@ export default function CartIcon({ show = true, showGroupCart = true }) {
         className="relative"
       >
         <ShoppingCart className="w-6 h-6 text-black dark:text-white" />
-        
+
+        {/* Debug: Always show a small indicator to test */}
+        <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full"></div>
+
         {/* Combined indicator (when not showing separate) */}
         {(!shouldShowSeparate && (totalItems > 0 || groupTotalItems > 0)) && (
           <motion.span
@@ -45,7 +65,7 @@ export default function CartIcon({ show = true, showGroupCart = true }) {
             {loading ? "…" : (currentGroupId ? groupTotalItems : totalItems + groupTotalItems)}
           </motion.span>
         )}
-        
+
         {/* Separate indicators */}
         {shouldShowSeparate && (
           <div className="absolute -top-3 -right-3 flex flex-col items-end gap-0.5">

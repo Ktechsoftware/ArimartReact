@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchCategories, fetchSubcategories, fetchChildSubcategories } from '../../Store/categoriesSlice';
+import { useNavigate } from 'react-router-dom';
+import { fetchCategories, fetchSubcategories } from '../../Store/categoriesSlice';
+import { fetchProducts, resetProducts } from '../../Store/productsSlice';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LoaderCircle } from 'lucide-react';
+import TopProducts from '../Explore/TopProducts';
 
-export default function MobileCategoryLayout() {
+export default function CategoryLayout() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+
   const {
     categories,
     subcategories,
@@ -15,10 +20,17 @@ export default function MobileCategoryLayout() {
     loadingChildSubcategories
   } = useSelector((state) => state.category);
 
+  const { 
+    items: products, 
+    loading: productsLoading,
+    pagination,
+    hasMore,
+    loadingMore
+  } = useSelector(state => state.products);
+
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
-  const [view, setView] = useState('categories'); // 'categories', 'subcategories', 'childCategories'
-  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
+  const [view, setView] = useState('categories'); // 'categories', 'subcategories', 'products'
 
   useEffect(() => {
     dispatch(fetchCategories());
@@ -32,17 +44,28 @@ export default function MobileCategoryLayout() {
   };
 
   const handleSubcategoryClick = (subcategory) => {
+    console.log("Clicking subcategory:", subcategory);
     setSelectedSubcategory(subcategory);
-    dispatch(fetchChildSubcategories(subcategory.id));
-    setIsBottomSheetOpen(true);
+    setView('products');
+    
+    // Reset products and fetch fresh data for this subcategory
+    dispatch(resetProducts());
+    dispatch(fetchProducts({ 
+      subcategoryId: subcategory.id,
+      page: 1,
+      limit: 20 // Adjust as needed
+    }));
   };
 
   const handleBack = () => {
-    if (view === 'childCategories') {
+    if (view === 'products') {
       setView('subcategories');
-      setIsBottomSheetOpen(false);
+      setSelectedSubcategory(null);
+      // Reset products when going back
+      dispatch(resetProducts());
     } else if (view === 'subcategories') {
       setView('categories');
+      setSelectedCategory(null);
     }
   };
 
@@ -73,7 +96,7 @@ export default function MobileCategoryLayout() {
         <h1 className="text-xl font-bold text-gray-800 dark:text-white">
           {view === 'categories' ? 'Categories' :
             view === 'subcategories' ? selectedCategory?.categoryName :
-              selectedSubcategory?.subcategoryName}
+              view === 'products' ? selectedSubcategory?.subcategoryName : 'Products'}
         </h1>
       </div>
 
@@ -132,6 +155,20 @@ export default function MobileCategoryLayout() {
                 <div className="flex justify-center items-center p-4">
                   <LoaderCircle className="w-6 h-6 text-gray-500 animate-spin" />
                 </div>
+              ) : subcategories.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-8 text-center">
+                  <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m13-8L9 9l6 6" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-800 dark:text-white mb-2">
+                    No subcategories found
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    There are no subcategories available in this category yet.
+                  </p>
+                </div>
               ) : (
                 subcategories.map((sub, index) => (
                   <motion.div
@@ -163,84 +200,24 @@ export default function MobileCategoryLayout() {
               )}
             </motion.div>
           )}
+
+          {view === 'products' && (
+            <motion.div
+              key="products"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.2 }}
+              className="p-4"
+            >
+              <TopProducts
+                products={{ products }}
+                title={selectedSubcategory?.subcategoryName || 'Products'}
+              />
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
-
-      {/* Bottom Sheet for Child Categories */}
-      <AnimatePresence>
-        {isBottomSheetOpen && (
-          <>
-            {/* Overlay */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.5 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsBottomSheetOpen(false)}
-              className="fixed inset-0 bg-black z-20"
-            />
-
-            {/* Bottom Sheet */}
-            {/* Bottom Sheet */}
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{
-                type: 'spring',
-                stiffness: 200,
-                damping: 30,
-                mass: 0.5
-              }}
-              className="fixed bottom-16 left-0 right-0 z-30 bg-white dark:bg-gray-800 rounded-t-3xl shadow-xl"
-            >
-              {/* Handle */}
-              <div className="py-3 flex justify-center">
-                <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
-              </div>
-
-              {/* Header */}
-              <div className="px-4 pb-2 border-b border-gray-100 dark:border-gray-700">
-                <h2 className="text-lg font-bold text-gray-800 dark:text-white">
-                  {selectedSubcategory?.subcategoryName}
-                </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {childSubcategories.length} subcategories
-                </p>
-              </div>
-
-              {/* Content */}
-              <div className="h-[60vh] overflow-y-auto p-4 grid grid-cols-2 gap-3">
-                {loadingChildSubcategories ? (
-                  <div className="flex justify-center items-center p-4">
-                    <LoaderCircle className="w-6 h-6 text-gray-500 animate-spin" />
-                  </div>
-                ) : (
-                  childSubcategories.map((child, index) => (
-                    <motion.div
-                      key={child.id}
-                      whileTap={{ scale: 0.95 }}
-                      className="bg-white dark:bg-gray-700 rounded-lg shadow-xs overflow-hidden border border-gray-100 dark:border-gray-600"
-                    >
-                      <div className="aspect-square bg-gray-100 dark:bg-gray-600 relative">
-                        <img
-                          src={demoImages[(index + 4) % demoImages.length]}
-                          alt={child.childcategoryName}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="p-2">
-                        <h4 className="text-sm font-medium text-gray-800 dark:text-white text-center">
-                          {child.childcategoryName}
-                        </h4>
-                      </div>
-                    </motion.div>
-                  ))
-                )}
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

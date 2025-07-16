@@ -35,18 +35,39 @@ export default function NotificationCenter() {
   const [activeTab, setActiveTab] = useState("all");
 
   const markAsRead = (id) => {
-    setNotifications(notifs => 
-      notifs.map(n => n.id === id ? {...n, read: true} : n)
-    )};
+    setNotifications(notifs =>
+      notifs.map(n => n.id === id ? { ...n, read: true } : n)
+    )
+  };
 
   const deleteNotification = (id) => {
     setNotifications(notifs => notifs.filter(n => n.id !== id));
+  };
+  const requestNotificationPermission = async () => {
+    if (!("Notification" in window)) {
+      alert("This browser does not support desktop notifications.");
+      return;
+    }
+
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") {
+      console.log("✅ Notification permission granted.");
+      // Optional: Show a test notification
+      new Notification("Notifications enabled!", {
+        body: "You’ll now receive real-time updates.",
+        icon: "/icon.png", // optional
+      });
+    } else if (permission === "denied") {
+      console.warn("🚫 Notification permission denied.");
+    } else {
+      console.log("ℹ️ Notification permission dismissed.");
+    }
   };
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 bg-white dark:bg-gray-900 min-h-screen">
       {/* Header */}
-      <motion.div 
+      <motion.div
         className="flex justify-between items-center mb-6"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -69,10 +90,11 @@ export default function NotificationCenter() {
           >
             <div className="flex items-center gap-3">
               <motion.div
-                animate={{ 
+                animate={{
                   rotate: [0, 10, -10, 0],
                   transition: { repeat: Infinity, duration: 3 }
                 }}
+                onClick={requestNotificationPermission}
                 className="p-3 bg-blue-100 dark:bg-blue-900/50 rounded-full"
               >
                 <Bell className="text-blue-600 dark:text-blue-400" size={24} />
@@ -88,7 +110,7 @@ export default function NotificationCenter() {
                 "Order delivery updates",
                 "Personalized deals and offers"
               ].map((item, i) => (
-                <motion.li 
+                <motion.li
                   key={i}
                   initial={{ x: -20, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
@@ -128,7 +150,7 @@ export default function NotificationCenter() {
             className="flex flex-col items-center justify-center h-80 text-center space-y-4"
           >
             <motion.div
-              animate={{ 
+              animate={{
                 scale: [1, 1.05, 1],
                 transition: { repeat: Infinity, duration: 2 }
               }}
@@ -158,7 +180,7 @@ export default function NotificationCenter() {
             className="space-y-4"
           >
             {/* Tabs */}
-            <motion.div 
+            <motion.div
               className="flex gap-2 mb-4 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -167,11 +189,10 @@ export default function NotificationCenter() {
                 <motion.button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium flex-1 ${
-                    activeTab === tab 
+                  className={`px-4 py-2 rounded-lg text-sm font-medium flex-1 ${activeTab === tab
                       ? "bg-white dark:bg-gray-700 shadow-sm text-gray-800 dark:text-white"
                       : "text-gray-500 dark:text-gray-400"
-                  }`}
+                    }`}
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -192,30 +213,27 @@ export default function NotificationCenter() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, x: -50 }}
                     transition={{ type: "spring", stiffness: 300 }}
-                    className={`p-4 rounded-xl shadow-sm ${
-                      n.read 
-                        ? "bg-gray-50 dark:bg-gray-800/50" 
+                    className={`p-4 rounded-xl shadow-sm ${n.read
+                        ? "bg-gray-50 dark:bg-gray-800/50"
                         : "bg-blue-50 dark:bg-blue-900/20"
-                    } border ${
-                      n.read 
-                        ? "border-gray-200 dark:border-gray-700" 
+                      } border ${n.read
+                        ? "border-gray-200 dark:border-gray-700"
                         : "border-blue-200 dark:border-blue-800"
-                    }`}
+                      }`}
                   >
                     <div className="flex justify-between items-start gap-3">
                       <div className="flex items-start gap-3">
                         <div className="text-2xl mt-1">{n.icon}</div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <h3 className={`font-medium ${
-                              n.read 
-                                ? "text-gray-700 dark:text-gray-300" 
+                            <h3 className={`font-medium ${n.read
+                                ? "text-gray-700 dark:text-gray-300"
                                 : "text-gray-800 dark:text-white"
-                            }`}>
+                              }`}>
                               {n.title}
                             </h3>
                             {!n.read && (
-                              <motion.span 
+                              <motion.span
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
                                 className="w-2 h-2 bg-blue-500 rounded-full"

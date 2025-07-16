@@ -1,65 +1,119 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
-const products = [
-  {
-    name: "Beetroot",
-    desc: "Local shop",
-    img: "https://via.placeholder.com/80x80?text=Beetroot",
-    weight: "500 gm",
-    price: "14.29$",
-  },
-  {
-    name: "Italian Avocado",
-    desc: "Local shop",
-    img: "https://via.placeholder.com/80x80?text=Avocado",
-    weight: "450 gm",
-    price: "14.29$",
-  },
-  {
-    name: "Beef Mixed",
-    desc: "Cut Bone",
-    img: "https://via.placeholder.com/80x80?text=Beef",
-    weight: "1000 gm",
-    price: "14.29$",
-  },
-  {
-    name: "Plant Hunter",
-    desc: "Frozen pack",
-    img: "https://via.placeholder.com/80x80?text=Plant",
-    weight: "250 gm",
-    price: "14.29$",
-  },
-  {
-    name: "Sprite",
-    desc: "Can & Bottle",
-    img: "https://via.placeholder.com/80x80?text=Sprite",
-    weight: "250 gm",
-    price: "14.29$",
-  },
-  {
-    name: "Szam amm",
-    desc: "Process food",
-    img: "https://via.placeholder.com/80x80?text=Szam",
-    weight: "300 gm",
-    price: "14.29$",
-  },
-];
-const TopProducts = () => {
+import { PlusCircle, Star, LoaderCircle, Filter } from "lucide-react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { loadMoreProducts } from "../../Store/productsSlice";
+import ProductCard from "../Products/ProductCard";
+import FilterSheet from './FilterSheet'
+const TopProducts = ({ products = [], title = "Products" }) => {
+  const dispatch = useDispatch();
   const [loading, setLoading] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const observerRef = useRef(null);
+  const loadMoreRef = useRef(null);
+
+  // Get Redux state for load more functionality
+  const { 
+    loadingMore, 
+    hasMore, 
+    pagination,
+    filters 
+  } = useSelector(state => state.products);
 
   useEffect(() => {
-    setTimeout(() => {
+    // Only show loading if products array is empty
+    if (products.length === 0) {
+      setLoading(true);
+      const timer = setTimeout(() => {
+        setLoading(false);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else {
       setLoading(false);
-    }, 3000);
-  }, []);
+      setIsInitialLoad(false);
+    }
+  }, [products]);
+
+  // Load more function
+  const loadMore = useCallback(() => {
+    if (hasMore && !loadingMore && !isInitialLoad) {
+      const params = {
+        ...filters,
+        page: pagination.page + 1,
+        limit: pagination.limit
+      };
+      dispatch(loadMoreProducts(params));
+    }
+  }, [dispatch, hasMore, loadingMore, isInitialLoad, filters, pagination]);
+
+  // Intersection Observer for auto load more
+  useEffect(() => {
+    const currentLoadMoreRef = loadMoreRef.current;
+    
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && hasMore && !loadingMore && !isInitialLoad) {
+          loadMore();
+        }
+      },
+      {
+        root: null,
+        rootMargin: '100px', // Load more when 100px before reaching the end
+        threshold: 0.1
+      }
+    );
+
+    if (currentLoadMoreRef) {
+      observerRef.current.observe(currentLoadMoreRef);
+    }
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [hasMore, loadingMore, isInitialLoad, loadMore]);
+
   return (
-    <>
+    <div className="w-full">
+      {/* Section Title */}
+      <div className="mb-4 flex justify-between items-center">
+  <div>
+    <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
+      {title}
+    </h2>
+    <p className="text-sm text-gray-500 dark:text-gray-400">
+      {products.length} products available
+    </p>
+  </div>
+  
+  <button 
+    onClick={() => setIsFilterOpen(true)}
+    className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+  >
+    <Filter className="w-4 h-4" />
+    <span className="text-sm">Filters</span>
+  </button>
+
+  <FilterSheet 
+    isOpen={isFilterOpen} 
+    onClose={() => setIsFilterOpen(false)} 
+  />
+</div>
+
       {loading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {[...Array(10)].map((_, idx) => (
+          {[...Array(8)].map((_, idx) => (
             <div
               key={idx}
-              className="bg-gray-100 dark:bg-gray-800 p-4 rounded-xl shadow-sm animate-pulse">
+              className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm animate-pulse border border-gray-100 dark:border-gray-700"
+            >
               <div className="w-20 h-20 mx-auto bg-gray-300 dark:bg-gray-700 rounded mb-3" />
               <div className="space-y-2 text-center">
                 <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mx-auto" />
@@ -71,41 +125,45 @@ const TopProducts = () => {
             </div>
           ))}
         </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {products.map((product, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.1 + idx * 0.05 }}
-              whileHover={{ y: -5 }}
-              className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl shadow-sm hover:shadow-md transition-all"
-            >
-              <img
-                src={product.img}
-                alt={product.name}
-                className="w-20 h-20 mx-auto object-contain mb-3"
-              />
-              <div className="text-center">
-                <p className="font-semibold text-sm">{product.name}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{product.desc}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{product.weight}</p>
-                <p className="font-semibold text-green-600 dark:text-green-400 mt-2">{product.price}</p>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="mt-3 bg-green-500 hover:bg-green-600 text-white text-sm w-full py-2 rounded-lg flex items-center justify-center"
-                >
-                  <span>+</span>
-                </motion.button>
+      ) : products.products && products.products.length > 0 ? (
+        <div className="space-y-4">
+          {/* Products Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {products.products.map((product, idx) => (
+              <ProductCard key={`${product.id}-${idx}`} product={product} />
+            ))}
+          </div>
+
+          {/* Load More Trigger Element */}
+          <div ref={loadMoreRef} className="flex justify-center py-4">
+            {loadingMore && (
+              <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                <LoaderCircle className="w-5 h-5 animate-spin" />
+                <span className="text-sm">Loading more products...</span>
               </div>
-            </motion.div>
-          ))}
+            )}
+            {!hasMore && products.products.length > 0 && (
+              <div className="text-center text-gray-500 dark:text-gray-400">
+                <p className="text-sm">No more products to load</p>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <div className="w-24 h-24 mx-auto bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+            <PlusCircle className="w-12 h-12 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
+            No products found
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400">
+            Try selecting a different category or subcategory
+          </p>
         </div>
       )}
-    </>
-  )
-}
+    </div>
+  );
+};
 
-export default TopProducts
+export default TopProducts;

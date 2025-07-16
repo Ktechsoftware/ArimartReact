@@ -16,6 +16,7 @@ import {
 
 import DesktopSidebar from '../sidebar/DesktopSidebar';
 import { fetchCategories } from '../../Store/categoriesSlice';
+import { Link } from 'react-router-dom';
 
 export default function DesktopCategory() {
   const dispatch = useDispatch();
@@ -25,7 +26,7 @@ export default function DesktopCategory() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState(null);
   const [hoveredSubcategory, setHoveredSubcategory] = useState(null);
-  
+
   // Local state for navigation dropdown - separate from page state
   const [navSubcategories, setNavSubcategories] = useState([]);
   const [navChildSubcategories, setNavChildSubcategories] = useState([]);
@@ -39,7 +40,7 @@ export default function DesktopCategory() {
     setHoveredCategory(category);
     setHoveredSubcategory(null);
     setNavChildSubcategories([]);
-    
+
     try {
       setLoading(true);
       const response = await API.get(`/subcategory/by-category/${category.id}`);
@@ -52,16 +53,18 @@ export default function DesktopCategory() {
     }
   };
 
+  // Keep the child subcategory function for future use (commented out the API call)
   const handleSubcategoryHover = async (subcategory) => {
     setHoveredSubcategory(subcategory);
-    
-    try {
-      const response = await API.get(`/childsubcategory/by-subcategory/${subcategory.id}`);
-      setNavChildSubcategories(response.data);
-    } catch (error) {
-      console.error('Error fetching child subcategories:', error);
-      setNavChildSubcategories([]);
-    }
+
+    // Commented out for future use
+    // try {
+    //   const response = await API.get(`/childsubcategory/by-subcategory/${subcategory.id}`);
+    //   setNavChildSubcategories(response.data);
+    // } catch (error) {
+    //   console.error('Error fetching child subcategories:', error);
+    //   setNavChildSubcategories([]);
+    // }
   };
 
   return (
@@ -94,32 +97,53 @@ export default function DesktopCategory() {
                   {hoveredCategory?.id === category.id && navSubcategories.length > 0 && (
                     <div className="h-[30rem] max-w-6xl mx-auto fixed inset-0 top-[6.5rem] shadow-xl rounded-xl bg-white/90 dark:bg-gray-900/95 backdrop-blur-lg z-[9998] overflow-y-auto transition-all duration-300 origin-top scale-y-0 opacity-0 group-hover:scale-y-100 group-hover:opacity-100">
                       <div className="container mx-auto px-4 py-8">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                          <div className="md:col-span-1 space-y-2">
-                            <h3 className="text-lg font-bold mb-4">{category.categoryName}</h3>
+                        <div className="grid grid-cols-1 gap-8">
+                          <div className="space-y-2">
+                            <h3 className="text-lg font-bold mb-6 text-center">{category.categoryName}</h3>
                             {loading ? (
-                              <div className="space-y-2">
-                                {[...Array(5)].map((_, i) => (
-                                  <div key={i} className="h-12 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                {[...Array(8)].map((_, i) => (
+                                  <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
                                 ))}
                               </div>
                             ) : (
-                              navSubcategories.map((sub) => (
-                                <div
-                                  key={sub.id}
-                                  onMouseEnter={() => handleSubcategoryHover(sub)}
-                                  className={`px-4 py-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800 ${hoveredSubcategory?.id === sub.id
-                                    ? 'bg-gray-100 dark:bg-gray-800 font-medium text-primary-500 dark:text-primary-400 shadow-sm'
-                                    : ''
-                                    }`}
-                                >
-                                  {sub.subcategoryName}
+                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                {navSubcategories.map((sub) => (
+                                  <Link
+                                    to={`/category/${category.categoryName}/${category.id}`}
+                                    state={{
+                                      selectedSubcategory: sub,
+                                      scrollToProducts: true
+                                    }}
+                                    key={sub.id}
+                                    onMouseEnter={() => handleSubcategoryHover(sub)}
+                                    className="p-4 rounded-lg cursor-pointer transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800 border border-transparent hover:border-gray-200 dark:hover:border-gray-700 hover:shadow-sm"
+                                  >
+                                    <h5 className="font-medium text-center">{sub.subcategoryName}</h5>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 text-center">
+                                      View products
+                                    </p>
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
+
+                            {!loading && navSubcategories.length === 0 && (
+                              <div className="text-center py-16 text-gray-500 dark:text-gray-400">
+                                <div className="flex flex-col items-center justify-center space-y-3">
+                                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                                    <Gift className="w-8 h-8 text-gray-400" />
+                                  </div>
+                                  <p className="text-lg font-medium">No subcategories available</p>
+                                  <p className="text-sm">Check back later for more options</p>
                                 </div>
-                              ))
+                              </div>
                             )}
                           </div>
 
-                          <div className="md:col-span-3">
+                          {/* Hidden child subcategories section - kept for future use */}
+                          {/* 
+                          <div className="md:col-span-3" style={{ display: 'none' }}>
                             {hoveredSubcategory && (
                               <>
                                 <h4 className="text-xl font-bold mb-6">{hoveredSubcategory.subcategoryName}</h4>
@@ -164,6 +188,7 @@ export default function DesktopCategory() {
                               </div>
                             )}
                           </div>
+                          */}
                         </div>
                       </div>
                     </div>

@@ -1,7 +1,7 @@
 import { BrowserRouter as Router } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import AppRoutes from './routes/AppRoutes';
-import { Toaster } from 'react-hot-toast';
+import toast, { Toaster } from 'react-hot-toast';
 import { DealAlertModal } from './components/GroupBuying/DealAlertModal';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import store from './Store';
@@ -9,15 +9,25 @@ import { fetchCartByUserId } from './Store/cartSlice';
 import { useEffect } from 'react';
 import { CartProvider } from './context/CartContext';
 import { checkAuth } from './Store/authSlice';
+import { startSignalRConnection } from './services/signalr';
+import { fetchNotifications, fetchUnreadCount } from './Store/notificationSlice';
 
 function AppContent() {
   const dispatch = useDispatch();
   const { isAuthenticated, userData } = useSelector((state) => state.auth);
   const userId = isAuthenticated ? userData?.id : null;
 
-useEffect(() => {
-  dispatch(checkAuth());
-}, [dispatch]);
+  useEffect(() => {
+    dispatch(checkAuth());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (userId) {
+      startSignalRConnection(userId);
+      dispatch(fetchNotifications({ page: 1, pageSize: 10 }));
+      dispatch(fetchUnreadCount());
+    }
+  }, [userId]);
 
   return (
     <>
@@ -51,7 +61,7 @@ export default function App() {
   return (
     <Provider store={store}>
       <CartProvider>
-      <AppContent />
+        <AppContent />
       </CartProvider>
     </Provider>
   );

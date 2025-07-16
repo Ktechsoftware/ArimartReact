@@ -41,6 +41,7 @@ import Termcondition from '../pages/Privacypolicy/termcondition';
 import Trackorders from '../pages/Orders/Trackorders';
 import PaymentOrder from '../pages/PaymentScreen/PaymentOrder';
 import JointoGroup from '../pages/GroupBuy/JointoGroup';
+import SubcategoryExplore from '../pages/Explore/SubcategoryExplore';
 
 const publicRoutes = [
   "/", "/home", "/onboard", "/auth", "/about", "/contactus", "/faq", "/privacypolicy",
@@ -134,6 +135,7 @@ export default function AppRoutes() {
               <Route path="/account" element={<AccountIndex />} />
               <Route path="/account/editprofile" element={<EditProfilescreen />} />
               <Route path="/explore" element={<ExploreIndex />} />
+             <Route path="/subcategory/:subcategoryId" element={<SubcategoryExplore />} />  
               <Route path="/cart" element={<Cartpage />} />
               <Route path="/wishlist" element={<WishlistScreen />} />
               <Route path="/promocodes" element={<PromocodeScreen />} />

@@ -11,20 +11,20 @@ import { addToWishlist } from '../../Store/wishlistSlice';
 import { useCart } from '../../context/CartContext';
 import { fetchProductImageUrl } from '../../Store/productsSlice';
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ key, product }) => {
   const { market } = useParams();
   const dispatch = useDispatch();
   const userData = useSelector((state) => state.auth.userData);
   const wishlistItems = useSelector((state) => state.wishlist.items);
   const { imageUrls, imageLoading } = useSelector((state) => state.products);
 
-  const { addToCart, isItemInCart, getItemQuantity, updateQuantity, removeFromCart,getCartItemInfo } = useCart();
+  const { addToCart, isItemInCart, getItemQuantity, updateQuantity, removeFromCart, getCartItemInfo } = useCart();
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [quantityLoading, setQuantityLoading] = useState(false);
 
   const productId = product?.id;
- const cartItem = product ? getCartItemInfo(product.id) : null;
+  const cartItem = product ? getCartItemInfo(product.id) : null;
   const itemInCart = !!cartItem;
   const itemQuantity = cartItem ? cartItem.quantity : 0;
 
@@ -108,7 +108,7 @@ const ProductCard = ({ product }) => {
 
       <Link
         to={generateProductLink()}
-        className="h-32 w-full bg-gray-100 dark:bg-gray-800 rounded-md overflow-hidden mb-2 relative block"
+        className="w-full h-48 bg-gray-100 dark:bg-gray-800 rounded-md overflow-hidden mb-2 relative block"
       >
         {isLoading ? (
           <div className="w-full h-full flex items-center justify-center">
@@ -116,7 +116,7 @@ const ProductCard = ({ product }) => {
           </div>
         ) : (
           <img
-            src={"http://localhost:5015/Uploads/" + imageUrl}
+            src={`http://localhost:5015/Uploads/${imageUrl}`}
             alt={product.name}
             className="w-full h-full object-cover"
             onError={(e) => {
@@ -125,6 +125,8 @@ const ProductCard = ({ product }) => {
           />
         )}
       </Link>
+
+
 
       <p className="font-medium text-gray-800 dark:text-white line-clamp-2 leading-snug mb-1">
         {product.productName}
@@ -137,7 +139,7 @@ const ProductCard = ({ product }) => {
         <div className="flex items-center text-orange-400">
           {[...Array(5)].map((_, i) => (
             <Star
-              key={i}
+              key={`star-${product.id}-${i}`}
               className={`w-3 h-3 fill-orange-400 stroke-orange-400 ${i >= Math.round(product.rating) ? "opacity-30" : ""}`}
             />
           ))}
@@ -155,44 +157,47 @@ const ProductCard = ({ product }) => {
       </div>
 
       {/* Cart Action Area */}
-      <div className="absolute bottom-3 right-3">
+      {/* Replace the existing Cart Action Area with this */}
+      <div className="mt-3">
         {itemInCart ? (
-          <div className="flex items-center bg-white dark:bg-gray-800 rounded-full px-2 py-1 shadow border border-gray-200 dark:border-gray-600 gap-1">
+          <div className="flex items-center justify-between bg-gray-100 dark:bg-gray-800 rounded-full px-3 py-2 gap-2">
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={itemQuantity > 1 ? () => handleUpdateQuantity(-1) : handleRemoveFromCart}
               disabled={quantityLoading}
               className="text-gray-600 dark:text-gray-300 hover:text-red-500 disabled:opacity-50 disabled:cursor-not-allowed p-1"
-              title={itemQuantity > 1 ? "Decrease quantity" : "Remove from cart"}
             >
               <Minus className="w-4 h-4" />
             </motion.button>
-            <span className="text-sm font-semibold min-w-[2rem] text-center text-gray-900 dark:text-white">
-              {quantityLoading ? '...' : itemQuantity}
+            <span className="text-sm font-semibold text-gray-900 dark:text-white">
+              {quantityLoading ? '...' : `${itemQuantity}`}
             </span>
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => handleUpdateQuantity(1)}
               disabled={quantityLoading}
               className="text-gray-600 dark:text-gray-300 hover:text-green-500 disabled:opacity-50 disabled:cursor-not-allowed p-1"
-              title="Increase quantity"
             >
               <Plus className="w-4 h-4" />
             </motion.button>
           </div>
         ) : (
           <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+            whileTap={{ scale: 0.95 }}
             onClick={handleAddToCart}
             disabled={isAddingToCart}
-            className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-200 bg-orange-500 hover:bg-orange-600 ${isAddingToCart ? 'opacity-50 cursor-not-allowed' : ''}`}
-            title="Add to cart"
+            className={`w-full py-2 rounded-md flex items-center justify-center gap-2 transition-all duration-200 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium ${isAddingToCart ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {isAddingToCart ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Adding...
+              </>
             ) : (
-              <Plus className="text-white w-4 h-4" />
+              <>
+                <Plus className="text-white w-4 h-4" />
+                Add to Cart
+              </>
             )}
           </motion.button>
         )}

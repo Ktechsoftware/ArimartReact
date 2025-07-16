@@ -53,7 +53,7 @@ export const fetchProductImageUrl = createAsyncThunk(
   async (productId, { rejectWithValue }) => {
     try {
       const response = await API.get(`products/${productId}/image-url`);
-      console.log('Product Image URL:', response.data);
+      // console.log('Product Image URL:', response.data);
       return {
         productId,
         imageUrl: response.data
@@ -78,13 +78,29 @@ export const fetchProductImageUrls = createAsyncThunk(
   }
 );
 
+// fetch product from subcateogroy
+export const fetchSubcategoryproducts = createAsyncThunk(
+  'products/fetchSubcategoryproducts',
+  async (subcategoryid, { rejectWithValue }) => {
+    try {
+      const response = await API.get(`products/by-subcategory/${subcategoryid}`);
+      console.log(' product:', response.data);
+      return {
+        subcategoryid,
+        subcategoryProducts: response.data
+      };
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
 // ✅ Fetch group buys for product (gid, pid, pdid only)
 export const fetchGroupBuysByProductId = createAsyncThunk(
   'products/fetchGroupBuysByProductId',
   async (productId, { rejectWithValue }) => {
     try {
       const response = await API.get(`products/groupbuy/${productId}`);
-      console.log('Group buys for product:', response.data);
+      // console.log('Group buys for product:', response.data);
       return {
         productId,
         groupBuys: response.data
@@ -143,6 +159,7 @@ const productsSlice = createSlice({
     loadingMore: false, // New state for load more
     error: null,
     imageUrls: {},
+    subcategoryProducts: {},
     imageLoading: {},
     groupBuys: {}, // { [productId]: [ { gid, pid, pdid } ] }
     pagination: {
@@ -293,6 +310,21 @@ const productsSlice = createSlice({
       })
       .addCase(fetchGroupBuysByProductId.rejected, (state, action) => {
         state.error = action.payload;
+      })
+      // 🔄 Fetch Subcategory product
+      .addCase(fetchSubcategoryproducts.pending, (state) => {
+        state.error = null;
+        state.loading = true;
+      })
+      .addCase(fetchSubcategoryproducts.fulfilled, (state, action) => {
+        const { subcategoryid, subcategoryProducts } = action.payload;
+        console.log('Storing in state:', subcategoryid, subcategoryProducts);
+        state.subcategoryProducts[subcategoryid] = subcategoryProducts;
+        state.loading = false;
+      })
+      .addCase(fetchSubcategoryproducts.rejected, (state, action) => {
+        state.error = action.payload;
+        state.loading = false; 
       })
 
       // 🔄 Create Product

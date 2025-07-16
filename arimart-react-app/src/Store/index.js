@@ -12,6 +12,7 @@ import ratingReducer, { ratingApi } from './ratingSlice';
 import searchReducer from './searchSlice'
 import filterReducer from './filterSlice'
 import topOrdersReducer from './Tops/topOrdersSlice'
+import notificationReducer from "./notificationSlice";
 
 const store = configureStore({
   reducer: {
@@ -20,6 +21,7 @@ const store = configureStore({
     category: categoryReducer,
     order: orderReducer,
     productDetail: productDetailReducer,
+    notifications: notificationReducer,
     cart: cartReducer,
     search : searchReducer,
     wallet: walletReducer,
