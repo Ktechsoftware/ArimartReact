@@ -6,21 +6,22 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTheme } from "../../context/ThemeContext";
 import CartIcon from "../common/CartIcon";
+import DesktopSidebar from "../sidebar/DesktopSidebar";
 
-export default function Header({ 
-  title, 
-  setbaricon = true, 
-  setcarticon = true, 
+export default function Header({
+  title,
+  setbaricon = true,
+  setcarticon = true,
   cartIconRef,
   showGroupCart = true  // New prop to control group cart display
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const { darkMode, toggleDarkMode } = useTheme();
-  
+
   return (
     <>
-      <header className="md:hidden sticky top-0 z-50 border dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 shadow-lg backdrop-blur-md">
+      <header className="md:hidden sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="">
             {setbaricon ? (
@@ -53,8 +54,13 @@ export default function Header({
         </div>
       </header>
       {isSidebarOpen && (
-        <SidebarMenu open={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+        <DesktopSidebar
+          key="sidebar-from-header"
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+        />
       )}
+
     </>
   );
 }

@@ -11,7 +11,7 @@ export default function ReferAndEarn() {
   try {
     await navigator.clipboard.writeText(referralCode);
     setCopied(true);
-    toast.success("Referral code copied!"); // Fixed typo in "Referral"
+    toast.success("Referral code copied!");
     setTimeout(() => setCopied(false), 2000);
   } catch (err) {
     toast.error("Failed to copy referral code");

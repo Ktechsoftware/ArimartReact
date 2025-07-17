@@ -26,7 +26,11 @@ const SubCategoriesPage = ({ mainCategory, categoryid }) => {
     // Fetch products for all subcategories when they load
     if (subcategories.length > 0) {
       subcategories.forEach(subcategory => {
-        dispatch(fetchSubcategoryproducts(subcategory.id));
+        dispatch(fetchSubcategoryproducts({ 
+          subcategoryId: subcategory.id,
+          page: 1,
+          limit: 10
+        }));
       });
     }
   }, [subcategories, dispatch]);
@@ -93,37 +97,44 @@ const SubCategoriesPage = ({ mainCategory, categoryid }) => {
               ))}
             </div>
           ) : (
-            subcategories.map((subcategory) => (
-              <motion.div 
-                key={subcategory.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="group"
-              >
-                <div className="mb-6 text-center">
-                  <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2 relative inline-block">
-                    <span className="relative z-10 px-4 bg-gray-50 dark:bg-gray-900">
-                      {subcategory.subcategoryName || subcategory.name}
-                    </span>
-                    <span className="absolute left-0 right-0 top-1/2 h-px bg-gray-200 dark:bg-gray-700 transform -translate-y-1/2 z-0"></span>
-                  </h2>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Explore our {subcategory.subcategoryName || subcategory.name} collection
-                  </p>
-                </div>
-
-                {loading ? (
-                  <div className="flex justify-center items-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+            subcategories.map((subcategory) => {
+              // Get products for this specific subcategory
+              const subcategoryProductsData = subcategoryProducts[subcategory.id] || [];
+              
+              return (
+                <motion.div 
+                  key={subcategory.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="group"
+                >
+                  <div className="mb-6 text-center">
+                    <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2 relative inline-block">
+                      <span className="relative z-10 px-4 bg-gray-50 dark:bg-gray-900">
+                        {subcategory.subcategoryName || subcategory.name}
+                      </span>
+                      <span className="absolute left-0 right-0 top-1/2 h-px bg-gray-200 dark:bg-gray-700 transform -translate-y-1/2 z-0"></span>
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Explore our {subcategory.subcategoryName || subcategory.name} collection
+                    </p>
                   </div>
-                ) : (
-                  <SubcategoryProductSlider 
-                    products={subcategoryProducts[subcategory.id]?.products || []} 
-                  />
-                )}
-              </motion.div>
-            ))
+
+                  {loading ? (
+                    <div className="flex justify-center items-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+                    </div>
+                  ) : (
+                    <SubcategoryProductSlider 
+                      products={subcategoryProductsData} 
+                      title={subcategory.subcategoryName || subcategory.name}
+                      subcategoryId={subcategory.id}
+                    />
+                  )}
+                </motion.div>
+              );
+            })
           )}
         </section>
       </div>

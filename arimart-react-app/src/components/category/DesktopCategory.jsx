@@ -200,9 +200,13 @@ export default function DesktopCategory() {
         </div>
       </nav>
 
-      {isSidebarOpen && (
-        <DesktopSidebar key="mobile-sidebar" isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-      )}
+      <DesktopSidebar
+        key={`sidebar-${Math.random()}`}
+        source="header"
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
+
     </>
   );
 }

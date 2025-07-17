@@ -7,6 +7,14 @@ export const fetchNotifications = createAsyncThunk(
   "notifications/fetch",
   async ({ page = 1, pageSize = 10 }, thunkAPI) => {
     const response = await API.get(`/notifications?page=${page}&pageSize=${pageSize}`);
+    console.log(response.data.data)
+    return response.data.data;
+  }
+);
+export const createNotification = createAsyncThunk(
+  "notifications/create",
+  async (notificationData, thunkAPI) => {
+    const response = await API.post(`/notifications`, notificationData);
     return response.data.data;
   }
 );
@@ -64,7 +72,12 @@ const notificationSlice = createSlice({
         state.loading = true;
       })
       .addCase(fetchNotifications.fulfilled, (state, action) => {
-        state.list = action.payload.notifications;
+        const isNextPage = action.meta.arg.page > 1;
+        if (isNextPage) {
+          state.list = [...state.list, ...action.payload.notifications];
+        } else {
+          state.list = action.payload.notifications;
+        }
         state.loading = false;
       })
       .addCase(fetchNotifications.rejected, (state, action) => {
@@ -77,6 +90,10 @@ const notificationSlice = createSlice({
           state.list[index].read = true;
           state.unreadCount = Math.max(state.unreadCount - 1, 0);
         }
+      })
+      .addCase(createNotification.fulfilled, (state, action) => {
+        state.list.unshift(action.payload);
+        state.unreadCount += 1;
       })
       .addCase(markAllAsRead.fulfilled, (state) => {
         state.list = state.list.map(n => ({ ...n, read: true }));
@@ -93,4 +110,3 @@ const notificationSlice = createSlice({
 
 export const { addNotification } = notificationSlice.actions;
 export default notificationSlice.reducer;
-    

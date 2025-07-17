@@ -81,19 +81,62 @@ export const fetchProductImageUrls = createAsyncThunk(
 // fetch product from subcateogroy
 export const fetchSubcategoryproducts = createAsyncThunk(
   'products/fetchSubcategoryproducts',
-  async (subcategoryid, { rejectWithValue }) => {
+  async ({ subcategoryId, page = 1, limit = 10 }, { rejectWithValue }) => {
     try {
-      const response = await API.get(`products/by-subcategory/${subcategoryid}`);
-      console.log(' product:', response.data);
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        pageSize: limit.toString()
+      });
+
+      const response = await API.get(`products/by-subcategory/${subcategoryId}?${queryParams}`);
+      console.log('Subcategory products:', response.data);
+
       return {
-        subcategoryid,
-        subcategoryProducts: response.data
+        subcategoryId,
+        subcategoryProducts: response.data.products || response.data,
+        pagination: {
+          currentPage: response.data.currentPage || page,
+          pageSize: response.data.pageSize || limit,
+          totalCount: response.data.totalCount || 0,
+          totalPages: response.data.totalPages || 1,
+          hasNextPage: response.data.hasNextPage || false
+        }
       };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
+
+// New action for loading more subcategory products
+export const loadMoreSubcategoryProducts = createAsyncThunk(
+  'products/loadMoreSubcategoryProducts',
+  async ({ subcategoryId, page, limit = 10 }, { rejectWithValue, getState }) => {
+    try {
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        pageSize: limit.toString()
+      });
+
+      const response = await API.get(`products/by-subcategory/${subcategoryId}?${queryParams}`);
+
+      return {
+        subcategoryId,
+        newProducts: response.data.products || response.data,
+        pagination: {
+          currentPage: response.data.currentPage || page,
+          pageSize: response.data.pageSize || limit,
+          totalCount: response.data.totalCount || 0,
+          totalPages: response.data.totalPages || 1,
+          hasNextPage: response.data.hasNextPage || false
+        }
+      };
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
 // ✅ Fetch group buys for product (gid, pid, pdid only)
 export const fetchGroupBuysByProductId = createAsyncThunk(
   'products/fetchGroupBuysByProductId',
@@ -156,12 +199,15 @@ const productsSlice = createSlice({
     items: [],
     currentProduct: null,
     loading: false,
-    loadingMore: false, // New state for load more
+    loadingMore: false,
     error: null,
     imageUrls: {},
     subcategoryProducts: {},
+    subcategoryPagination: {}, // Add pagination for each subcategory
+    subcategoryHasMore: {}, // Track hasMore for each subcategory
+    subcategoryLoadingMore: {},
     imageLoading: {},
-    groupBuys: {}, // { [productId]: [ { gid, pid, pdid } ] }
+    groupBuys: {},
     pagination: {
       page: 1,
       limit: 10,
@@ -173,7 +219,7 @@ const productsSlice = createSlice({
       priceRange: { min: 0, max: 1000 },
       search: '',
     },
-    hasMore: true, // New state to track if more products are available
+    hasMore: true,
   },
   reducers: {
     setCurrentProduct: (state, action) => {
@@ -312,19 +358,50 @@ const productsSlice = createSlice({
         state.error = action.payload;
       })
       // 🔄 Fetch Subcategory product
-      .addCase(fetchSubcategoryproducts.pending, (state) => {
+      .addCase(fetchSubcategoryproducts.pending, (state, action) => {
+        const { subcategoryId } = action.meta.arg;
         state.error = null;
         state.loading = true;
+        state.subcategoryLoadingMore[subcategoryId] = false;
       })
       .addCase(fetchSubcategoryproducts.fulfilled, (state, action) => {
-        const { subcategoryid, subcategoryProducts } = action.payload;
-        console.log('Storing in state:', subcategoryid, subcategoryProducts);
-        state.subcategoryProducts[subcategoryid] = subcategoryProducts;
+        const { subcategoryId, subcategoryProducts, pagination } = action.payload;
+        console.log('Storing in state:', subcategoryId, subcategoryProducts);
+
+        // Replace products for fresh load
+        state.subcategoryProducts[subcategoryId] = subcategoryProducts;
+        state.subcategoryPagination[subcategoryId] = pagination;
+        state.subcategoryHasMore[subcategoryId] = pagination.hasNextPage;
         state.loading = false;
+        state.subcategoryLoadingMore[subcategoryId] = false;
       })
       .addCase(fetchSubcategoryproducts.rejected, (state, action) => {
+        const { subcategoryId } = action.meta.arg;
         state.error = action.payload;
-        state.loading = false; 
+        state.loading = false;
+        state.subcategoryLoadingMore[subcategoryId] = false;
+      })
+
+      // Add cases for load more
+      .addCase(loadMoreSubcategoryProducts.pending, (state, action) => {
+        const { subcategoryId } = action.meta.arg;
+        state.subcategoryLoadingMore[subcategoryId] = true;
+        state.error = null;
+      })
+      .addCase(loadMoreSubcategoryProducts.fulfilled, (state, action) => {
+        const { subcategoryId, newProducts, pagination } = action.payload;
+
+        // Append new products to existing ones
+        const existingProducts = state.subcategoryProducts[subcategoryId] || [];
+        state.subcategoryProducts[subcategoryId] = [...existingProducts, ...newProducts];
+        state.subcategoryPagination[subcategoryId] = pagination;
+        state.subcategoryHasMore[subcategoryId] = pagination.hasNextPage;
+        state.subcategoryLoadingMore[subcategoryId] = false;
+      })
+      .addCase(loadMoreSubcategoryProducts.rejected, (state, action) => {
+        const { subcategoryId } = action.meta.arg;
+        state.subcategoryLoadingMore[subcategoryId] = false;
+        state.error = action.payload;
       })
 
       // 🔄 Create Product

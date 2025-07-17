@@ -394,7 +394,7 @@ export default function CartDetails() {
           <button
             type="button"
             onClick={() => setCheckoutModalOpen(true)}
-            className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-4 rounded-xl shadow-lg transition-all duration-200 flex items-center justify-center space-x-2"
+            className="w-full sticky bottom-20 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-4 rounded-xl shadow-lg transition-all duration-200 flex items-center justify-center space-x-2"
           >
             Proceed to Checkout • ₹{total.toFixed(2)}
           </button>
@@ -408,7 +408,7 @@ export default function CartDetails() {
 
           {/* Continue Shopping Link */}
           <Link
-            to="/products"
+            to="/"
             className="block text-center text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition mt-3"
           >
             ← Continue Shopping

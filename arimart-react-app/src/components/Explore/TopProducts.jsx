@@ -2,10 +2,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PlusCircle, Star, LoaderCircle, Filter } from "lucide-react";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { loadMoreProducts } from "../../Store/productsSlice";
+import { loadMoreProducts, loadMoreSubcategoryProducts } from "../../Store/productsSlice";
 import ProductCard from "../Products/ProductCard";
 import FilterSheet from './FilterSheet'
-const TopProducts = ({ products = [], title = "Products" }) => {
+
+const TopProducts = ({ 
+  products = [], 
+  title = "Products", 
+  subcategoryId = null,
+  hasMore: propHasMore,
+  loadingMore: propLoadingMore,
+  pagination: propPagination
+}) => {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(true);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -13,39 +21,59 @@ const TopProducts = ({ products = [], title = "Products" }) => {
   const observerRef = useRef(null);
   const loadMoreRef = useRef(null);
 
-  // Get Redux state for load more functionality
   const { 
-    loadingMore, 
-    hasMore, 
-    pagination,
-    filters 
+    loadingMore: globalLoadingMore, 
+    hasMore: globalHasMore, 
+    pagination: globalPagination,
+    filters,
+    loading: productsLoading,
+    subcategoryLoadingMore,
+    subcategoryHasMore,
+    subcategoryPagination
   } = useSelector(state => state.products);
 
+  // Determine which states to use based on whether we have subcategoryId
+  const hasMore = subcategoryId ? 
+    (propHasMore !== undefined ? propHasMore : subcategoryHasMore[subcategoryId]) : 
+    globalHasMore;
+    
+  const loadingMore = subcategoryId ? 
+    (propLoadingMore !== undefined ? propLoadingMore : subcategoryLoadingMore[subcategoryId]) : 
+    globalLoadingMore;
+    
+  const pagination = subcategoryId ? 
+    (propPagination || subcategoryPagination[subcategoryId] || { page: 1, limit: 10 }) : 
+    globalPagination;
+
+  // Updated load more function
+  const loadMore = useCallback(() => {
+    if (hasMore && !loadingMore && !isInitialLoad && subcategoryId) {
+      const currentPage = pagination.currentPage || pagination.page || 1;
+      const nextPage = currentPage + 1;
+      
+      dispatch(loadMoreSubcategoryProducts({ 
+        subcategoryId: subcategoryId,
+        page: nextPage,
+        limit: pagination.pageSize || pagination.limit || 10
+      }));
+    }
+  }, [dispatch, hasMore, loadingMore, isInitialLoad, subcategoryId, pagination]);
+
+  // Rest of the component remains the same...
   useEffect(() => {
-    // Only show loading if products array is empty
-    if (products.length === 0) {
-      setLoading(true);
-      const timer = setTimeout(() => {
-        setLoading(false);
-      }, 1000);
-      return () => clearTimeout(timer);
+    if (productsLoading || (products.length === 0 && !productsLoading)) {
+      setLoading(productsLoading);
+      if (!productsLoading) {
+        const timer = setTimeout(() => {
+          setLoading(false);
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
     } else {
       setLoading(false);
       setIsInitialLoad(false);
     }
-  }, [products]);
-
-  // Load more function
-  const loadMore = useCallback(() => {
-    if (hasMore && !loadingMore && !isInitialLoad) {
-      const params = {
-        ...filters,
-        page: pagination.page + 1,
-        limit: pagination.limit
-      };
-      dispatch(loadMoreProducts(params));
-    }
-  }, [dispatch, hasMore, loadingMore, isInitialLoad, filters, pagination]);
+  }, [products, productsLoading]);
 
   // Intersection Observer for auto load more
   useEffect(() => {
@@ -64,7 +92,7 @@ const TopProducts = ({ products = [], title = "Products" }) => {
       },
       {
         root: null,
-        rootMargin: '100px', // Load more when 100px before reaching the end
+        rootMargin: '100px',
         threshold: 0.1
       }
     );
@@ -84,28 +112,28 @@ const TopProducts = ({ products = [], title = "Products" }) => {
     <div className="w-full">
       {/* Section Title */}
       <div className="mb-4 flex justify-between items-center">
-  <div>
-    <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
-      {title}
-    </h2>
-    <p className="text-sm text-gray-500 dark:text-gray-400">
-      {products.length} products available
-    </p>
-  </div>
-  
-  <button 
-    onClick={() => setIsFilterOpen(true)}
-    className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-  >
-    <Filter className="w-4 h-4" />
-    <span className="text-sm">Filters</span>
-  </button>
+        <div>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
+            {title}
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {products.length} products available
+          </p>
+        </div>
+        
+        <button 
+          onClick={() => setIsFilterOpen(true)}
+          className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+        >
+          <Filter className="w-4 h-4" />
+          <span className="text-sm">Filters</span>
+        </button>
 
-  <FilterSheet 
-    isOpen={isFilterOpen} 
-    onClose={() => setIsFilterOpen(false)} 
-  />
-</div>
+        <FilterSheet 
+          isOpen={isFilterOpen} 
+          onClose={() => setIsFilterOpen(false)} 
+        />
+      </div>
 
       {loading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -125,11 +153,11 @@ const TopProducts = ({ products = [], title = "Products" }) => {
             </div>
           ))}
         </div>
-      ) : products.products && products.products.length > 0 ? (
+      ) : products && products.length > 0 ? (
         <div className="space-y-4">
           {/* Products Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {products.products.map((product, idx) => (
+            {products.map((product, idx) => (
               <ProductCard key={`${product.id}-${idx}`} product={product} />
             ))}
           </div>
@@ -142,7 +170,7 @@ const TopProducts = ({ products = [], title = "Products" }) => {
                 <span className="text-sm">Loading more products...</span>
               </div>
             )}
-            {!hasMore && products.products.length > 0 && (
+            {!hasMore && products.length > 0 && (
               <div className="text-center text-gray-500 dark:text-gray-400">
                 <p className="text-sm">No more products to load</p>
               </div>

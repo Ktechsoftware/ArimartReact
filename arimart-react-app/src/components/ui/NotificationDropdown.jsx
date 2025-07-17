@@ -1,9 +1,45 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, ChevronRight, CheckCircle, X, Mail } from "lucide-react";
+import { Bell, ChevronRight, CheckCircle, X, ShoppingBag, CreditCard, Mail } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { deleteNotification, markAsRead } from "../../Store/notificationSlice";
+
+const NotificationIcon = ({ title }) => {
+  const iconSize = 16;
+  const iconClass = "text-white";
+
+  if (title.includes('%order%') || title.toLowerCase().includes('order')) {
+    return (
+      <div className="bg-purple-500 p-2 rounded-full">
+        <ShoppingBag size={iconSize} className={iconClass} />
+      </div>
+    );
+  }
+
+  if (title.toLowerCase().includes('payment')) {
+    return (
+      <div className="bg-green-500 p-2 rounded-full">
+        <CreditCard size={iconSize} className={iconClass} />
+      </div>
+    );
+  }
+
+  if (title.toLowerCase().includes('success')) {
+    return (
+      <div className="bg-blue-500 p-2 rounded-full">
+        <CheckCircle size={iconSize} className={iconClass} />
+      </div>
+    );
+  }
+
+  // Default icon
+  return (
+    <div className="bg-gray-500 p-2 rounded-full">
+      <Bell size={iconSize} className={iconClass} />
+    </div>
+  );
+};
 
 const NotificationDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -39,7 +75,7 @@ const NotificationDropdown = () => {
 
       <AnimatePresence>
         {isOpen && (
-          <div 
+          <div
             className="absolute mt-3 z-50"
             style={{ right: "-150px" }}
             onMouseEnter={() => setIsOpen(true)}
@@ -60,7 +96,7 @@ const NotificationDropdown = () => {
                     Notifications
                   </h3>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {unreadCount > 0 
+                    {unreadCount > 0
                       ? `${unreadCount} new message${unreadCount !== 1 ? 's' : ''}`
                       : 'No new messages'}
                   </p>
@@ -71,11 +107,41 @@ const NotificationDropdown = () => {
                     notifications.map((notification) => (
                       <div
                         key={notification.id}
-                        className={`p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
-                          !notification.read ? "bg-blue-50 dark:bg-blue-900/20" : ""
-                        }`}
+                        className={`p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${!notification.read ? "bg-blue-50 dark:bg-blue-900/20" : ""
+                          }`}
                       >
-                        {/* ... existing notification item ... */}
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0">
+                            <NotificationIcon title={notification.title} />
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex justify-between items-start">
+                              <h3 className="font-medium text-gray-900 dark:text-white">
+                                {notification.title.replace('%order%', '')}
+                              </h3>
+                              <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap ml-2">
+                                {new Date(notification.addedDate).toLocaleTimeString([], {
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </span>
+                            </div>
+
+                            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                              {notification.message}
+                            </p>
+
+                            {notification.urlt && (
+                              <a
+                                href={notification.urlt}
+                                className="mt-2 inline-block text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                              >
+                                View details
+                              </a>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     ))
                   ) : (
@@ -96,9 +162,9 @@ const NotificationDropdown = () => {
                         }}
                         className="mb-4"
                       >
-                        <Mail 
-                          size={48} 
-                          className="text-gray-400 dark:text-gray-500" 
+                        <Mail
+                          size={48}
+                          className="text-gray-400 dark:text-gray-500"
                         />
                       </motion.div>
                       <h4 className="text-lg font-medium text-gray-600 dark:text-gray-300 mb-1">

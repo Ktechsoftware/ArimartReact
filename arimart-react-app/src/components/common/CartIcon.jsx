@@ -16,18 +16,6 @@ export default function CartIcon({ show = true, showGroupCart = true }) {
     groupCartItems
   } = useCart();
 
-  // Debug logs
-  console.log("CartIcon Debug:", {
-    show,
-    showGroupCart,
-    totalItems,
-    groupTotalItems,
-    loading,
-    currentGroupId,
-    regularCartItemsCount: regularCartItems?.length || 0,
-    groupCartItemsCount: groupCartItems?.length || 0
-  });
-
   if (!show) {
     console.log("CartIcon hidden because show=false");
     return null;

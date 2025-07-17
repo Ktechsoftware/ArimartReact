@@ -13,6 +13,7 @@ import searchReducer from './searchSlice'
 import filterReducer from './filterSlice'
 import topOrdersReducer from './Tops/topOrdersSlice'
 import notificationReducer from "./notificationSlice";
+import popularProductsReducer from './PopularSlice/popularProductsSlice'
 
 const store = configureStore({
   reducer: {
@@ -21,6 +22,7 @@ const store = configureStore({
     category: categoryReducer,
     order: orderReducer,
     productDetail: productDetailReducer,
+    popularProducts: popularProductsReducer,
     notifications: notificationReducer,
     cart: cartReducer,
     search : searchReducer,

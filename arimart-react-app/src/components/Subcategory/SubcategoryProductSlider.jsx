@@ -3,10 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ShoppingCart, Heart, Star, Eye, LoaderCircle } from 'lucide-react';
 import ProductCard from '../Products/ProductCard';
 import { useDispatch, useSelector } from 'react-redux';
-import { loadMoreProducts } from '../../Store/productsSlice';
+import { loadMoreSubcategoryProducts } from '../../Store/productsSlice';
 
-const SubcategoryProductSlider = ({ products = [], title = "Products" }) => {
-  console.log(products)
+const SubcategoryProductSlider = ({ products = [], title = "Products", subcategoryId }) => {
+  console.log('SubcategoryProductSlider props:', { products, title, subcategoryId });
+  
   const scrollRef = useRef(null);
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(true);
@@ -18,6 +19,25 @@ const SubcategoryProductSlider = ({ products = [], title = "Products" }) => {
   const [scrollLeft, setScrollLeft] = useState(0);
   const loadMoreRef = useRef(null);
   const observerRef = useRef(null);
+
+  // Get subcategory-specific state from Redux
+  const { 
+    subcategoryPagination = {},
+    subcategoryHasMore = {},
+    subcategoryLoadingMore = {}
+  } = useSelector(state => state.products);
+
+  // Get pagination info for this specific subcategory
+  const currentPagination = subcategoryPagination[subcategoryId] || {
+    currentPage: 1,
+    pageSize: 10,
+    totalCount: 0,
+    totalPages: 1,
+    hasNextPage: false
+  };
+
+  const hasMore = subcategoryHasMore[subcategoryId] || false;
+  const loadingMore = subcategoryLoadingMore[subcategoryId] || false;
 
   // Check scroll position
   const checkScrollPosition = () => {
@@ -71,13 +91,6 @@ const SubcategoryProductSlider = ({ products = [], title = "Products" }) => {
     setIsDragging(false);
   };
 
-  const { 
-    loadingMore, 
-    hasMore, 
-    pagination,
-    filters 
-  } = useSelector(state => state.products);
-
   useEffect(() => {
     // Only show loading if products array is empty
     if (products.length === 0) {
@@ -92,17 +105,17 @@ const SubcategoryProductSlider = ({ products = [], title = "Products" }) => {
     }
   }, [products]);
 
-  // Load more function
+  // Load more function for subcategory products
   const loadMore = useCallback(() => {
-    if (hasMore && !loadingMore && !isInitialLoad) {
-      const params = {
-        ...filters,
-        page: pagination.page + 1,
-        limit: pagination.limit
-      };
-      dispatch(loadMoreProducts(params));
+    if (hasMore && !loadingMore && !isInitialLoad && subcategoryId) {
+      console.log('Loading more products for subcategory:', subcategoryId);
+      dispatch(loadMoreSubcategoryProducts({
+        subcategoryId,
+        page: currentPagination.currentPage + 1,
+        limit: currentPagination.pageSize || 10
+      }));
     }
-  }, [dispatch, hasMore, loadingMore, isInitialLoad, filters, pagination]);
+  }, [dispatch, hasMore, loadingMore, isInitialLoad, subcategoryId, currentPagination]);
 
   // Intersection Observer for auto load more - trigger when scrolling near the end
   useEffect(() => {
@@ -160,6 +173,9 @@ const SubcategoryProductSlider = ({ products = [], title = "Products" }) => {
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {products.length} products available
+            {currentPagination.totalCount > 0 && (
+              <span> • {currentPagination.totalCount} total</span>
+            )}
           </p>
         </div>
 
@@ -227,6 +243,9 @@ const SubcategoryProductSlider = ({ products = [], title = "Products" }) => {
         <div className="flex justify-center py-4 border-t border-gray-100 dark:border-gray-700">
           <div className="text-center text-gray-500 dark:text-gray-400">
             <p className="text-sm">No more products to load</p>
+            <p className="text-xs mt-1">
+              Showing {products.length} of {currentPagination.totalCount} products
+            </p>
           </div>
         </div>
       )}

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { fetchCategories, fetchSubcategories } from '../../Store/categoriesSlice';
-import { fetchProducts, resetProducts } from '../../Store/productsSlice';
+import { fetchProducts, fetchSubcategoryproducts, resetProducts } from '../../Store/productsSlice';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LoaderCircle } from 'lucide-react';
 import TopProducts from '../Explore/TopProducts';
@@ -20,12 +20,16 @@ export default function CategoryLayout() {
     loadingChildSubcategories
   } = useSelector((state) => state.category);
 
-  const { 
-    items: products, 
+  const {
+    items: products,
     loading: productsLoading,
     pagination,
     hasMore,
-    loadingMore
+    loadingMore,
+    subcategoryProducts,
+    subcategoryPagination,
+    subcategoryHasMore,
+    subcategoryLoadingMore
   } = useSelector(state => state.products);
 
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -35,6 +39,19 @@ export default function CategoryLayout() {
   useEffect(() => {
     dispatch(fetchCategories());
   }, [dispatch]);
+
+  const location = useLocation();
+  const incomingCategory = location.state?.selectedCategory;
+
+  useEffect(() => {
+    if (incomingCategory) {
+      setSelectedCategory(incomingCategory);
+      setSelectedSubcategory(null);
+      dispatch(fetchSubcategories(incomingCategory.id));
+      setView('subcategories');
+    }
+  }, [incomingCategory, dispatch]);
+
 
   const handleCategoryClick = (category) => {
     setSelectedCategory(category);
@@ -47,13 +64,12 @@ export default function CategoryLayout() {
     console.log("Clicking subcategory:", subcategory);
     setSelectedSubcategory(subcategory);
     setView('products');
-    
-    // Reset products and fetch fresh data for this subcategory
-    dispatch(resetProducts());
-    dispatch(fetchProducts({ 
+
+    // Fetch first page of subcategory products
+    dispatch(fetchSubcategoryproducts({
       subcategoryId: subcategory.id,
       page: 1,
-      limit: 20 // Adjust as needed
+      limit: 10
     }));
   };
 
@@ -211,11 +227,17 @@ export default function CategoryLayout() {
               className="p-4"
             >
               <TopProducts
-                products={{ products }}
+                products={subcategoryProducts[selectedSubcategory?.id] || []}
                 title={selectedSubcategory?.subcategoryName || 'Products'}
+                subcategoryId={selectedSubcategory?.id}
+                // Pass subcategory-specific pagination states
+                hasMore={subcategoryHasMore[selectedSubcategory?.id] || false}
+                loadingMore={subcategoryLoadingMore[selectedSubcategory?.id] || false}
+                pagination={subcategoryPagination[selectedSubcategory?.id] || { page: 1, limit: 10 }}
               />
             </motion.div>
           )}
+
         </AnimatePresence>
       </div>
     </div>

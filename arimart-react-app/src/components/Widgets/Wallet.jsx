@@ -91,6 +91,7 @@ export default function Wallet() {
         ))}
       </motion.div>
 
+      
       {/* Assets List */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -119,25 +120,18 @@ export default function Wallet() {
           </div>
         </motion.div>
 
-        {/* Grocery Wallet Card */}
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm flex items-center justify-between"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
-              <span className="text-lg">🛒</span>
-            </div>
-            <div>
-              <p className="font-medium text-gray-800 dark:text-white">Grocery Wallet</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Main balance for shopping</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-blue-500 dark:text-blue-400">₹20.43</span>
-            <ChevronRight className="text-gray-400" size={18} />
-          </div>
-        </motion.div>
+<div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-sm shadow-sm border border-gray-200 dark:border-gray-700">
+      <h3 className="text-base font-semibold text-gray-800 dark:text-white mb-2">Wallet Terms</h3>
+      <ul className="list-disc list-inside space-y-1 text-gray-600 dark:text-gray-300">
+        <li>Use only on Arimart platform</li>
+        <li>Non-transferable & non-refundable</li>
+        <li>Refunds go to wallet if prepaid</li>
+        <li>Promos may expire if unused</li>
+        <li>Max cap applies (₹10,000)</li>
+        <li>KYC may be required for full use</li>
+        <li>Inactive wallets may be paused</li>
+      </ul>
+    </div>
       </motion.div>
     </motion.div>
   );

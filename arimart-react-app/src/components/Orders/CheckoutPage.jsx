@@ -14,6 +14,7 @@ import { fetchWalletBalance } from '../../Store/walletSlice';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { refreshUserInfo } from '../../Store/authSlice';
 import { AddressSection } from '../common/AddressSection';
+import { createNotification } from '../../Store/notificationSlice';
 
 const paymentMethods = [
   { id: 'card', name: 'Credit/Debit Card', icon: <CreditCard className="w-5 h-5" /> },
@@ -98,61 +99,59 @@ export default function CheckoutPage() {
 
   const [isProcessing, setIsProcessing] = useState(false);
 
- const handlecheckoutCart = async () => {
-  if (selectedPayment.id !== 'cod') {
-    navigate('/checkout/payment');
-    return;
-  }
-  
-  setIsProcessing(true);
-  const processingTimer = setTimeout(() => {
-    setIsProcessing(false);
-  }, 6000);
-  
-  try {
-    const cartIds = items.map(item => item.id).join(',');
-    
-    // Detect if this is a group order by checking if items have groupId
-    const isGroupOrder = items.some(item => item.groupId || item.groupid);
-    const groupId = isGroupOrder ? (items[0].groupId || items[0].groupid) : null;
-    
-    const payload = {
-      Addid: cartIds,
-      Userid: userId,
-      Sipid: "0"
-    };
-
-    if (groupId) {
-      payload.groupId = groupId;
+  const handlecheckoutCart = async () => {
+    if (selectedPayment.id !== 'cod') {
+      navigate('/checkout/payment');
+      return;
     }
 
-    const res = await dispatch(checkoutCart(payload)).unwrap();
-    clearTimeout(processingTimer);
-    const trackId = res.orderid;
-    
-    if (!trackId) {
-      throw new Error("Invalid response: Track ID missing");
-    }
+    setIsProcessing(true);
+    const processingTimer = setTimeout(() => {
+      setIsProcessing(false);
+    }, 6000);
 
-    setLatestTrackId(trackId);
-    setShowModal(true);
-    
-    // Clear the appropriate cart
-    if (groupId) {
-      await clearCart({ groupId });
-    } else {
-      await clearCart();
+    try {
+      const cartIds = items.map(item => item.id).join(',');
+      const isGroupOrder = items.some(item => item.groupId || item.groupid);
+      const groupId = isGroupOrder ? (items[0].groupId || items[0].groupid) : null;
+
+      const payload = {
+        Addid: cartIds,
+        Userid: userId,
+        Sipid: "0"
+      };
+
+      if (groupId) {
+        payload.groupId = groupId;
+      }
+
+      const res = await dispatch(checkoutCart(payload)).unwrap();
+      clearTimeout(processingTimer);
+      const trackId = res.orderid;
+
+      if (!trackId) {
+        throw new Error("Invalid response: Track ID missing");
+      }
+
+      setLatestTrackId(trackId);
+      setShowModal(true);
+
+      // Clear the appropriate cart
+      if (groupId) {
+        await clearCart({ groupId });
+      } else {
+        await clearCart();
+      }
+
+      toast.success("Order placed successfully!");
+    } catch (err) {
+      clearTimeout(processingTimer);
+      console.error("Checkout failed:", err);
+      toast.error(err.message || "Checkout failed");
+    } finally {
+      setIsProcessing(false);
     }
-    
-    toast.success("Order placed successfully!");
-  } catch (err) {
-    clearTimeout(processingTimer);
-    console.error("Checkout failed:", err);
-    toast.error(err.message || "Checkout failed");
-  } finally {
-    setIsProcessing(false);
-  }
-};
+  };
 
   // ⏹️ Determine subtotal dynamically based on cartType
   let displaySubtotal = 0;
@@ -460,7 +459,7 @@ export default function CheckoutPage() {
       </motion.div>
 
 
-      <div className="sticky bottom-0 flex justify-center p-4 bg-white dark:bg-gray-900 z-10">
+      <div className="sticky bottom-16 flex justify-center p-4 bg-white dark:bg-gray-900 z-10">
         <motion.button
           onClick={handlecheckoutCart}
           disabled={isProcessing}
