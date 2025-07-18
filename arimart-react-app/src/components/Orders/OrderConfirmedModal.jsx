@@ -1,9 +1,7 @@
 import { motion } from "framer-motion";
 import { CheckCircle } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
-import { createNotification } from "../../Store/notificationSlice";
 
 const ConfettiPiece = () => {
   const [position] = useState({
@@ -46,7 +44,7 @@ const ConfettiPiece = () => {
 };
 
 export default function OrderConfirmedModal({userData, isOpen, onClose, trackId }) {
-  const dispatch = useDispatch();
+
   const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
@@ -64,12 +62,6 @@ const formattedDate = tomorrow.toLocaleDateString('en-IN', {
   month: 'short',
   year: 'numeric',
 });
-dispatch(createNotification({
-        userid: userData.id,
-        urlt : `/orders/track/${trackId}`,
-        title: "Order Placed",
-        message: `Your order #${trackId} has been successfully placed.`,
-      }));
 
 const randomHour = Math.floor(Math.random() * 8) + 9; // 9 AM to 5 PM
 const formattedTime = `${randomHour}:00 ${randomHour < 12 ? 'AM' : 'PM'}`;

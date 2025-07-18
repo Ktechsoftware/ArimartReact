@@ -13,6 +13,7 @@ import { createGroup, fetchAllGroups } from "../../Store/groupBuySlice";
 import ProductReview from "../Reviews/ProductReview";
 import { fetchGroupBuysByProductId } from "../../Store/productsSlice";
 import { AnimatePresence } from "framer-motion";
+import RecommendedProducts from "./RecommendedProducts";
 
 export default function ProductContentDetail() {
   const { id } = useParams();
@@ -674,15 +675,7 @@ const handleRemove = async () => {
 
       <ProductReview />
       {/* Related Products */}
-      <motion.h4
-        className="mt-6 text-xl font-semibold text-gray-700 dark:text-gray-300"
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.7 }}
-      >
-        Products related to this item
-      </motion.h4>
-      <DProductCard product={product} />
+      <RecommendedProducts productId={product.id} className="max-w-6xl mx-auto px-4"/>
     </div>
   );
 }

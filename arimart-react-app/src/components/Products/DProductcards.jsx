@@ -130,7 +130,7 @@ const DProductCard = ({ product }) => {
   const generateProductLink = () => {
     const marketParam = market || categoryName;
     const subcategoryParam = subcategory || subcategoryName || productName;
-    return `/category/${encodeURIComponent(marketParam)}/${encodeURIComponent(subcategoryParam)}/${productId}`;
+    return `/category/${encodeURIComponent(marketParam)}/${encodeURIComponent(subcategoryParam)}/product/${productId}`;
   };
 
   // Don't render if product is invalid
@@ -144,7 +144,7 @@ const DProductCard = ({ product }) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       whileHover={{ y: -5 }}
-      className="w-48 bg-white dark:bg-gray-900 rounded-md shadow-sm border border-gray-200 dark:border-gray-700 p-3 text-sm flex-shrink-0 relative"
+      className="w-50 bg-white dark:bg-gray-900 rounded-md shadow-sm border border-gray-200 dark:border-gray-700 p-3 text-sm flex-shrink-0 relative"
     >
       {/* Wishlist Heart Icon */}
       <button

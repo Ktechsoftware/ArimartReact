@@ -1,23 +1,42 @@
 import { motion } from "framer-motion";
 import { Share2, Copy, PlayCircle, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { clearReferralState, fetchReferralCode, fetchReferralStats } from "../../Store/referralSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 export default function ReferAndEarn() {
-  const referralCode = "1575YOG81";
+  // const referralCode = "1575YOG81";
+  const dispatch = useDispatch();
+  const userData = useSelector(state => state.auth.userData);
+  const userId = userData?.id;
+  const { referCode, stats, name, phone, loading, error } = useSelector(
+    (state) => state.referral
+  );
+  useEffect(() => {
+    if (userId) {
+      dispatch(fetchReferralCode(userId));
+      dispatch(fetchReferralStats(userId)); // ✅ important!
+    }
+
+    return () => {
+      dispatch(clearReferralState());
+    };
+  }, [dispatch, userId]);
+
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-  try {
-    await navigator.clipboard.writeText(referralCode);
-    setCopied(true);
-    toast.success("Referral code copied!");
-    setTimeout(() => setCopied(false), 2000);
-  } catch (err) {
-    toast.error("Failed to copy referral code");
-    console.error("Failed to copy: ", err);
-  }
-};
+    try {
+      await navigator.clipboard.writeText(referCode);
+      setCopied(true);
+      toast.success("Referral code copied!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      toast.error("Failed to copy referral code");
+      console.error("Failed to copy: ", err);
+    }
+  };
 
   const steps = [
     {
@@ -30,12 +49,12 @@ export default function ReferAndEarn() {
     },
     {
       id: 3,
-      text: "Enjoy your ₹35 reward in your wallet instantly!",
+      text: "Enjoy your ₹100 reward in your wallet instantly!",
     },
   ];
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
@@ -49,10 +68,10 @@ export default function ReferAndEarn() {
         className="text-center mb-8"
       >
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          Refer & Earn ₹35
+          Refer & Earn ₹100
         </h1>
         <p className="text-gray-600 dark:text-gray-300">
-          Share this code or link with your friend. Once they install and enter your code, you'll receive ₹35!
+          Share this code or link with your friend. Once they install and enter your code, you'll receive ₹100!
         </p>
       </motion.div>
 
@@ -64,30 +83,30 @@ export default function ReferAndEarn() {
         className="max-w-md mx-auto bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 text-center shadow-lg mb-8 relative overflow-hidden"
       >
         <div className="inset-0 bg-gradient-to-r from-transparent via-green-500/10 dark:via-green-400/10 to-transparent opacity-30" />
-        
+
         <p className="text-gray-500 dark:text-gray-400 text-sm mb-3">
           Your Referral Code
         </p>
-        
+
         <motion.div
           whileHover={{ scale: 1.02 }}
           className="text-3xl font-bold tracking-widest bg-gray-100 dark:bg-gray-800 p-4 rounded-xl inline-block mb-6"
         >
-          {referralCode}
+          {referCode}
         </motion.div>
-        
+
         <div className="flex justify-center gap-4">
           <motion.button
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      onClick={handleCopy}
-      className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm px-6 py-3 rounded-xl flex items-center gap-2 font-medium"
-      disabled={copied}
-    >
-      <Copy size={18} />
-      {copied ? 'Copied!' : 'Copy Code'}
-    </motion.button>
-          
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleCopy}
+            className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm px-6 py-3 rounded-xl flex items-center gap-2 font-medium"
+            disabled={copied}
+          >
+            <Copy size={18} />
+            {copied ? 'Copied!' : 'Copy Code'}
+          </motion.button>
+
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -100,7 +119,7 @@ export default function ReferAndEarn() {
       </motion.div>
 
       {/* How It Works */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
@@ -110,7 +129,7 @@ export default function ReferAndEarn() {
           How It Works
           <ChevronRight className="ml-1 w-5 h-5 text-gray-400" />
         </h2>
-        
+
         <div className="space-y-4">
           {steps.map((step, index) => (
             <motion.div
@@ -151,24 +170,25 @@ export default function ReferAndEarn() {
       </motion.div>
 
       {/* Stats */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
         className="grid grid-cols-2 gap-4"
       >
+        {console.log(stats)}
         <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm text-center">
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
             Total Installed
           </p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalInstalled}</p>
         </div>
         <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm text-center">
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
             Total Earned
           </p>
           <p className="text-2xl font-bold text-green-500 dark:text-green-400">
-            ₹0
+            ₹{stats.totalEarned}
           </p>
         </div>
       </motion.div>

@@ -1,19 +1,20 @@
 import { motion } from "framer-motion";
-import { ArrowUpRight, ArrowLeftRight, ArrowDown, ChevronRight, Share2 } from "lucide-react";
+import { ArrowUpRight, ArrowLeftRight, ArrowDown, ChevronRight, Share2, GroupIcon, UserCheck, UserCheck2Icon, Wallet2Icon, UserCircle2Icon } from "lucide-react";
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchWalletBalance } from '../../Store/walletSlice';
 import { useEffect } from 'react';
+import { combineSlices } from "@reduxjs/toolkit";
+import { fetchWalletBalance } from "../../Store/walletSlice";
 
 
 export default function Wallet() {
   const userData = useSelector((state) => state.auth.userData);
   const dispatch = useDispatch();
-
+  const { balance, walletAmount, referAmount } = useSelector(state => state.wallet);
   useEffect(() => {
-    if (userData.userId) {
-      dispatch(fetchWalletBalance(userData.userId));
+    if (userData.id) {
+      dispatch(fetchWalletBalance(userData.id));
     }
-  }, [userData]);
+  }, [userData, dispatch]);
 
   return (
     <motion.div
@@ -30,11 +31,7 @@ export default function Wallet() {
       >
         <div className="flex items-center gap-3">
           <motion.div whileHover={{ scale: 1.05 }}>
-            <img
-              src="https://via.placeholder.com/32"
-              alt="profile"
-              className="w-10 h-10 rounded-full border-2 border-green-400 dark:border-green-500"
-            />
+            <UserCircle2Icon className="w-7 h-7"/>
           </motion.div>
           <div>
             <p className="text-sm font-medium text-gray-700 dark:text-gray-300">mywallet.arimart</p>
@@ -60,7 +57,7 @@ export default function Wallet() {
           className="text-4xl font-bold tracking-tight text-green-800 mt-1"
           whileHover={{ scale: 1.01 }}
         >
-          ₹{userData.walletBalance || "0.00"}
+          ₹{balance || "0.00"}
         </motion.h2>
         <p className="text-xs text-right text-gray-600 mt-2 dark:text-white/80">Updated just now</p>
       </motion.div>
@@ -91,7 +88,7 @@ export default function Wallet() {
         ))}
       </motion.div>
 
-      
+
       {/* Assets List */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -107,31 +104,50 @@ export default function Wallet() {
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
-              <span className="text-lg">💰</span>
+             <UserCheck2Icon className="w-4 h-4"/>
             </div>
             <div>
-              <p className="font-medium text-gray-800 dark:text-white">Cashback Balance</p>
+              <p className="font-medium text-gray-800 dark:text-white">Referal Balance</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">Can be used on next order</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-green-500 dark:text-green-400">₹520.00</span>
+            <span className="text-lg font-bold text-green-500 dark:text-green-400">₹{referAmount || "0.00"}</span>
+            <ChevronRight className="text-gray-400" size={18} />
+          </div>
+        </motion.div>
+        {/* Cashback Card */}
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm flex items-center justify-between mb-3"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center">
+              <Wallet2Icon className="w-4 h-4"/>
+            </div>
+            <div>
+              <p className="font-medium text-gray-800 dark:text-white">Wallet Balance</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Can be used on next order</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-bold text-green-500 dark:text-green-400">₹{walletAmount || "0.00"}</span>
             <ChevronRight className="text-gray-400" size={18} />
           </div>
         </motion.div>
 
-<div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-sm shadow-sm border border-gray-200 dark:border-gray-700">
-      <h3 className="text-base font-semibold text-gray-800 dark:text-white mb-2">Wallet Terms</h3>
-      <ul className="list-disc list-inside space-y-1 text-gray-600 dark:text-gray-300">
-        <li>Use only on Arimart platform</li>
-        <li>Non-transferable & non-refundable</li>
-        <li>Refunds go to wallet if prepaid</li>
-        <li>Promos may expire if unused</li>
-        <li>Max cap applies (₹10,000)</li>
-        <li>KYC may be required for full use</li>
-        <li>Inactive wallets may be paused</li>
-      </ul>
-    </div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-sm shadow-sm border border-gray-200 dark:border-gray-700">
+          <h3 className="text-base font-semibold text-gray-800 dark:text-white mb-2">Wallet Terms</h3>
+          <ul className="list-disc list-inside space-y-1 text-gray-600 dark:text-gray-300">
+            <li>Use only on Arimart platform</li>
+            <li>Non-transferable & non-refundable</li>
+            <li>Refunds go to wallet if prepaid</li>
+            <li>Promos may expire if unused</li>
+            <li>Max cap applies (₹10,000)</li>
+            <li>KYC may be required for full use</li>
+            <li>Inactive wallets may be paused</li>
+          </ul>
+        </div>
       </motion.div>
     </motion.div>
   );

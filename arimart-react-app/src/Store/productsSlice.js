@@ -193,6 +193,25 @@ export const deleteProduct = createAsyncThunk(
   }
 );
 
+export const fetchProductRecommendations = createAsyncThunk(
+  'products/fetchProductRecommendations',
+  async ({ productId, limit = 8 }, { rejectWithValue }) => {
+    try {
+      const queryParams = new URLSearchParams({
+        limit: limit.toString()
+      });
+
+      const response = await API.get(`products/recommendations/${productId}?${queryParams}`);
+      return {
+        productId,
+        recommendations: response.data
+      };
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
 const productsSlice = createSlice({
   name: 'products',
   initialState: {
@@ -206,6 +225,8 @@ const productsSlice = createSlice({
     subcategoryPagination: {}, // Add pagination for each subcategory
     subcategoryHasMore: {}, // Track hasMore for each subcategory
     subcategoryLoadingMore: {},
+    recommendations: {}, // Store recommendations by productId
+    recommendationsLoading: {},
     imageLoading: {},
     groupBuys: {},
     pagination: {
@@ -455,7 +476,23 @@ const productsSlice = createSlice({
       .addCase(deleteProduct.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      });
+      })
+      // 🔄 Fetch Product Recommendations
+      .addCase(fetchProductRecommendations.pending, (state, action) => {
+        const { productId } = action.meta.arg;
+        state.recommendationsLoading[productId] = true;
+        state.error = null;
+      })
+      .addCase(fetchProductRecommendations.fulfilled, (state, action) => {
+        const { productId, recommendations } = action.payload;
+        state.recommendationsLoading[productId] = false;
+        state.recommendations[productId] = recommendations;
+      })
+      .addCase(fetchProductRecommendations.rejected, (state, action) => {
+        const { productId } = action.meta.arg;
+        state.recommendationsLoading[productId] = false;
+        state.error = action.payload;
+      })
   },
 });
 

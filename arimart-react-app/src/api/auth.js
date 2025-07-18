@@ -9,11 +9,12 @@ export const verifyOtp = (mobileNumber, OTP) =>
     otp: OTP
   });
 
-export const registerUser = (name, email, phone) =>
+export const registerUser = (name, email, phone,referral) =>
   API.post('/auth/register', {
     name,
     email,
-    phone
+    phone,
+    refferalCode: referral
   });
 
 export const logout = () =>

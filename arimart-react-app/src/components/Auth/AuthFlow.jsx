@@ -81,7 +81,7 @@ export default function AuthFlow() {
   const handleContinue = async () => {
     setIsLoading(true);
     try {
-      const res = await registerUser(form.fullName, form.email, mobile);
+      const res = await registerUser(form.fullName, form.email, mobile,form.referral);
       const { token, user } = res.data;
       localStorage.setItem('token', token);
       Cookies.set('userLoginDataArimart', JSON.stringify(user), { expires: 7, secure: true, sameSite: 'strict' });

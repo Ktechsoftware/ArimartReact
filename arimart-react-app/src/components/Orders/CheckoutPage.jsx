@@ -14,7 +14,6 @@ import { fetchWalletBalance } from '../../Store/walletSlice';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { refreshUserInfo } from '../../Store/authSlice';
 import { AddressSection } from '../common/AddressSection';
-import { createNotification } from '../../Store/notificationSlice';
 
 const paymentMethods = [
   { id: 'card', name: 'Credit/Debit Card', icon: <CreditCard className="w-5 h-5" /> },
@@ -43,6 +42,8 @@ export default function CheckoutPage() {
   const [selectedPayment, setSelectedPayment] = useState(paymentMethods[2]);
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
   const [latestTrackId, setLatestTrackId] = useState(null);
+const walletBalance = useSelector((state) => state.wallet.balance);
+
 
   const {
     regularCartItems,
@@ -56,16 +57,11 @@ export default function CheckoutPage() {
   } = useCart();
 
   useEffect(() => {
-    if (userData?.userId) {
-      dispatch(fetchWalletBalance(userData.userId));
+    if (userData?.id) {
+      dispatch(fetchWalletBalance(userData.id));
     }
   }, [userData, dispatch]);
 
-  useEffect(() => {
-    if (userData?.userId) {
-      dispatch(fetchWalletBalance(userData.userId));
-    }
-  }, [userData]);
   let items = []
   if (cartType === "both") {
     items = [...regularCartItems, ...groupCartItems];
@@ -220,7 +216,7 @@ export default function CheckoutPage() {
           <div className="flex items-center gap-2 text-sm">
             <Wallet2 className="w-5 h-5 text-green-600" /> Wallet Balance
           </div>
-          <span className="font-semibold">₹{userData?.walletBalance || 0}</span>
+          <span className="font-semibold">₹{walletBalance || 0}</span>
         </div>
       </div>
 
@@ -459,7 +455,7 @@ export default function CheckoutPage() {
       </motion.div>
 
 
-      <div className="sticky bottom-16 flex justify-center p-4 bg-white dark:bg-gray-900 z-10">
+      <div className="sticky bottom-16 md:bottom-0 flex justify-center p-4 bg-white dark:bg-gray-900 z-10">
         <motion.button
           onClick={handlecheckoutCart}
           disabled={isProcessing}

@@ -8,7 +8,7 @@ export const fetchWalletBalance = createAsyncThunk(
   async (userid, thunkAPI) => {
     try {
       const response = await API.get(`/wallet/balance/${userid}`);
-    //   console.log("Wallet Balance Response:", response.data);
+      console.log("Wallet Balance Response:", response.data);
       return response.data;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response?.data?.message || "Failed to fetch wallet balance");
@@ -45,10 +45,13 @@ export const deductFromWallet = createAsyncThunk(
 // Initial State
 const initialState = {
   balance: 0,
+  referAmount: 0,
+  walletAmount: 0,
   loading: false,
   error: null,
   successMessage: null,
 };
+
 
 // Slice
 const walletSlice = createSlice({
@@ -70,39 +73,41 @@ const walletSlice = createSlice({
       })
       .addCase(fetchWalletBalance.fulfilled, (state, action) => {
         state.loading = false;
-        state.balance = action.payload.balance;
+        state.balance = action.payload.totalbalance;
+        state.referAmount = action.payload.referamount;
+        state.walletAmount = action.payload.walletamount;
       })
       .addCase(fetchWalletBalance.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
 
-      // add
-      .addCase(addToWallet.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(addToWallet.fulfilled, (state, action) => {
-        state.loading = false;
-        state.successMessage = action.payload.message;
-      })
-      .addCase(addToWallet.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
+    // add
+    .addCase(addToWallet.pending, (state) => {
+      state.loading = true;
+    })
+    .addCase(addToWallet.fulfilled, (state, action) => {
+      state.loading = false;
+      state.successMessage = action.payload.message;
+    })
+    .addCase(addToWallet.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+    })
 
-      // deduct
-      .addCase(deductFromWallet.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(deductFromWallet.fulfilled, (state, action) => {
-        state.loading = false;
-        state.successMessage = action.payload.message;
-      })
-      .addCase(deductFromWallet.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      });
-  }
+    // deduct
+    .addCase(deductFromWallet.pending, (state) => {
+      state.loading = true;
+    })
+    .addCase(deductFromWallet.fulfilled, (state, action) => {
+      state.loading = false;
+      state.successMessage = action.payload.message;
+    })
+    .addCase(deductFromWallet.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+    });
+}
 });
 
 export const { clearWalletState } = walletSlice.actions;
