@@ -3,7 +3,7 @@ import axios from 'axios';
 const API_KEY = 'arimart_secret_api_key_123';
 
 const API = axios.create({
-  baseURL: 'http://localhost:5015/api',
+  baseURL: 'https://apiari.kuldeepchaurasia.in/api',
   headers: {
     'X-Api-Key': API_KEY,
     'Content-Type': 'application/json',

@@ -10,7 +10,7 @@ import OrderConfirmedModal from './OrderConfirmedModal';
 import { useCart } from '../../context/CartContext';
 import { checkoutCart } from '../../Store/orderSlice';
 import { clearCart } from '../../Store/cartSlice';
-import { fetchWalletBalance } from '../../Store/walletSlice';
+import { deductFromWallet, fetchWalletBalance } from '../../Store/walletSlice';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { refreshUserInfo } from '../../Store/authSlice';
 import { AddressSection } from '../common/AddressSection';
@@ -42,7 +42,9 @@ export default function CheckoutPage() {
   const [selectedPayment, setSelectedPayment] = useState(paymentMethods[2]);
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
   const [latestTrackId, setLatestTrackId] = useState(null);
-const walletBalance = useSelector((state) => state.wallet.balance);
+  const [sipid, setSipid] = useState(0);
+  const [useWalletAmount, setUseWalletAmount] = useState(0);
+  const walletBalance = useSelector((state) => state.wallet.balance);
 
 
   const {
@@ -95,59 +97,77 @@ const walletBalance = useSelector((state) => state.wallet.balance);
 
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const handlecheckoutCart = async () => {
-    if (selectedPayment.id !== 'cod') {
-      navigate('/checkout/payment');
-      return;
+const handlecheckoutCart = async () => {
+  if (!sipid) {
+    toast.error("Please select delivery address to place order.");
+    return;
+  }
+
+  if (selectedPayment.id !== 'cod') {
+    navigate('/checkout/payment');
+    return;
+  }
+
+  setIsProcessing(true);
+  const processingTimer = setTimeout(() => {
+    setIsProcessing(false);
+  }, 6000);
+
+  try {
+    const cartIds = items.map(item => item.id).join(',');
+    const isGroupOrder = items.some(item => item.groupId || item.groupid);
+    const groupId = isGroupOrder ? (items[0].groupId || items[0].groupid) : null;
+
+    // Deduct wallet amount first (if applicable)
+    if (useWalletAmount > 0) {
+      try {
+        await dispatch(deductFromWallet({
+          userid: userId,
+          amount: useWalletAmount
+        })).unwrap();
+      } catch (deductError) {
+        throw new Error("Wallet deduction failed: " + (deductError?.message || ""));
+      }
     }
 
-    setIsProcessing(true);
-    const processingTimer = setTimeout(() => {
-      setIsProcessing(false);
-    }, 6000);
+    const payload = {
+      Addid: cartIds,
+      Userid: userId,
+      Sipid: sipid
+    };
 
-    try {
-      const cartIds = items.map(item => item.id).join(',');
-      const isGroupOrder = items.some(item => item.groupId || item.groupid);
-      const groupId = isGroupOrder ? (items[0].groupId || items[0].groupid) : null;
-
-      const payload = {
-        Addid: cartIds,
-        Userid: userId,
-        Sipid: "0"
-      };
-
-      if (groupId) {
-        payload.groupId = groupId;
-      }
-
-      const res = await dispatch(checkoutCart(payload)).unwrap();
-      clearTimeout(processingTimer);
-      const trackId = res.orderid;
-
-      if (!trackId) {
-        throw new Error("Invalid response: Track ID missing");
-      }
-
-      setLatestTrackId(trackId);
-      setShowModal(true);
-
-      // Clear the appropriate cart
-      if (groupId) {
-        await clearCart({ groupId });
-      } else {
-        await clearCart();
-      }
-
-      toast.success("Order placed successfully!");
-    } catch (err) {
-      clearTimeout(processingTimer);
-      console.error("Checkout failed:", err);
-      toast.error(err.message || "Checkout failed");
-    } finally {
-      setIsProcessing(false);
+    if (groupId) {
+      payload.groupId = groupId;
     }
-  };
+
+    const res = await dispatch(checkoutCart(payload)).unwrap();
+    clearTimeout(processingTimer);
+    const trackId = res.orderid;
+
+    if (!trackId) {
+      throw new Error("Invalid response: Track ID missing");
+    }
+
+    setLatestTrackId(trackId);
+    setShowModal(true);
+
+    if (groupId) {
+      await clearCart({ groupId });
+    } else {
+      await clearCart();
+    }
+
+    toast.success("Order placed successfully!");
+  } catch (err) {
+    clearTimeout(processingTimer);
+    console.error("Checkout failed:", err);
+    toast.error(err.message || "Checkout failed");
+  } finally {
+    setIsProcessing(false);
+  }
+};
+
+
 
   // ⏹️ Determine subtotal dynamically based on cartType
   let displaySubtotal = 0;
@@ -164,13 +184,15 @@ const walletBalance = useSelector((state) => state.wallet.balance);
   const shipping = 30;
   const discount = 10;
   const tax = 10;
-  const total = displaySubtotal + shipping - discount - tax;
+  const rawTotal = displaySubtotal + shipping - discount - tax;
+  const total = Math.max(0, rawTotal - useWalletAmount);
 
 
   return (
     <div className="max-w-6xl mx-auto p-4 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen">
       {/* Address */}
-      <AddressSection userData={userData} />
+      <AddressSection userData={userData} onSelectPrimary={(id) => setSipid(id)} />
+
 
       {/* Cart Items */}
       <motion.div className="border border-orange-200 dark:border-gray-700 rounded-xl p-4 mb-6 space-y-4">
@@ -211,13 +233,36 @@ const walletBalance = useSelector((state) => state.wallet.balance);
       </motion.div>
 
       {/* Wallet */}
-      <div className="space-y-4 mb-6">
-        <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-gray-800 rounded-lg">
+      <div className="space-y-4 bg-green-50 dark:bg-gray-800 rounded-lg mb-6">
+        <div className="flex items-center justify-between p-3">
           <div className="flex items-center gap-2 text-sm">
             <Wallet2 className="w-5 h-5 text-green-600" /> Wallet Balance
           </div>
           <span className="font-semibold">₹{walletBalance || 0}</span>
         </div>
+        <div className="flex items-center justify-between px-3 pb-2">
+          <label className="text-sm font-medium">Use Wallet</label>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min="0"
+              max={walletBalance}
+              value={useWalletAmount}
+              onChange={(e) => {
+                const value = parseFloat(e.target.value) || 0;
+                setUseWalletAmount(Math.min(value, walletBalance)); // cap to max balance
+              }}
+              className="w-24 px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+            />
+            <button
+              onClick={() => setUseWalletAmount(walletBalance)}
+              className="text-xs text-orange-600 hover:underline"
+            >
+              Apply Max
+            </button>
+          </div>
+        </div>
+
       </div>
 
       {/* Payment Method */}
@@ -440,6 +485,11 @@ const walletBalance = useSelector((state) => state.wallet.balance);
           <span>Subtotal</span>
           <span>₹{displaySubtotal.toFixed(2)}</span>
         </div>
+        {useWalletAmount > 0 ? <div className="flex justify-between">
+          <span>Wallet Used</span>
+          <span className="text-green-600">- ₹{useWalletAmount.toFixed(2)}</span>
+        </div>
+          : ""}
         <div className="flex justify-between">
           <span>Delivery</span>
           <span>₹{shipping.toFixed(2)}</span>

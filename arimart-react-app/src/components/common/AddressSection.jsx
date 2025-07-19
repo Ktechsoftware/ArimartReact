@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Check, MapPin, Pencil, Plus, Star, Trash2, X, Home, Briefcase, MapPinIcon, Loader } from 'lucide-react';
+import { ArrowRight, Check, MapPin, Pencil, Plus, Star, Trash2, X, Home, Briefcase, MapPinIcon, Loader, ChevronDown } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import {
@@ -12,22 +12,25 @@ import {
   clearAddressState
 } from '../../Store/addressSlice';
 
-export const AddressSection = ({ userData }) => {
+export const AddressSection = ({ userData, onSelectPrimary }) => {
   const dispatch = useDispatch();
-  const { 
-    addresses, 
-    loading, 
-    addLoading, 
-    updateLoading, 
-    deleteLoading, 
-    setPrimaryLoading, 
-    error, 
-    successMessage 
-  } = useSelector((state) => state.address);
+  const {
+    addresses,
+    loading,
+    addLoading,
+    updateLoading,
+    deleteLoading,
+    setPrimaryLoading,
+    error,
+    successMessage
+  } = useSelector((state) => state.shipping);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [isCompactView, setIsCompactView] = useState(true);
+  const [isManualSelection, setIsManualSelection] = useState(false);
   const [formData, setFormData] = useState({
     adName: '',
     adContact: '',
@@ -55,20 +58,17 @@ export const AddressSection = ({ userData }) => {
   }, [userData, dispatch]);
 
   useEffect(() => {
+    if (addresses.length > 0 && !isManualSelection) {
+      const primary = addresses.find(addr => addr.isPrimary === 1) || addresses[0];
+      setSelectedAddressId(primary.adId);
+      if (onSelectPrimary) onSelectPrimary(primary.adId);
+    }
+  }, [addresses, onSelectPrimary, isManualSelection]);
+
+
+  useEffect(() => {
     if (successMessage) {
-      toast.success(successMessage, {
-        duration: 3000,
-        position: 'top-right',
-        style: {
-          background: '#10B981',
-          color: 'white',
-          borderRadius: '8px',
-        },
-        iconTheme: {
-          primary: 'white',
-          secondary: '#10B981',
-        },
-      });
+      toast.success(successMessage)
       setShowSuccessAnimation(true);
       setTimeout(() => setShowSuccessAnimation(false), 2000);
       dispatch(clearAddressState());
@@ -77,22 +77,22 @@ export const AddressSection = ({ userData }) => {
 
   useEffect(() => {
     if (error) {
-      toast.error(error, {
-        duration: 4000,
-        position: 'top-right',
-        style: {
-          background: '#EF4444',
-          color: 'white',
-          borderRadius: '8px',
-        },
-        iconTheme: {
-          primary: 'white',
-          secondary: '#EF4444',
-        },
-      });
+      toast.error(error)
       dispatch(clearAddressState());
     }
   }, [error, dispatch]);
+
+  const handleAddressSelect = (addressId) => {
+    setSelectedAddressId(addressId);
+    setIsManualSelection(true); // this prevents auto-reset
+    if (onSelectPrimary) onSelectPrimary(addressId);
+  };
+
+
+  // And add useMemo for selectedAddress calculation
+  const selectedAddress = useMemo(() => {
+    return addresses.find(addr => addr.adId === selectedAddressId);
+  }, [addresses, selectedAddressId]);
 
   const validateForm = () => {
     const errors = {};
@@ -101,17 +101,15 @@ export const AddressSection = ({ userData }) => {
     if (!formData.adAddress1.trim()) errors.adAddress1 = 'Address line 1 is required';
     if (!formData.adCity.trim()) errors.adCity = 'City is required';
     if (!formData.adPincode.trim()) errors.adPincode = 'Pincode is required';
-    
-    // Validate mobile number format (10 digits)
+
     if (formData.adContact.trim() && !/^\d{10}$/.test(formData.adContact.trim())) {
       errors.adContact = 'Enter a valid 10-digit mobile number';
     }
-    
-    // Validate pincode format (6 digits)
+
     if (formData.adPincode.trim() && !/^\d{6}$/.test(formData.adPincode.trim())) {
       errors.adPincode = 'Enter a valid 6-digit pincode';
     }
-    
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -147,7 +145,7 @@ export const AddressSection = ({ userData }) => {
       } else {
         await dispatch(addAddress(formData)).unwrap();
       }
-      
+
       dispatch(fetchUserAddresses(userData.id));
       setIsModalOpen(false);
     } catch (error) {
@@ -180,167 +178,200 @@ export const AddressSection = ({ userData }) => {
     return addressType ? addressType.icon : MapPinIcon;
   };
 
-  const allAddresses = [...addresses];
-  if (userData?.address && !addresses.some(a => a.adId === userData.address.adId)) {
-    allAddresses.unshift(userData.address);
-  }
+  useEffect(() => {
+    if (addresses.length === 0) {
+      setIsManualSelection(false);
+    }
+  }, [addresses.length]);
+
 
   return (
-    <div className="space-y-6">
-      {/* Delivery Address Card */}
-      <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-gray-800 dark:to-gray-800 p-5 rounded-2xl shadow-sm border border-orange-100 dark:border-gray-700">
-        <div className="flex items-start gap-4">
-          <div className="p-3 bg-orange-100/80 dark:bg-gray-700 rounded-xl">
+    <div className="space-y-4 mb-5">
+      {/* Compact Address Selection */}
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
             <MapPin className="w-5 h-5 text-orange-500" />
-          </div>
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">Delivery Address</h3>
-            {userData?.address ? (
-              <p className="text-gray-600 dark:text-gray-300">
-                {`${userData.address.adAddress1}, ${userData.address.adAddress2}, ${userData.address.adCity} - ${userData.address.adPincode}`}
-              </p>
-            ) : (
-              <p className="text-gray-400 dark:text-gray-500">No default address saved</p>
-            )}
-          </div>
-          <button 
-            onClick={() => openModal()}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-1 ${
-              userData?.address
-                ? 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
-                : 'bg-orange-500 text-white hover:bg-orange-600 shadow-md'
-            }`}
-          >
-            {userData?.address ? 'Edit' : (
-              <>
-                <Plus className="w-4 h-4" />
-                Add Address
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Saved Addresses */}
-      <div className="space-y-4 pb-5">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-white">Saved Addresses</h3>
-        
-        {loading ? (
-          <div className="flex justify-center items-center py-12">
-            <Loader className="w-8 h-8 animate-spin text-orange-500" />
-          </div>
-        ) : allAddresses.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="mx-auto w-16 h-16 bg-orange-50 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
-              <MapPin className="w-6 h-6 text-orange-400" />
-            </div>
-            <h4 className="text-gray-500 dark:text-gray-400">No addresses saved yet</h4>
-            <button 
+            Delivery Address
+          </h3>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsCompactView(!isCompactView)}
+              className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex items-center gap-1"
+            >
+              <ChevronDown className={`w-4 h-4 transition-transform ${isCompactView ? '' : 'rotate-180'}`} />
+              {isCompactView ? 'Show All' : 'Compact'}
+            </button>
+            <button
               onClick={() => openModal()}
-              className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors inline-flex items-center gap-2"
+              className="px-3 py-1.5 text-sm bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-1"
+            >
+              <Plus className="w-3 h-3" />
+              Add
+            </button>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center items-center py-8">
+            <Loader className="w-6 h-6 animate-spin text-orange-500" />
+          </div>
+        ) : addresses.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="mx-auto w-12 h-12 bg-orange-50 dark:bg-gray-700 rounded-full flex items-center justify-center mb-3">
+              <MapPin className="w-5 h-5 text-orange-400" />
+            </div>
+            <p className="text-gray-500 dark:text-gray-400 mb-3">No addresses saved yet</p>
+            <button
+              onClick={() => openModal()}
+              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors inline-flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
               Add Your First Address
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:md:grid-cols-3 gap-4">
+          <div className="space-y-4">
+            {/* Selected Address Display */}
+            {selectedAddress && (
+              <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                      {(() => {
+                        const IconComponent = getAddressTypeIcon(selectedAddress.adType);
+                        return <IconComponent className="w-4 h-4 text-orange-600" />;
+                      })()}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-medium text-gray-800 dark:text-white">{selectedAddress.adName}</h4>
+                        <span className="text-xs px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-full">
+                          {selectedAddress.adType}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        {selectedAddress.adAddress1}{selectedAddress.adAddress2 && ', ' + selectedAddress.adAddress2} ,{selectedAddress.adCity}, {selectedAddress.adPincode}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {selectedAddress.adContact}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => openModal(selectedAddress)}
+                      className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex items-center gap-1"
+                    >
+                      <Pencil className="w-3 h-3" />
+                      Edit
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Address Selection Grid - Compact/Expanded View */}
             <AnimatePresence>
-              {allAddresses.map((addr) => {
-                const IconComponent = getAddressTypeIcon(addr.adType);
-                return (
-                  <motion.div
-                    key={addr.adId}
-                    className={`relative p-5 rounded-xl border transition-all ${
-                      addr.isPrimary === 1 
-                        ? 'border-orange-300 bg-orange-50 dark:bg-gray-800/50' 
-                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
-                    }`}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    whileHover={{ scale: 1.01 }}
-                  >
-                    {addr.isPrimary === 1 && (
-                      <div className="absolute top-3 right-3 bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
-                        Primary
-                      </div>
-                    )}
-                    
-                    <div className="flex items-start gap-3">
-                      <div className={`p-2 rounded-lg ${
-                        addr.isPrimary === 1 
-                          ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30' 
-                          : 'bg-gray-100 text-gray-600 dark:bg-gray-700'
-                      }`}>
-                        <IconComponent className="w-5 h-5" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium text-gray-800 dark:text-white">{addr.adName}</h4>
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
-                            {addr.adType}
-                          </span>
-                        </div>
-                        <p className="text-gray-600 dark:text-gray-300 text-sm">
-                          {addr.adAddress1}, {addr.adAddress2 || ''}
-                        </p>
-                        <p className="text-gray-600 dark:text-gray-300 text-sm">
-                          {addr.adCity}, {addr.adPincode}
-                        </p>
-                        {addr.adLandmark && (
-                          <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
-                            Landmark: {addr.adLandmark}
-                          </p>
-                        )}
-                        <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
-                          {addr.adContact}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-end gap-3 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
-                      {addr.isPrimary === 0 && (
-                        <button
-                          onClick={() => handleSetPrimary(addr.adId)}
-                          disabled={setPrimaryLoading}
-                          className="text-xs text-orange-500 hover:text-orange-600 disabled:opacity-50 flex items-center gap-1"
-                          title="Set as primary"
+              {!isCompactView && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-3"
+                >
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Select Address ({addresses.length})
+                  </h4>
+                  <div className="grid grid-cols-1 gap-2">
+                    {addresses.map((addr) => {
+                      const IconComponent = getAddressTypeIcon(addr.adType);
+                      return (
+                        <motion.div
+                          key={addr.adId}
+                          className={`relative p-3 rounded-lg border cursor-pointer transition-all ${selectedAddressId === addr.adId
+                            ? 'border-orange-300 bg-orange-50 dark:bg-orange-900/20'
+                            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
+                            }`}
+                          onClick={() => handleAddressSelect(addr.adId)}
+                          whileHover={{ scale: 1.005 }}
+                          whileTap={{ scale: 0.995 }}
                         >
-                          {setPrimaryLoading ? (
-                            <Loader className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <Star className="w-4 h-4" />
-                          )}
-                          <span>Make Primary</span>
-                        </button>
-                      )}
-                      <button
-                        onClick={() => openModal(addr)}
-                        className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex items-center gap-1 text-xs"
-                        title="Edit address"
-                      >
-                        <Pencil className="w-3 h-3" />
-                        <span>Edit</span>
-                      </button>
-                      <button
-                        onClick={() => handleDelete(addr.adId)}
-                        disabled={deleteLoading}
-                        className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 disabled:opacity-50 flex items-center gap-1 text-xs"
-                        title="Delete address"
-                      >
-                        {deleteLoading ? (
-                          <Loader className="w-3 h-3 animate-spin" />
-                        ) : (
-                          <Trash2 className="w-3 h-3" />
-                        )}
-                        <span>Delete</span>
-                      </button>
-                    </div>
-                  </motion.div>
-                );
-              })}
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="radio"
+                              name="address"
+                              checked={selectedAddressId === addr.adId}
+                              onChange={() => handleAddressSelect(addr.adId)}
+                              className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
+                            />
+                            <div className={`p-1.5 rounded ${selectedAddressId === addr.adId
+                              ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30'
+                              : 'bg-gray-100 text-gray-600 dark:bg-gray-700'
+                              }`}>
+                              <IconComponent className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h5 className="font-medium text-sm text-gray-800 dark:text-white">{addr.adName}</h5>
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                                  {addr.adType}
+                                </span>
+                                {addr.isPrimary === 1 && (
+                                  <span className="text-xs px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-full">
+                                    Primary
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-600 dark:text-gray-300">
+                                {addr.adAddress1}{addr.adAddress2 && ', ' + addr.adAddress2}, {addr.adCity}, {addr.adPincode}
+                              </p>
+                            </div>
+                            <div className="flex gap-1">
+                              {addr.isPrimary === 0 && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSetPrimary(addr.adId);
+                                  }}
+                                  disabled={setPrimaryLoading}
+                                  className="text-xs text-gray-400 hover:text-orange-500 disabled:opacity-50 p-1"
+                                  title="Set as primary"
+                                >
+                                  <Star className="w-3 h-3" />
+                                </button>
+                              )}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openModal(addr);
+                                }}
+                                className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1"
+                                title="Edit address"
+                              >
+                                <Pencil className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(addr.adId);
+                                }}
+                                disabled={deleteLoading}
+                                className="text-xs text-gray-400 hover:text-red-500 disabled:opacity-50 p-1"
+                                title="Delete address"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
             </AnimatePresence>
+
           </div>
         )}
       </div>
@@ -419,11 +450,10 @@ export const AddressSection = ({ userData }) => {
                           key={type.value}
                           type="button"
                           onClick={() => setFormData({ ...formData, adType: type.value })}
-                          className={`p-2 rounded-lg border transition-all flex flex-col items-center gap-1 text-sm ${
-                            formData.adType === type.value
-                              ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400'
-                              : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                          }`}
+                          className={`p-2 rounded-lg border transition-all flex flex-col items-center gap-1 text-sm ${formData.adType === type.value
+                            ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400'
+                            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                            }`}
                         >
                           <IconComponent className="w-5 h-5" />
                           {type.label}
@@ -442,9 +472,8 @@ export const AddressSection = ({ userData }) => {
                     <input
                       value={formData.adName}
                       onChange={(e) => setFormData({ ...formData, adName: e.target.value })}
-                      className={`w-full px-4 py-2 rounded-lg border ${
-                        formErrors.adName ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'
-                      } bg-white dark:bg-gray-800 focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
+                      className={`w-full px-4 py-2 rounded-lg border ${formErrors.adName ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'
+                        } bg-white dark:bg-gray-800 focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
                       placeholder="Enter your full name"
                     />
                     {formErrors.adName && (
@@ -459,9 +488,8 @@ export const AddressSection = ({ userData }) => {
                     <input
                       value={formData.adContact}
                       onChange={(e) => setFormData({ ...formData, adContact: e.target.value })}
-                      className={`w-full px-4 py-2 rounded-lg border ${
-                        formErrors.adContact ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'
-                      } bg-white dark:bg-gray-800 focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
+                      className={`w-full px-4 py-2 rounded-lg border ${formErrors.adContact ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'
+                        } bg-white dark:bg-gray-800 focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
                       placeholder="Enter 10-digit mobile number"
                       type="tel"
                       maxLength="10"
@@ -478,9 +506,8 @@ export const AddressSection = ({ userData }) => {
                     <input
                       value={formData.adAddress1}
                       onChange={(e) => setFormData({ ...formData, adAddress1: e.target.value })}
-                      className={`w-full px-4 py-2 rounded-lg border ${
-                        formErrors.adAddress1 ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'
-                      } bg-white dark:bg-gray-800 focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
+                      className={`w-full px-4 py-2 rounded-lg border ${formErrors.adAddress1 ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'
+                        } bg-white dark:bg-gray-800 focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
                       placeholder="House no., Building name"
                     />
                     {formErrors.adAddress1 && (
@@ -508,9 +535,8 @@ export const AddressSection = ({ userData }) => {
                       <input
                         value={formData.adCity}
                         onChange={(e) => setFormData({ ...formData, adCity: e.target.value })}
-                        className={`w-full px-4 py-2 rounded-lg border ${
-                          formErrors.adCity ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'
-                        } bg-white dark:bg-gray-800 focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
+                        className={`w-full px-4 py-2 rounded-lg border ${formErrors.adCity ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'
+                          } bg-white dark:bg-gray-800 focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
                         placeholder="Enter city"
                       />
                       {formErrors.adCity && (
@@ -525,9 +551,8 @@ export const AddressSection = ({ userData }) => {
                       <input
                         value={formData.adPincode}
                         onChange={(e) => setFormData({ ...formData, adPincode: e.target.value })}
-                        className={`w-full px-4 py-2 rounded-lg border ${
-                          formErrors.adPincode ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'
-                        } bg-white dark:bg-gray-800 focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
+                        className={`w-full px-4 py-2 rounded-lg border ${formErrors.adPincode ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'
+                          } bg-white dark:bg-gray-800 focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
                         placeholder="6-digit pincode"
                         type="tel"
                         maxLength="6"
@@ -577,12 +602,10 @@ export const AddressSection = ({ userData }) => {
                 <button
                   onClick={handleSave}
                   disabled={addLoading || updateLoading}
-                  className="px-5 py-2 text-sm font-medium text-white bg-orange-500 rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2 disabled:opacity-70"
+                  className="px-5 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-2"
                 >
-                  {(addLoading || updateLoading) ? (
+                  {(addLoading || updateLoading) && (
                     <Loader className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Check className="w-4 h-4" />
                   )}
                   {isEdit ? 'Update Address' : 'Save Address'}
                 </button>

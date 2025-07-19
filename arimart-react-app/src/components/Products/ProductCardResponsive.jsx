@@ -93,7 +93,7 @@ const ProductCardResponsive = ({ product }) => {
           className="w-full md:w-1/3 h-40 bg-white dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600"
         >
           <img
-            src={`http://localhost:5015/Uploads/${product.image || '/placeholder-image.jpg'}`}
+            src={`https://apiari.kuldeepchaurasia.in/${product.image || '/placeholder-image.jpg'}`}
             alt={product.name}
             className="w-full h-full object-contain p-2"
             onError={(e) => {

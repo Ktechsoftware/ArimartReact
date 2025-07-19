@@ -19,20 +19,21 @@ export default function MobileLayout({ children }) {
     if (path.startsWith("/checkout")) return "Checkout";
     return ""; // default no title
   };
-const hideBottomNavRoutes = ['/','/onboard', '/auth', '/faq','/privacypolicy','/cart', '/checkout', '/account/editprofile', '/home/wallet', '/home/referandearn', '/wishlist', '/about', '/contactus', '/notification','/promocodes'];
-  const hideBottomNavRoutesWithPrefix = ['/product', '/orders','/topstore'];
+  const hideBottomNavRoutes = ['/onboard', '/auth'];
+  const shouldHideBottomNav = hideBottomNavRoutes.includes(location.pathname);
+  // const hideBottomNavRoutesWithPrefix = ['/product', '/orders','/topstore'];
 
-  const shouldHideBottomNav =
-    hideBottomNavRoutes.includes(location.pathname) ||
-    hideBottomNavRoutesWithPrefix.some(prefix => location.pathname.startsWith(prefix));
+  // const shouldHideBottomNav =
+  //   hideBottomNavRoutes.includes(location.pathname) ||
+  //   hideBottomNavRoutesWithPrefix.some(prefix => location.pathname.startsWith(prefix));
 
 
-  const title = getTitle(location.pathname);
+  // const title = getTitle(location.pathname);
 
   return (
     <>
-      <main className="mb-20">{children}</main>
-       {<BottomNav />}
+      <main className="mb-20 md:mb-2">{children}</main>
+       {!shouldHideBottomNav && <BottomNav />}
     </>
   );
 }

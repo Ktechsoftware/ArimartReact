@@ -47,7 +47,7 @@ export default function ProductContentDetail() {
   // console.log("cart quantity : ", itemQuantity)
   // Demo images for left side
   const demoImages = [
-    "http://localhost:5015/Uploads/" + product?.image || '/placeholder-image.jpg',
+    "https://apiari.kuldeepchaurasia.in/" + product?.image || '/placeholder-image.jpg',
     "https://m.media-amazon.com/images/S/aplus-media-library-service-media/f4258821-4583-407e-9882-650d32b364af.__CR0,0,300,300_PT0_SX300_V1___.jpg",
     "https://m.media-amazon.com/images/S/aplus-media-library-service-media/94c5ccbd-5093-4b45-a9dd-55fb709761fd.__CR0,0,300,300_PT0_SX300_V1___.jpg"
   ];

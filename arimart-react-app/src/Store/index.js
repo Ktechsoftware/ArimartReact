@@ -15,7 +15,7 @@ import topOrdersReducer from './Tops/topOrdersSlice'
 import notificationReducer from "./notificationSlice";
 import popularProductsReducer from './PopularSlice/popularProductsSlice'
 import referalReducer from './referralSlice'
-import addressReducer from './addressSlice'
+import shippingReducer from './addressSlice'
 
 const store = configureStore({
   reducer: {
@@ -27,7 +27,7 @@ const store = configureStore({
     popularProducts: popularProductsReducer,
     notifications: notificationReducer,
     cart: cartReducer,
-    address : addressReducer,
+    shipping : shippingReducer,
     referral : referalReducer,
     search : searchReducer,
     wallet: walletReducer,

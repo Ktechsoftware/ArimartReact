@@ -49,12 +49,9 @@ const publicRoutes = [
 ];
 
 const hideBottomNavRoutes = [
-  '/', '/onboard', '/auth', '/faq', '/privacypolicy', '/cart', '/checkout',
-  '/account/editprofile', '/home/wallet', '/home/referandearn',
-  '/wishlist', '/about', '/contactus', '/notification', '/promocodes','/category'
+  '/', '/onboard', '/auth'
 ];
 
-const hideBottomNavRoutesWithPrefix = ['/product', '/topstore','/category'];
 export default function AppRoutes() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -63,9 +60,6 @@ export default function AppRoutes() {
   const device = useDeviceType();
   const [isLoading, setIsLoading] = useState(false);
 
-  const shouldHideBottomNav =
-    hideBottomNavRoutes.includes(location.pathname) ||
-    hideBottomNavRoutesWithPrefix.some(prefix => location.pathname.startsWith(prefix));
 
   // ✅ Unified auth & route protection
   useEffect(() => {
