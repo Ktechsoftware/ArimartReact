@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Share2, Copy, PlayCircle, ChevronRight } from "lucide-react";
+import { Share2, Copy, PlayCircle, ChevronRight, Loader } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { clearReferralState, fetchReferralCode, fetchReferralStats } from "../../Store/referralSlice";
@@ -49,7 +49,7 @@ export default function ReferAndEarn() {
     },
     {
       id: 3,
-      text: "Enjoy your ₹100 reward in your wallet instantly!",
+      text: "Enjoy your ₹50 reward in your wallet instantly!",
     },
   ];
 
@@ -68,10 +68,10 @@ export default function ReferAndEarn() {
         className="text-center mb-8"
       >
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          Refer & Earn ₹100
+          Refer & Earn ₹50
         </h1>
         <p className="text-gray-600 dark:text-gray-300">
-          Share this code or link with your friend. Once they install and enter your code, you'll receive ₹100!
+          Share this code or link with your friend. Once they install and enter your code, you'll receive ₹50!
         </p>
       </motion.div>
 
@@ -90,10 +90,15 @@ export default function ReferAndEarn() {
 
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="text-3xl font-bold tracking-widest bg-gray-100 dark:bg-gray-800 p-4 rounded-xl inline-block mb-6"
+          className="text-3xl font-bold tracking-widest bg-gray-100 dark:bg-gray-800 p-4 rounded-xl inline-block mb-6 min-h-[3rem] flex items-center justify-center"
         >
-          {referCode}
+          {loading ? (
+            <Loader className="w-6 h-6 animate-spin text-gray-500 dark:text-gray-300" />
+          ) : (
+            referCode || "------"
+          )}
         </motion.div>
+
 
         <div className="flex justify-center gap-4">
           <motion.button

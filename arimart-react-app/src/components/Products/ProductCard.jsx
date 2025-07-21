@@ -116,7 +116,7 @@ const ProductCard = ({ key, product }) => {
           </div>
         ) : (
           <img
-            src={`https://apiari.kuldeepchaurasia.in/${imageUrl}`}
+            src={`https://apiari.kuldeepchaurasia.in/Uploads/${imageUrl}`}
             alt={product.name}
             className="w-full h-full object-cover"
             onError={(e) => {

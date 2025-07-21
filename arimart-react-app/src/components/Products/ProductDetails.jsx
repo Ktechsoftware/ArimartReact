@@ -385,7 +385,7 @@ const handleRemove = async () => {
               <AnimatePresence>
                 <motion.img
                   key={product.image}
-                  src={"https://apiari.kuldeepchaurasia.in/" + product.image}
+                  src={"https://apiari.kuldeepchaurasia.in/Uploads/" + product.image}
                   alt={product.name}
                   className="absolute inset-0 w-full h-full object-cover"
                   initial={{ opacity: 0 }}

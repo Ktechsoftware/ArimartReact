@@ -19,31 +19,6 @@ import DealAlert from "../GroupBuying/DealAlert";
 import DProductCard from "../Products/DProductcards";
 import EcommerceHomepage from "./EcommerceHomepage";
 
-const categories = [
-  { label: "Vegetable", color: "bg-purple-100", icon: "🥦" },
-  { label: "Coffee & Drinks", color: "bg-pink-100", icon: "☕" },
-  { label: "Milk & Dairy", color: "bg-yellow-100", icon: "🥛" },
-];
-
-const offers = [
-  {
-    name: "Fresh Carrot",
-    img: "https://via.placeholder.com/80x80?text=Carrot",
-    rating: 5,
-    weight: "1kg, Priceg",
-    price: "$4.99",
-    bg: "bg-purple-100",
-  },
-  {
-    name: "Fresh Salmon",
-    img: "https://via.placeholder.com/80x80?text=Salmon",
-    rating: 5,
-    weight: "1kg, Priceg",
-    price: "$4.99",
-    bg: "bg-orange-100",
-  },
-];
-
 export default function GroceryHome() {
   const [showFilter, setShowFilter] = useState(false);
   const [loading, setLoading] = useState(true);

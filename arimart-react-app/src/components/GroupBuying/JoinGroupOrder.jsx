@@ -19,7 +19,9 @@ import {
     UserPlus,
     Info, ShoppingCart,
     Minus,
-    Plus
+    Plus,
+    CheckCircle,
+    ArrowRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
@@ -492,7 +494,7 @@ const JoinGroupOrder = () => {
                         <div className="flex-shrink-0 mx-auto xs:mx-0">
                             <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
                                 <img
-                                    src={group.image ? `http://localhost:5015/uploads/${group.image}` : '/placeholder-product.jpg'}
+                                    src={group.image ? `https://apiari.kuldeepchaurasia.in/Uploads/${group.image}` : '/placeholder-product.jpg'}
                                     alt={group.productName}
                                     className="w-full h-full object-cover"
                                     loading="lazy"

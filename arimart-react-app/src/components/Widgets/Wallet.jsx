@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowUpRight, ArrowLeftRight, ArrowDown, ChevronRight, Share2, GroupIcon, UserCheck, UserCheck2Icon, Wallet2Icon, UserCircle2Icon } from "lucide-react";
+import { ArrowUpRight, ArrowLeftRight, ArrowDown, ChevronRight, Share2, GroupIcon, UserCheck, UserCheck2Icon, Wallet2Icon, UserCircle2Icon, Loader } from "lucide-react";
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect } from 'react';
 import { combineSlices } from "@reduxjs/toolkit";
@@ -9,7 +9,7 @@ import { fetchWalletBalance } from "../../Store/walletSlice";
 export default function Wallet() {
   const userData = useSelector((state) => state.auth.userData);
   const dispatch = useDispatch();
-  const { balance, walletAmount, referAmount } = useSelector(state => state.wallet);
+  const { balance, walletAmount, referAmount, loading } = useSelector(state => state.wallet);
   useEffect(() => {
     if (userData.id) {
       dispatch(fetchWalletBalance(userData.id));
@@ -31,7 +31,7 @@ export default function Wallet() {
       >
         <div className="flex items-center gap-3">
           <motion.div whileHover={{ scale: 1.05 }}>
-            <UserCircle2Icon className="w-7 h-7"/>
+            <UserCircle2Icon className="w-7 h-7" />
           </motion.div>
           <div>
             <p className="text-sm font-medium text-gray-700 dark:text-gray-300">mywallet.arimart</p>
@@ -57,8 +57,15 @@ export default function Wallet() {
           className="text-4xl font-bold tracking-tight text-green-800 mt-1"
           whileHover={{ scale: 1.01 }}
         >
-          ₹{balance || "0.00"}
+          {loading ? (
+            <span className="inline-flex items-center justify-center h-6 align-middle">
+              <Loader className="w-6 h-6 animate-spin text-gray-500 dark:text-gray-300" />
+            </span>
+          ) : (
+            `₹${balance || "0.00"}`
+          )}
         </motion.h2>
+
         <p className="text-xs text-right text-gray-600 mt-2 dark:text-white/80">Updated just now</p>
       </motion.div>
 
@@ -104,7 +111,7 @@ export default function Wallet() {
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
-             <UserCheck2Icon className="w-4 h-4"/>
+              <UserCheck2Icon className="w-4 h-4" />
             </div>
             <div>
               <p className="font-medium text-gray-800 dark:text-white">Referal Balance</p>
@@ -112,7 +119,14 @@ export default function Wallet() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-green-500 dark:text-green-400">₹{referAmount || "0.00"}</span>
+            <span className="text-lg font-bold text-green-500 dark:text-green-400">₹
+              {loading ? (
+                <span className="inline-flex items-center justify-center h-6 align-middle">
+                  <Loader className="w-6 h-6 animate-spin text-gray-500 dark:text-gray-300" />
+                </span>
+              ) : (
+                referAmount || "0.00"
+              )}</span>
             <ChevronRight className="text-gray-400" size={18} />
           </div>
         </motion.div>
@@ -123,7 +137,7 @@ export default function Wallet() {
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center">
-              <Wallet2Icon className="w-4 h-4"/>
+              <Wallet2Icon className="w-4 h-4" />
             </div>
             <div>
               <p className="font-medium text-gray-800 dark:text-white">Wallet Balance</p>
@@ -131,7 +145,14 @@ export default function Wallet() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-green-500 dark:text-green-400">₹{walletAmount || "0.00"}</span>
+            <span className="text-lg font-bold text-green-500 dark:text-green-400">₹
+              {loading ? (
+                <span className="inline-flex items-center justify-center h-6 align-middle">
+                  <Loader className="w-6 h-6 animate-spin text-gray-500 dark:text-gray-300" />
+                </span>
+              ) : (
+                walletAmount || "0.00"
+              )}</span>
             <ChevronRight className="text-gray-400" size={18} />
           </div>
         </motion.div>

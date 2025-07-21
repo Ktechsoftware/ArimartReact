@@ -22,3 +22,6 @@ export const logout = () =>
 
 export const getUserInfo = (userId) =>
   API.get(`/auth/user-info/${userId}`);
+
+export const updateUserInfo = (userId, updateData) =>
+  API.put(`/auth/update-user/${userId}`, updateData);

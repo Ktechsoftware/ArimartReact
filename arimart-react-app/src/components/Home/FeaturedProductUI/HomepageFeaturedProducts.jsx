@@ -64,9 +64,8 @@ const HomepageFeaturedProducts = () => {
         setLoadingStates(prev => ({ ...prev, [product.id]: true }));
         try {
             await addToCart(product, 1);
-            // toast.success("Added to cart!");
         } catch (error) {
-            // toast.error("Failed to add to cart");
+            toast.error("Failed to add to cart");
             console.error('Error adding to cart:', error);
         } finally {
             setLoadingStates(prev => ({ ...prev, [product.id]: false }));
@@ -121,7 +120,7 @@ const HomepageFeaturedProducts = () => {
         const productId = product.id;
 
         const imageUrl = product.image
-            ? `http://localhost:5015/Uploads/${product.image}`
+            ? `https://apiari.kuldeepchaurasia.in/Uploads/${product.image}`
             : '/placeholder-image.jpg';
 
         const inCart = isItemInCart(productId);

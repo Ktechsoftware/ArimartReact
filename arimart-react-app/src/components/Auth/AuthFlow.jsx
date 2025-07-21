@@ -108,12 +108,12 @@ export default function AuthFlow() {
   const ProductGrid = () => (
     <div className="grid grid-cols-3 gap-4 mb-8">
       {[
-        { emoji: '🍌', bg: 'bg-yellow-100' },
-        { emoji: '🥛', bg: 'bg-blue-100' },
-        { emoji: '🥗', bg: 'bg-green-100' },
-        { emoji: '🍞', bg: 'bg-orange-100' },
-        { emoji: '☕', bg: 'bg-red-100' },
-        { emoji: '🧊', bg: 'bg-cyan-100' }
+        { emoji: '🍌', bg: 'bg-yellow-100 dark:bg-yellow-900' },
+        { emoji: '🥛', bg: 'bg-blue-100 dark:bg-blue-900' },
+        { emoji: '🥗', bg: 'bg-green-100 dark:bg-green-900' },
+        { emoji: '🍞', bg: 'bg-orange-100 dark:bg-orange-900' },
+        { emoji: '☕', bg: 'bg-red-100 dark:bg-red-900' },
+        { emoji: '🧊', bg: 'bg-cyan-100 dark:bg-cyan-900' }
       ].map((item, i) => (
         <div key={i} className={`${item.bg} rounded-2xl p-4 aspect-square flex items-center justify-center`}>
           <span className="text-3xl">{item.emoji}</span>
@@ -123,14 +123,14 @@ export default function AuthFlow() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto bg-white min-h-screen md:min-h-[600px] md:rounded-2xl md:shadow-xl md:px-5 relative overflow-hidden">
+    <div className="max-w-6xl mx-auto bg-white dark:bg-gray-900 min-h-screen md:min-h-[600px] md:rounded-2xl md:shadow-xl dark:md:shadow-gray-800/30 md:px-5 relative overflow-hidden">
 
       {/* Back Button */}
       <button
         onClick={() => step > 1 ? setStep(step - 1) : navigate(-1)}
-        className="absolute top-5 left-5 z-10 p-2 bg-gray-300 hover:bg-gray-100 rounded-full transition-colors"
+        className="absolute top-5 left-5 z-10 p-2 bg-gray-300 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full transition-colors"
       >
-        <ArrowLeft className="w-5 h-5" />
+        <ArrowLeft className="w-5 h-5 dark:text-white" />
       </button>
 
       {isLoading && <LoaderSpinner />}
@@ -139,13 +139,13 @@ export default function AuthFlow() {
       <div className="flex flex-col md:flex-row h-full mt-10">
         {/* Left Side - Desktop Only */}
         {!isMobile && (
-          <div className="hidden md:block w-1/2 bg-gradient-to-b from-green-400 to-green-600 p-8">
+          <div className="hidden md:block w-1/2 bg-gradient-to-b from-green-400 to-green-600 dark:from-green-600 dark:to-green-800 p-8">
             <div className="text-white">
               <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-8 shadow-lg">
                 <img src={logo} alt="Logo" className="w-12 h-12 object-contain" />
               </div>
               <h1 className="text-3xl font-bold mb-4">Arimart Retail Shopping App</h1>
-              <p className="text-green-100 mb-8">Experience lightning fast shopping</p>
+              <p className="text-green-100 dark:text-green-200 mb-8">Experience lightning fast shopping</p>
               <ProductGrid />
             </div>
           </div>
@@ -157,8 +157,8 @@ export default function AuthFlow() {
           <div className="mb-4">
             {step === 2 && (
               <div className="flex items-center space-x-2 mb-6">
-                <Shield className="w-5 h-5 text-green-500" />
-                <span className="font-medium text-gray-700">
+                <Shield className="w-5 h-5 text-green-500 dark:text-green-400" />
+                <span className="font-medium text-gray-700 dark:text-gray-300">
                   OTP verification
                 </span>
               </div>
@@ -170,14 +170,14 @@ export default function AuthFlow() {
             {isMobile && step === 1 && <ProductGrid />}
 
             <div className="text-center mb-8">
-              <div className={`${isMobile ? 'w-16 h-16' : 'w-20 h-20'} bg-green-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg`}>
+              <div className={`${isMobile ? 'w-16 h-16' : 'w-20 h-20'} bg-green-500 dark:bg-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg`}>
                 <img src={logo} alt="Logo" className="w-12 h-12 object-contain" />
               </div>
 
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                 {isMobile ? "Arimart Retail Shopping app" : "Welcome to AriMart"}
               </h1>
-              <p className="text-gray-600 mb-8 whitespace-pre-line">
+              <p className="text-gray-600 dark:text-gray-400 mb-8 whitespace-pre-line">
                 {step === 1 && (isMobile ? 'Log in or sign up' : 'Enter your phone number to get started')}
                 {step === 2 && `We've sent a verification code to\n+91 ${mobile.slice(0, 5)}${mobile.slice(5)}`}
                 {step === 3 && 'Complete your profile'}
@@ -198,12 +198,12 @@ export default function AuthFlow() {
                         value={mobile}
                         onChange={(e) => handleChange(e.target.value)}
                         onBlur={handleBlur}
-                        className="w-full p-3 border-2 border-gray-200 rounded-xl text-black focus:border-green-500 focus:outline-none transition-colors"
+                        className="w-full p-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl text-black dark:text-white dark:bg-gray-800 focus:border-green-500 focus:outline-none transition-colors"
                         placeholder="Enter phone number"
                         maxLength={10}
                       />
                       {isTouched && !isValid && (
-                        <p className="mt-1 text-sm text-red-600 flex items-center justify-center">
+                        <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center justify-center">
                           <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
@@ -211,7 +211,7 @@ export default function AuthFlow() {
                         </p>
                       )}
                       {isLocalhost && (
-                        <div className="text-center text-sm text-green-600">
+                        <div className="text-center text-sm text-green-600 dark:text-green-400">
                           Demo Mobile Number is <strong>8799690044</strong>
                         </div>
                       )}
@@ -231,26 +231,26 @@ export default function AuthFlow() {
                             onChange={(e) => handleOTPChange(index, e.target.value)}
                             onKeyDown={(e) => handleOTPKeyDown(e, index)}
                             onPaste={handleOTPPaste}
-                            className="w-12 h-14 text-center text-black text-xl font-semibold border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none transition-colors"
+                            className="w-12 h-14 text-center text-black dark:text-white text-xl font-semibold border-2 border-gray-200 dark:border-gray-700 dark:bg-gray-800 rounded-xl focus:border-green-500 focus:outline-none transition-colors"
                             autoFocus={index === 0}
                           />
                         ))}
                       </div>
 
                       {countdown > 0 ? (
-                        <p className="text-gray-500 text-sm">
+                        <p className="text-gray-500 dark:text-gray-400 text-sm">
                           Resend OTP in {countdown}s
                         </p>
                       ) : (
                         <button
                           onClick={handleResendOTP}
-                          className="text-green-500 text-sm font-medium hover:underline"
+                          className="text-green-500 dark:text-green-400 text-sm font-medium hover:underline"
                         >
                           Resend OTP
                         </button>
                       )}
                       {isLocalhost && (
-                        <div className="text-center text-sm text-green-600">
+                        <div className="text-center text-sm text-green-600 dark:text-green-400">
                           Mock OTP is <strong>123456</strong>
                         </div>
                       )}
@@ -260,24 +260,25 @@ export default function AuthFlow() {
                   {step === 3 && (
                     <div className="space-y-4 max-w-xs mx-auto">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-left">
                           Full Name
                           <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
-                          className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${form.fullName.length > 0
+                          className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors dark:bg-gray-800 dark:text-white ${
+                            form.fullName.length > 0
                               ? form.fullName.length >= 3
-                                ? 'border-green-500 focus:ring-green-200'
-                                : 'border-red-500 focus:ring-red-200'
-                              : 'border-gray-200 focus:border-green-500'
-                            }`}
+                                ? 'border-green-500 focus:ring-green-200 dark:focus:ring-green-800'
+                                : 'border-red-500 focus:ring-red-200 dark:focus:ring-red-800'
+                              : 'border-gray-200 dark:border-gray-700 focus:border-green-500'
+                          }`}
                           placeholder="John Doe"
                           value={form.fullName}
                           onChange={(e) => setForm({ ...form, fullName: e.target.value })}
                         />
                         {form.fullName.length > 0 && form.fullName.length < 3 && (
-                          <p className="mt-1 text-sm text-red-600 flex items-center">
+                          <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
                             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
@@ -287,24 +288,25 @@ export default function AuthFlow() {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-left">
                           Email
                           <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="email"
-                          className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${form.email.length > 0
+                          className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors dark:bg-gray-800 dark:text-white ${
+                            form.email.length > 0
                               ? /^\S+@\S+\.\S+$/.test(form.email)
-                                ? 'border-green-500 focus:ring-green-200'
-                                : 'border-red-500 focus:ring-red-200'
-                              : 'border-gray-200 focus:border-green-500'
-                            }`}
+                                ? 'border-green-500 focus:ring-green-200 dark:focus:ring-green-800'
+                                : 'border-red-500 focus:ring-red-200 dark:focus:ring-red-800'
+                              : 'border-gray-200 dark:border-gray-700 focus:border-green-500'
+                          }`}
                           placeholder="example@mail.com"
                           value={form.email}
                           onChange={(e) => setForm({ ...form, email: e.target.value })}
                         />
                         {form.email.length > 0 && !/^\S+@\S+\.\S+$/.test(form.email) && (
-                          <p className="mt-1 text-sm text-red-600 flex items-center">
+                          <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
                             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
@@ -314,12 +316,12 @@ export default function AuthFlow() {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-left">
                           Referral Code (optional)
                         </label>
                         <input
                           type="text"
-                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none transition-colors"
+                          className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-green-500 focus:outline-none transition-colors dark:bg-gray-800 dark:text-white"
                           placeholder="Enter referral code if any"
                           value={form.referral}
                           onChange={(e) => setForm({ ...form, referral: e.target.value })}
@@ -355,10 +357,11 @@ export default function AuthFlow() {
                   }
                 }}
                 disabled={!isValid}
-                className={`w-full py-3 rounded-2xl font-semibold text-white transition-all ${isValid
-                    ? 'bg-green-500 hover:bg-green-600 active:scale-95'
-                    : 'bg-gray-300 cursor-not-allowed'
-                  }`}
+                className={`w-full py-3 rounded-2xl font-semibold text-white transition-all ${
+                  isValid
+                    ? 'bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 active:scale-95'
+                    : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
+                }`}
               >
                 Continue
               </button>
@@ -399,10 +402,11 @@ export default function AuthFlow() {
                   }
                 }}
                 disabled={otp.join('').length < 6}
-                className={`w-full py-3 rounded-2xl font-semibold text-white transition-all ${otp.join('').length === 6
-                    ? 'bg-green-500 hover:bg-green-600 active:scale-95'
-                    : 'bg-gray-300 cursor-not-allowed'
-                  }`}
+                className={`w-full py-3 rounded-2xl font-semibold text-white transition-all ${
+                  otp.join('').length === 6
+                    ? 'bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 active:scale-95'
+                    : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
+                }`}
               >
                 Verify
               </button>
@@ -411,10 +415,11 @@ export default function AuthFlow() {
               <button
                 onClick={handleContinue}
                 disabled={form.fullName.length < 3 || !/^\S+@\S+\.\S+$/.test(form.email)}
-                className={`w-full py-3 rounded-2xl font-semibold text-white transition-all ${form.fullName.length >= 3 && /^\S+@\S+\.\S+$/.test(form.email)
-                    ? 'bg-green-500 hover:bg-green-600 active:scale-95'
-                    : 'bg-gray-300 cursor-not-allowed'
-                  }`}
+                className={`w-full py-3 rounded-2xl font-semibold text-white transition-all ${
+                  form.fullName.length >= 3 && /^\S+@\S+\.\S+$/.test(form.email)
+                    ? 'bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 active:scale-95'
+                    : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
+                }`}
               >
                 Complete Registration
               </button>

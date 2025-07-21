@@ -91,7 +91,7 @@ const EcommerceHomepage = () => {
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
 
       {/* Categories */}
-    <section className="py-12 container mx-auto px-6 relative">
+    <section className="hidden md:block py-12 container mx-auto px-6 relative">
       {/* Header with Navigation */}
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-2xl font-bold dark:text-white">Shop by Category</h2>

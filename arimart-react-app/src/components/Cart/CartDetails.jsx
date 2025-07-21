@@ -231,7 +231,7 @@ export default function CartDetails() {
                 {/* Product Image */}
                 <Link to={productLink} className="relative">
                   <img
-                    src={"https://apiari.kuldeepchaurasia.in/" + item.image}
+                    src={"https://apiari.kuldeepchaurasia.in/Uploads/" + item.image}
                     alt={item.name}
                     className="w-20 h-20 rounded-lg object-cover border border-gray-200 dark:border-gray-600"
                     onError={(e) => {

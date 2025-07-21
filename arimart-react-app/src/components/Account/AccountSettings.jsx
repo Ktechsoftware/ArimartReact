@@ -169,9 +169,9 @@ const AccountSettings = () => {
                 <div class="mb-4 grid gap-4 sm:grid-cols-2 sm:gap-8 lg:gap-16">
                   <div class="space-y-4">
                     <div class="flex space-x-4">
-                      <img class="h-16 w-16 rounded-lg" src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/helene-engels.png" alt="Helene avatar" />
+                      <img class="h-16 w-16 rounded-lg" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQu6Fw5tFWeBRwvGWXrKGzCzpy3S0srbrnvxA&s" alt="Helene avatar" />
                       <div>
-                        <span class="mb-2 inline-block rounded bg-primary-100 px-2.5 py-0.5 text-xs font-medium text-primary-800 dark:bg-primary-900 dark:text-primary-300"> PRO Account </span>
+                        <span class="mb-2 inline-block rounded bg-primary-100 px-2.5 py-0.5 text-xs font-medium text-primary-800 dark:bg-primary-900 dark:text-primary-300"> Account </span>
                         <h2 class="flex items-center text-xl font-bold leading-none text-gray-900 dark:text-white sm:text-2xl">{capitalizeWords(userData?.name) || "Guest"}</h2>
                       </div>
                     </div>

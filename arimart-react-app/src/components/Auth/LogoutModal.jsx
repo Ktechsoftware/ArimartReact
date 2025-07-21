@@ -22,7 +22,7 @@ export default function LogoutModal({ isOpen, onClose }) {
     sessionStorage.clear();
 
     setTimeout(() => {
-      navigate("/onboard");
+      navigate("/auth");
       setIsLoading(false);
     }, 1000);
   };

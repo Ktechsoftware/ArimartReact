@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import Cookies from 'js-cookie';
-import { getUserInfo } from '../api/auth'
+import { getUserInfo, updateUserInfo } from '../api/auth'
 
 const COOKIE_NAME = 'userLoginDataArimart';
 
@@ -13,6 +13,19 @@ const getUserFromCookie = () => {
     return null;
   }
 };
+
+export const updateUserInfoAsync = createAsyncThunk(
+  'auth/updateUserInfo',
+  async ({ userId, updatedData }, { rejectWithValue }) => {
+    try {
+      const response = await updateUserInfo(userId, updatedData);
+      return response.data.user;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
 
 const initialUser = getUserFromCookie();
 
@@ -80,7 +93,21 @@ const authSlice = createSlice({
       .addCase(refreshUserInfo.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(updateUserInfoAsync.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateUserInfoAsync.fulfilled, (state, action) => {
+        state.loading = false;
+        state.userData = action.payload;
+        Cookies.set(COOKIE_NAME, JSON.stringify(action.payload), { expires: 7 });
+      })
+      .addCase(updateUserInfoAsync.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
+
   }
 });
 

@@ -34,7 +34,7 @@ export default function MainPage() {
                 <div className="flex justify-center gap-4 md:mb-0 mb-6">
                     <ActionCard 
                         icon={<UserPlus className="w-6 h-6" />} 
-                        label="Share & Earn ₹30" 
+                        label="Share & Earn ₹50" 
                         color="bg-gradient-to-r from-blue-500 to-blue-400"
                         tolink="/home/referandearn"
                     />
