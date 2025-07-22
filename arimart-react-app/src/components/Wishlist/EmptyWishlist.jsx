@@ -27,7 +27,7 @@ export default function EmptyWishlist() {
 
         {/* Text */}
         <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
-          My Wishlist is Empty!
+          Wishlist is Empty!
         </h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
           Tap heart button to start saving your favorite items.

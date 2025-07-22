@@ -673,7 +673,7 @@ const handleRemove = async () => {
         dangerouslySetInnerHTML={{ __html: product.longdesc || "No additional information available." }}
       />
 
-      <ProductReview />
+      <ProductReview productId={product.pdid}/>
       {/* Related Products */}
       <RecommendedProducts productId={product.id} className="max-w-6xl mx-auto px-4"/>
     </div>

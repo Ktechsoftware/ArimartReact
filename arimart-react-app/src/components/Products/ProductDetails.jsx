@@ -134,7 +134,7 @@ export default function ProductDetails({ cartIconRef }) {
       toast.error('Product not found');
       return;
     }
-setIsCelebrating(true);
+    setIsCelebrating(true);
     setIsAddingToCart(true);
     try {
       await addToCart(product, 1);
@@ -153,49 +153,49 @@ setIsCelebrating(true);
 
   // Fixed quantity handler functions for ProductDetails component
 
-const handleIncrease = async () => {
-  const cartItemInfo = getCartItemInfo(product.id);
-  if (!cartItemInfo) return toast.error("Cart item not found");
-  
-  try {
-    // Pass the cart item ID (not the whole object) and new quantity
-    await updateQuantity(cartItemInfo.cartItemId, cartItemInfo.quantity + 1);
-    toast.success("Quantity updated");
-  } catch (error) {
-    console.error("Error updating quantity:", error);
-    toast.error("Failed to update quantity");
-  }
-};
+  const handleIncrease = async () => {
+    const cartItemInfo = getCartItemInfo(product.id);
+    if (!cartItemInfo) return toast.error("Cart item not found");
 
-const handleDecrease = async () => {
-  const cartItemInfo = getCartItemInfo(product.id);
-  if (!cartItemInfo) return toast.error("Cart item not found");
-  
-  if (cartItemInfo.quantity > 1) {
     try {
       // Pass the cart item ID (not the whole object) and new quantity
-      await updateQuantity(cartItemInfo.cartItemId, cartItemInfo.quantity - 1);
+      await updateQuantity(cartItemInfo.cartItemId, cartItemInfo.quantity + 1);
       toast.success("Quantity updated");
     } catch (error) {
       console.error("Error updating quantity:", error);
       toast.error("Failed to update quantity");
     }
-  }
-};
+  };
 
-const handleRemove = async () => {
-  const cartItemInfo = getCartItemInfo(product.id);
-  if (!cartItemInfo) return toast.error("Cart item not found");
-  
-  try {
-    // Pass only the cart item ID (not the whole object)
-    await removeFromCart(cartItemInfo.cartItemId);
-    toast.success("Item removed from cart");
-  } catch (error) {
-    console.error("Error removing from cart:", error);
-    toast.error("Failed to remove item from cart");
-  }
-};
+  const handleDecrease = async () => {
+    const cartItemInfo = getCartItemInfo(product.id);
+    if (!cartItemInfo) return toast.error("Cart item not found");
+
+    if (cartItemInfo.quantity > 1) {
+      try {
+        // Pass the cart item ID (not the whole object) and new quantity
+        await updateQuantity(cartItemInfo.cartItemId, cartItemInfo.quantity - 1);
+        toast.success("Quantity updated");
+      } catch (error) {
+        console.error("Error updating quantity:", error);
+        toast.error("Failed to update quantity");
+      }
+    }
+  };
+
+  const handleRemove = async () => {
+    const cartItemInfo = getCartItemInfo(product.id);
+    if (!cartItemInfo) return toast.error("Cart item not found");
+
+    try {
+      // Pass only the cart item ID (not the whole object)
+      await removeFromCart(cartItemInfo.cartItemId);
+      toast.success("Item removed from cart");
+    } catch (error) {
+      console.error("Error removing from cart:", error);
+      toast.error("Failed to remove item from cart");
+    }
+  };
 
   const handleCreateGroup = async () => {
     const userId = userData?.userId || userData?.id;
@@ -420,17 +420,26 @@ const handleRemove = async () => {
                 <p className="text-sm text-gray-500">{product.weight} (Pack of {product.wweight})</p>
 
                 <div className="flex items-center justify-between my-3">
-                  <div className="flex items-end">
+                  <div className="flex items-end flex-wrap gap-2">
                     <span className="text-3xl font-bold text-green-600">₹{product.price}</span>
+
                     {product.originalPrice > 0 && product.originalPrice !== product.price && (
-                      <span className="text-sm text-gray-500 ml-1 line-through">₹{product.originalPrice}</span>
+                      <span className="text-sm text-gray-500 line-through">₹{product.originalPrice}</span>
                     )}
+
                     {calculateDiscountPercentage() > 0 && (
-                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full ml-2">
+                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
                         {calculateDiscountPercentage()}% OFF
                       </span>
                     )}
+
+                    {product.gprice > 0 && (
+                      <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                        Group ₹{product.gprice}
+                      </span>
+                    )}
                   </div>
+
                   <p className="text-sm text-purple-600 bg-purple-100 px-2 py-1 rounded-full">{product.delivery}</p>
                 </div>
 
@@ -547,13 +556,13 @@ const handleRemove = async () => {
 
                   {activeTab === "reviews" && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="space-y-4">
-                      <ProductReview productId={product.pdid}/>
+                      <ProductReview productId={product.pdid} />
                     </motion.div>
                   )}
 
                   {activeTab === "more you like" && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-                       <RecommendedProducts productId={product.id} className="max-w-6xl mx-auto px-4"/>
+                      <RecommendedProducts productId={product.id} className="max-w-6xl mx-auto px-4" />
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -587,7 +596,7 @@ const handleRemove = async () => {
                   <motion.button
                     whileTap={{ scale: 0.8 }}
                     whileHover={{ scale: 1.1 }}
-                     onClick={itemQuantity > 1 ? handleDecrease : handleRemove}
+                    onClick={itemQuantity > 1 ? handleDecrease : handleRemove}
                     className="p-2 rounded-full bg-white bg-opacity-80 hover:bg-opacity-100 transition disabled:opacity-50"
                     disabled={isAddingToCart}
                     title={itemQuantity > 1 ? "Decrease quantity" : "Remove from cart"}

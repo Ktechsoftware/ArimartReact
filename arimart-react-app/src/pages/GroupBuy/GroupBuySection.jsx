@@ -195,7 +195,7 @@ export const GroupBuySection = ({ userId, product }) => {
           <div className="p-1 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full shadow-sm">
             {currentGroup?.image1 ? (
               <img
-                src={"http://localhost:5015/uploads/" + currentGroup.image1}
+                src={"https://apiari.kuldeepchaurasia.in/uploads/" + currentGroup.image1}
                 alt="Group"
                 className="w-8 h-8 rounded-full object-cover"
               />

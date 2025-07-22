@@ -2,23 +2,28 @@ import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchWishlist } from '../../Store/wishlistSlice';
 import EmptyWishlist from './EmptyWishlist';
-import DProductCard from '../Products/DProductcards';
-import ProductCardFullWidth from '../Products/ProductCardResponsive';
 import ProductCardResponsive from '../Products/ProductCardResponsive';
+import LoaderSpinner from '../LoaderSpinner'
 
 const Wishlist = () => {
   const dispatch = useDispatch();
-  const { userData } = useSelector((state) => state.auth); // logged-in user
-  const { items, loading, error } = useSelector((state) => state.wishlist);
-  console.log("Wishlist: ", items);
+  const { userData } = useSelector((state) => state.auth);
+  const { items, loading } = useSelector((state) => state.wishlist);
+
   useEffect(() => {
     if (userData?.id) {
       dispatch(fetchWishlist(userData.id));
     }
   }, [dispatch, userData?.id]);
 
-  if (loading) return <p className="text-center py-10">Loading wishlist...</p>;
-  // if (error) return <p className="text-center text-red-600">{error}</p>;
+  // 🌀 Full Page Loader
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900">
+        <LoaderSpinner />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">

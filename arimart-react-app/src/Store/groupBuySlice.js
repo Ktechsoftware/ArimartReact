@@ -97,16 +97,20 @@ export const fetchGroupReferCodeByProduct = createAsyncThunk("group/fetchReferCo
   }
 });
 
-export const fetchCurrentRunningGroups = createAsyncThunk("group/fetchCurrentRunning", async (_, thunkAPI) => {
-  try {
-    const res = await API.get(`/group/current-running`);
-    console.log(res.data)
-    return res.data;
-  } catch (err) {
-    return thunkAPI.rejectWithValue(err.response?.data || "Failed to fetch current running groups");
+export const fetchCurrentRunningGroups = createAsyncThunk(
+  "group/fetchCurrentRunning",
+  async ({ page = 1, pageSize = 10, append = false } = {}, thunkAPI) => {
+    try {
+      const res = await API.get(`/group/current-running`, {
+        params: { page, pageSize }
+      });
+      console.log(res.data);
+      return { ...res.data, append }; // Pass append flag to reducer
+    } catch (err) {
+      return thunkAPI.rejectWithValue(err.response?.data || "Failed to fetch current running groups");
+    }
   }
-});
-
+);
 export const fetchGroupStatus = createAsyncThunk("group/fetchStatus", async (gid, thunkAPI) => {
   try {
     const res = await API.get(`/group/status-short/${gid}`);
@@ -146,6 +150,15 @@ const groupSlice = createSlice({
     referCodesByGid: {},
     loadingStatesByGid: {},
     currentRunningGroups: [],
+    // ✅ NEW: Add pagination data for current running groups
+    currentRunningGroupsPagination: {
+      currentPage: 1,
+      pageSize: 10,
+      totalCount: 0,
+      totalPages: 0,
+      hasNextPage: false,
+      hasPreviousPage: false
+    },
     myJoinedGroups: [],
     allReferCodes: [],
     currentReferCode: null,
@@ -179,6 +192,19 @@ const groupSlice = createSlice({
     // Clear current group
     clearCurrentGroup: (state) => {
       state.currentGroup = null;
+    },
+
+    // ✅ NEW: Reset current running groups pagination
+    resetCurrentRunningGroupsPagination: (state) => {
+      state.currentRunningGroups = [];
+      state.currentRunningGroupsPagination = {
+        currentPage: 1,
+        pageSize: 10,
+        totalCount: 0,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPreviousPage: false
+      };
     },
 
     // ✅ ENHANCED: Clear specific group members
@@ -462,7 +488,53 @@ const groupSlice = createSlice({
       })
       .addCase(fetchCurrentRunningGroups.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.currentRunningGroups = action.payload;
+
+        const { append } = action.payload;
+
+        // Handle both paginated and non-paginated responses
+        if (action.payload.data && action.payload.pagination) {
+          // Paginated response
+          if (append) {
+            // Append new data to existing data (Load More)
+            const existingIds = new Set(state.currentRunningGroups.map(group =>
+              group.gid || group.Gid || group.id
+            ));
+
+            // Filter out duplicates and append new items
+            const newItems = action.payload.data.filter(group =>
+              !existingIds.has(group.gid || group.Gid || group.id)
+            );
+
+            state.currentRunningGroups = [...state.currentRunningGroups, ...newItems];
+          } else {
+            // Replace data (Initial load or refresh)
+            state.currentRunningGroups = action.payload.data;
+          }
+
+          state.currentRunningGroupsPagination = action.payload.pagination;
+        } else if (Array.isArray(action.payload)) {
+          // Non-paginated response (backward compatibility)
+          if (append) {
+            // For non-paginated responses, we don't append in load more scenarios
+            state.currentRunningGroups = action.payload;
+          } else {
+            state.currentRunningGroups = action.payload;
+          }
+
+          state.currentRunningGroupsPagination = {
+            currentPage: 1,
+            pageSize: action.payload.length,
+            totalCount: action.payload.length,
+            totalPages: 1,
+            hasNextPage: false,
+            hasPreviousPage: false
+          };
+        } else {
+          // Fallback
+          if (!append) {
+            state.currentRunningGroups = [];
+          }
+        }
       })
       .addCase(fetchCurrentRunningGroups.rejected, (state, action) => {
         state.isLoading = false;
@@ -502,7 +574,8 @@ export const {
   clearCurrentGroup,
   clearGroupMembers,
   clearGroupReferCode,
-  resetSuccessFlags
+  resetSuccessFlags,
+  resetCurrentRunningGroupsPagination
 } = groupSlice.actions;
 
 export default groupSlice.reducer;

@@ -56,7 +56,7 @@ const HomepageFeaturedProducts = () => {
 
     const handleWishlist = (product) => {
         if (!userData?.id) return toast.error("Please login to use wishlist.");
-        dispatch(addToWishlist({ userid: userData.id, pdid: product.id }));
+        dispatch(addToWishlist({ userid: userData.id, pdid: product.pdid }));
         // toast.success("Added to wishlist!");
     };
 
@@ -148,12 +148,18 @@ const HomepageFeaturedProducts = () => {
                                 {product.productName}
                             </h3>
                             <button
-                                onClick={() => handleWishlist(product)}
-                                disabled={loading}
-                                className={`ml-2 ${isWishlisted(productId) ? 'text-red-500' : 'text-gray-300 hover:text-red-500'}`}
-                            >
-                                <Heart size={18} filled={isWishlisted(productId)} />
-                            </button>
+                                    onClick={() => handleWishlist(product)}
+                                    disabled={loading}
+                                    className="ml-2"
+                                >
+                                    <Heart
+                                        size={18}
+                                        className={`transition-all duration-200 ${isWishlisted(product.pdid)
+                                                ? 'text-red-500 fill-red-500'
+                                                : 'text-gray-300 hover:text-red-500 fill-none'
+                                            }`}
+                                    />
+                                </button>
                         </div>
 
                         {product.wweight && (
