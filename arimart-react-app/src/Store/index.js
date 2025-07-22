@@ -8,7 +8,7 @@ import cartReducer from './cartSlice';
 import walletReducer from './walletSlice';
 import wishlistReducer from './wishlistSlice';
 import groupReducer from './groupBuySlice'; // �� Import your NEW slice
-import ratingReducer, { ratingApi } from './ratingSlice';
+import ratingReducer from './ratingSlice';
 import searchReducer from './searchSlice'
 import filterReducer from './filterSlice'
 import topOrdersReducer from './Tops/topOrdersSlice'
@@ -35,15 +35,14 @@ const store = configureStore({
     filters : filterReducer,
     wishlist: wishlistReducer,
     group: groupReducer,
-    rating: ratingReducer,
-    [ratingApi.reducerPath]: ratingApi.reducer,
+    rating: ratingReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
         ignoredActions: ['persist/PERSIST'],
       },
-    }).concat(ratingApi.middleware),
+    })
 });
 
 export default store;

@@ -1,274 +1,252 @@
-import { createSlice } from '@reduxjs/toolkit';
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { useDispatch, useSelector } from 'react-redux';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import API from '../api';
 
-// Base API configuration without auth token
-const baseQuery = fetchBaseQuery({
-  baseUrl: '/api/rating',
-});
+// ✅ Submit new rating
+export const submitRating = createAsyncThunk(
+  'ratings/submitRating',
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await API.post('/rating/rate', data);
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to submit rating');
+    }
+  }
+);
 
-// RTK Query API slice for rating operations
-export const ratingApi = createApi({
-  reducerPath: 'ratingApi',
-  baseQuery,
-  tagTypes: ['Rating', 'Analytics', 'Summary'],
-  endpoints: (builder) => ({
-    submitRating: builder.mutation({
-      query: (ratingData) => ({
-        url: '',
-        method: 'POST',
-        body: ratingData,
-      }),
-      invalidatesTags: (result, error, { pdid }) => [
-        { type: 'Rating', id: pdid },
-        { type: 'Analytics', id: pdid },
-        { type: 'Summary', id: pdid },
-      ],
-    }),
+// ✅ Get rating analytics
+export const fetchRatingAnalytics = createAsyncThunk(
+  'ratings/fetchRatingAnalytics',
+  async (pdid, { rejectWithValue }) => {
+    try {
+      const response = await API.get(`/rating/analytics/${pdid}`);
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to fetch analytics');
+    }
+  }
+);
 
-    getRatingAnalytics: builder.query({
-      query: (pdid) => `/analytics/${pdid}`,
-      providesTags: (result, error, pdid) => [{ type: 'Analytics', id: pdid }],
-    }),
+// ✅ Get rating summary
+export const fetchRatingSummary = createAsyncThunk(
+  'ratings/fetchRatingSummary',
+  async (pdid, { rejectWithValue }) => {
+    try {
+      const response = await API.get(`/rating/summary/${pdid}`);
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to fetch summary');
+    }
+  }
+);
 
-    getRatingSummary: builder.query({
-      query: (pdid) => `/summary/${pdid}`,
-      providesTags: (result, error, pdid) => [{ type: 'Summary', id: pdid }],
-    }),
+// ✅ Get detailed ratings with pagination and star filter
+export const fetchDetailedRatings = createAsyncThunk(
+  'ratings/fetchDetailedRatings',
+  async ({ pdid, page = 1, pageSize = 10, filterByStars = null }, { rejectWithValue }) => {
+    try {
+      const params = new URLSearchParams({ page, pageSize });
+      if (filterByStars) params.append('filterByStars', filterByStars);
+      const response = await API.get(`/rating/detailed/${pdid}?${params}`);
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to fetch detailed ratings');
+    }
+  }
+);
 
-    getDetailedRatings: builder.query({
-      query: ({ pdid, page = 1, pageSize = 10, filterByStars }) => {
-        const params = new URLSearchParams({
-          page: page.toString(),
-          pageSize: pageSize.toString(),
-        });
+// ✅ Get average rating (optional fallback)
+export const fetchAverageRating = createAsyncThunk(
+  'ratings/fetchAverageRating',
+  async (pdid, { rejectWithValue }) => {
+    try {
+      const response = await API.get(`/rating/average/${pdid}`);
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to fetch average rating');
+    }
+  }
+);
 
-        if (filterByStars) {
-          params.append('filterByStars', filterByStars.toString());
-        }
+// ✅ Get ratings with user info
+export const fetchRatingsWithUserInfo = createAsyncThunk(
+  'ratings/fetchRatingsWithUserInfo',
+  async (pdid, { rejectWithValue }) => {
+    try {
+      const response = await API.get(`/rating/withuser/${pdid}`);
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to fetch ratings with user info');
+    }
+  }
+);
 
-        return `/detailed/${pdid}?${params}`;
-      },
-      providesTags: (result, error, { pdid }) => [{ type: 'Rating', id: pdid }],
-    }),
-
-    getAverageRating: builder.query({
-      query: (pdid) => `/average/${pdid}`,
-      providesTags: (result, error, pdid) => [{ type: 'Rating', id: pdid }],
-    }),
-
-    getRatingsWithUserInfo: builder.query({
-      query: (pdid) => `/withuser/${pdid}`,
-      providesTags: (result, error, pdid) => [{ type: 'Rating', id: pdid }],
-    }),
-
-    getRatingsByProduct: builder.query({
-      query: (pdid) => `/product/${pdid}`,
-      providesTags: (result, error, pdid) => [{ type: 'Rating', id: pdid }],
-    }),
-
-    getOverallStats: builder.query({
-      query: () => '/stats/overview',
-      providesTags: ['Rating'],
-    }),
-  }),
-});
-
-export const {
-  useSubmitRatingMutation,
-  useGetRatingAnalyticsQuery,
-  useGetRatingSummaryQuery,
-  useGetDetailedRatingsQuery,
-  useGetAverageRatingQuery,
-  useGetRatingsWithUserInfoQuery,
-  useGetRatingsByProductQuery,
-  useGetOverallStatsQuery,
-} = ratingApi;
-
-const initialState = {
-  selectedStarFilter: null,
-  showRatingModal: false,
-  currentPage: 1,
-  pageSize: 10,
-
-  ratingForm: {
-    ratingid: 0,
-    userid: null,
-    orderid: null,
-    descr: '',
-    pdid: null,
-  },
-
-  isSubmitting: false,
-  submitError: null,
-
-  analyticsCache: {},
-
-  sortBy: 'newest',
-  showOnlyWithReviews: false,
-};
+// ✅ Mark review as helpful
+export const markReviewHelpful = createAsyncThunk(
+  'ratings/markReviewHelpful',
+  async ({ reviewId, isHelpful }, { rejectWithValue }) => {
+    try {
+      const response = await API.post(`/rating/helpful/${reviewId}`, { isHelpful });
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to mark review as helpful');
+    }
+  }
+);
 
 const ratingSlice = createSlice({
   name: 'rating',
-  initialState,
+  initialState: {
+    analytics: null,
+    summary: null,
+    detailed: {
+      ratings: [],
+      page: 1,
+      pageSize: 10,
+      totalCount: 0,
+      totalPages: 0,
+      filterByStars: null
+    },
+    average: null,
+    withUser: [],
+    loading: false,
+    analyticsLoading: false,
+    ratingsLoading: false,
+    error: null,
+    successMessage: null,
+  },
   reducers: {
-    setSelectedStarFilter: (state, action) => {
-      state.selectedStarFilter = action.payload;
-      state.currentPage = 1;
+    clearRatingMessages: (state) => {
+      state.successMessage = null;
+      state.error = null;
     },
-    clearStarFilter: (state) => {
-      state.selectedStarFilter = null;
-      state.currentPage = 1;
-    },
-    setShowRatingModal: (state, action) => {
-      state.showRatingModal = action.payload;
-    },
-    setCurrentPage: (state, action) => {
-      state.currentPage = action.payload;
-    },
-    setPageSize: (state, action) => {
-      state.pageSize = action.payload;
-      state.currentPage = 1;
-    },
-    setSortBy: (state, action) => {
-      state.sortBy = action.payload;
-      state.currentPage = 1;
-    },
-    setShowOnlyWithReviews: (state, action) => {
-      state.showOnlyWithReviews = action.payload;
-    },
-    setRatingForm: (state, action) => {
-      state.ratingForm = { ...state.ratingForm, ...action.payload };
+    setRatingFilter: (state, action) => {
+      state.detailed.filterByStars = action.payload;
     },
     resetRatingForm: (state) => {
-      state.ratingForm = {
-        ratingid: 0,
-        userid: null,
-        orderid: null,
-        descr: '',
-        pdid: null,
-      };
-    },
-    setRatingStars: (state, action) => {
-      state.ratingForm.ratingid = action.payload;
-    },
-    setRatingDescription: (state, action) => {
-      state.ratingForm.descr = action.payload;
-    },
-    cacheAnalytics: (state, action) => {
-      const { pdid, data } = action.payload;
-      state.analyticsCache[pdid] = {
-        data,
-        timestamp: Date.now(),
-      };
-    },
-    clearAnalyticsCache: (state) => {
-      state.analyticsCache = {};
-    },
-    clearSubmitError: (state) => {
-      state.submitError = null;
-    },
+      state.error = null;
+      state.successMessage = null;
+    }
   },
   extraReducers: (builder) => {
     builder
-      .addMatcher(
-        ratingApi.endpoints.submitRating.matchPending,
-        (state) => {
-          state.isSubmitting = true;
-          state.submitError = null;
+
+      // Submit rating
+      .addCase(submitRating.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.successMessage = null;
+      })
+      .addCase(submitRating.fulfilled, (state, action) => {
+        state.loading = false;
+        state.successMessage = action.payload.message || 'Review submitted successfully!';
+      })
+      .addCase(submitRating.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // Rating analytics
+      .addCase(fetchRatingAnalytics.pending, (state) => {
+        state.analyticsLoading = true;
+      })
+      .addCase(fetchRatingAnalytics.fulfilled, (state, action) => {
+        state.analyticsLoading = false;
+        state.analytics = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchRatingAnalytics.rejected, (state, action) => {
+        state.analyticsLoading = false;
+        state.error = action.payload;
+      })
+
+      // Rating summary
+      .addCase(fetchRatingSummary.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchRatingSummary.fulfilled, (state, action) => {
+        state.loading = false;
+        state.summary = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchRatingSummary.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // Detailed ratings
+      .addCase(fetchDetailedRatings.pending, (state) => {
+        state.ratingsLoading = true;
+      })
+      .addCase(fetchDetailedRatings.fulfilled, (state, action) => {
+        state.ratingsLoading = false;
+        state.detailed = {
+          ...action.payload,
+          ratings: action.payload.ratings || [],
+        };
+        state.error = null;
+      })
+      .addCase(fetchDetailedRatings.rejected, (state, action) => {
+        state.ratingsLoading = false;
+        state.error = action.payload;
+      })
+
+      // Average rating
+      .addCase(fetchAverageRating.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchAverageRating.fulfilled, (state, action) => {
+        state.loading = false;
+        state.average = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchAverageRating.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // Ratings with user info
+      .addCase(fetchRatingsWithUserInfo.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchRatingsWithUserInfo.fulfilled, (state, action) => {
+        state.loading = false;
+        state.withUser = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchRatingsWithUserInfo.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // Mark review as helpful
+      .addCase(markReviewHelpful.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(markReviewHelpful.fulfilled, (state, action) => {
+        state.loading = false;
+        state.successMessage = action.payload.message || 'Review marked as helpful!';
+        
+        // Update the helpful count in the detailed ratings if available
+        const { reviewId, helpfulCount } = action.payload;
+        if (state.detailed.ratings && reviewId) {
+          const ratingIndex = state.detailed.ratings.findIndex(rating => rating.id === reviewId);
+          if (ratingIndex !== -1 && helpfulCount !== undefined) {
+            state.detailed.ratings[ratingIndex].helpfulCount = helpfulCount;
+          }
         }
-      )
-      .addMatcher(
-        ratingApi.endpoints.submitRating.matchFulfilled,
-        (state) => {
-          state.isSubmitting = false;
-          state.showRatingModal = false;
-          state.ratingForm = initialState.ratingForm;
-        }
-      )
-      .addMatcher(
-        ratingApi.endpoints.submitRating.matchRejected,
-        (state, action) => {
-          state.isSubmitting = false;
-          state.submitError = action.error?.message || 'Failed to submit rating';
-        }
-      );
+      })
+      .addCase(markReviewHelpful.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
   },
 });
 
 export const {
-  setSelectedStarFilter,
-  clearStarFilter,
-  setShowRatingModal,
-  setCurrentPage,
-  setPageSize,
-  setSortBy,
-  setShowOnlyWithReviews,
-  setRatingForm,
-  resetRatingForm,
-  setRatingStars,
-  setRatingDescription,
-  cacheAnalytics,
-  clearAnalyticsCache,
-  clearSubmitError,
+  clearRatingMessages,
+  setRatingFilter,
+  resetRatingForm
 } = ratingSlice.actions;
 
 export default ratingSlice.reducer;
-
-// Selectors
-export const selectRatingState = (state) => state.rating;
-export const selectRatingForm = (state) => state.rating.ratingForm;
-export const selectSelectedStarFilter = (state) => state.rating.selectedStarFilter;
-export const selectCurrentPage = (state) => state.rating.currentPage;
-export const selectPageSize = (state) => state.rating.pageSize;
-export const selectSortBy = (state) => state.rating.sortBy;
-export const selectShowOnlyWithReviews = (state) => state.rating.showOnlyWithReviews;
-export const selectIsSubmitting = (state) => state.rating.isSubmitting;
-export const selectSubmitError = (state) => state.rating.submitError;
-export const selectShowRatingModal = (state) => state.rating.showRatingModal;
-export const selectAnalyticsCache = (state) => state.rating.analyticsCache;
-
-// Custom Hooks
-export const useRatingFilters = () => {
-  const dispatch = useDispatch();
-  const selectedStarFilter = useSelector(selectSelectedStarFilter);
-  const currentPage = useSelector(selectCurrentPage);
-  const pageSize = useSelector(selectPageSize);
-  const sortBy = useSelector(selectSortBy);
-  const showOnlyWithReviews = useSelector(selectShowOnlyWithReviews);
-
-  return {
-    selectedStarFilter,
-    currentPage,
-    pageSize,
-    sortBy,
-    showOnlyWithReviews,
-    setStarFilter: (stars) => dispatch(setSelectedStarFilter(stars)),
-    clearFilter: () => dispatch(clearStarFilter()),
-    setPage: (page) => dispatch(setCurrentPage(page)),
-    setSize: (size) => dispatch(setPageSize(size)),
-    setSort: (sort) => dispatch(setSortBy(sort)),
-    setShowReviews: (show) => dispatch(setShowOnlyWithReviews(show)),
-  };
-};
-
-export const useRatingForm = () => {
-  const dispatch = useDispatch();
-  const form = useSelector(selectRatingForm);
-  const isSubmitting = useSelector(selectIsSubmitting);
-  const submitError = useSelector(selectSubmitError);
-  const showModal = useSelector(selectShowRatingModal);
-
-  return {
-    form,
-    isSubmitting,
-    submitError,
-    showModal,
-    updateForm: (data) => dispatch(setRatingForm(data)),
-    resetForm: () => dispatch(resetRatingForm()),
-    setStars: (stars) => dispatch(setRatingStars(stars)),
-    setDescription: (desc) => dispatch(setRatingDescription(desc)),
-    setModal: (show) => dispatch(setShowRatingModal(show)),
-    clearError: () => dispatch(clearSubmitError()),
-  };
-};

@@ -1,10 +1,26 @@
 import { motion } from "framer-motion";
 import { ChevronRight, LocateFixedIcon } from "lucide-react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
+import { fetchUserAddresses } from "../../Store/addressSlice";
+import { useEffect } from "react";
 
 export function DeliveryInfo() {
-  const userData = useSelector((state) => state.auth.userData);
+  const dispatch = useDispatch();
+  const userId = useSelector((state) => state.auth.userData?.id);
+    const {
+      addresses,
+      loading
+    } = useSelector((state) => state.shipping);
+console.log(addresses)
+  useEffect(() => {
+    if (userId) {
+      dispatch(fetchUserAddresses(userId));
+    }
+  }, [userId, dispatch]);
+
+  const preferredAddress =
+    addresses.find(addr => addr.adType === "Home") || addresses[0];
 
   return (
     <motion.div
@@ -18,26 +34,24 @@ export function DeliveryInfo() {
         whileTap={{ scale: 0.98 }}
         className="md:hidden flex items-center justify-between p-3 rounded-lg cursor-pointer bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 shadow-sm"
       >
-        <motion.p
-          className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200"
-          animate={{ x: [0, 2, 0] }}
-          transition={{
-            repeat: Infinity,
-            repeatType: "reverse",
-            duration: 2
-          }}
-        >
-          <span className="text-blue-600 dark:text-blue-400 text-lg"><LocateFixedIcon /></span>
-          {userData?.adddress ? (
-            <span className="line-clamp-2">
-              <span className="font-bold capitalize">{userData.name}</span>: {userData.adddress}
+        <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
+          <span className="text-blue-600 dark:text-blue-400 text-lg">
+            <LocateFixedIcon />
+          </span>
+
+          {preferredAddress ? (
+            <span className="text-sm text-gray-700 dark:text-gray-200 line-clamp-2">
+             Delivery to {preferredAddress.adName} at 
+              {preferredAddress.adCity ? ` ${preferredAddress.adCity}` : ""}
+              {preferredAddress.adState ? `, ${preferredAddress.adState}` : ""}
+              {preferredAddress.adPincode ? ` - ${preferredAddress.adPincode}` : ""}
             </span>
           ) : (
-            <Link to="/account" className="hover:underline">
+            <Link to="/account" className="text-sm text-blue-600 hover:underline">
               Add delivery location to check extra discount
             </Link>
           )}
-        </motion.p>
+        </div>
 
         <motion.div
           whileHover={{ x: 3 }}

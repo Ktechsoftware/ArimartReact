@@ -179,7 +179,7 @@ const AccountSettings = () => {
                       <dt class="font-semibold text-gray-900 dark:text-white">Email Address</dt>
                       <dd class="text-gray-500 dark:text-gray-400">{userData?.email || "demo@gmail.com"}</dd>
                     </dl>
-                    <dl>
+                    {/* <dl>
                       <dt class="font-semibold text-gray-900 dark:text-white">Home Address</dt>
                       <dd class="flex items-center gap-1 text-gray-500 dark:text-gray-400">
                         <svg class="hidden h-5 w-5 shrink-0 text-gray-400 dark:text-gray-500 lg:inline" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
@@ -196,7 +196,7 @@ const AccountSettings = () => {
                         </svg>
                        {userData?.adddress || "No delivery address.."}
                       </dd>
-                    </dl>
+                    </dl> */}
                   </div>
                   <div class="space-y-4">
                     <dl>
@@ -212,8 +212,9 @@ const AccountSettings = () => {
                         </div>
                         <div>
                           <div class="text-sm">
-                            <p class="mb-0.5 font-medium text-gray-900 dark:text-white">Visa ending in 7658</p>
-                            <p class="font-normal text-gray-500 dark:text-gray-400">Expiry 10/2024</p>
+                            <p class="mb-0.5 font-medium text-gray-900 dark:text-white">Not avialable</p>
+                            {/* <p class="mb-0.5 font-medium text-gray-900 dark:text-white">Visa ending in 7658</p>
+                            <p class="font-normal text-gray-500 dark:text-gray-400">Expiry 10/2024</p> */}
                           </div>
                         </div>
                       </dd>

@@ -1,98 +1,91 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import {
-    useGetRatingAnalyticsQuery,
-    useGetDetailedRatingsQuery,
-    useSubmitRatingMutation,
-    useRatingFilters,
-    useRatingForm
-} from '../../Store/ratingSlice';
-import { data } from 'react-router-dom';
+import { fetchDetailedRatings, fetchRatingAnalytics, submitRating, clearRatingMessages } from '../../Store/ratingSlice';
 
-const ReviewsComponent = ({ pdid }) => {
-    console.log(pdid)
+const ReviewsComponent = ({ productId }) => {
+    console.log(productId);
     const dispatch = useDispatch();
-    const userData = useSelector((state) => state.auth.userData);
+    const { 
+        analytics, 
+        detailed: detailedRatings, 
+        loading, 
+        error, 
+        successMessage 
+    } = useSelector(state => state.rating);
 
-    // Get rating state from custom hooks
-    const {
-        selectedStarFilter,
-        currentPage,
-        pageSize,
-        sortBy,
-        showOnlyWithReviews,
-        setStarFilter,
-        clearFilter,
-        setPage,
-        setSize,
-        setSort,
-        setShowReviews,
-    } = useRatingFilters();
-
-    const {
-        form,
-        isSubmitting,
-        submitError,
-        showModal,
-        updateForm,
-        resetForm,
-        setStars,
-        setDescription,
-        setModal,
-        clearError,
-    } = useRatingForm();
-
-    // API queries
-    const { data: analytics, isLoading: analyticsLoading } = useGetRatingAnalyticsQuery(pdid);
-    console.log(data.analytics)
-    const { data: detailedRatings, isLoading: ratingsLoading } = useGetDetailedRatingsQuery({
-        pdid,
-        page: currentPage,
-        pageSize,
-        filterByStars: selectedStarFilter
-    });
-
-    // Mutations
-    const [submitRating] = useSubmitRatingMutation();
-
-    // Local state for star rating input
     const [hoverRating, setHoverRating] = useState(0);
+    const [form, setForm] = useState({ ratingid: 0, descr: '' });
+    const [showModal, setModal] = useState(false);
+    const [currentPage, setPage] = useState(1);
+    const [selectedStarFilter, setSelectedStarFilter] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Initialize form with user data
     useEffect(() => {
-        if (userData?.id && (form.userid !== userData.id || form.pdid !== pdid)) {
-            updateForm({
-                userid: userData.id,
-                pdid: pdid
-            });
+        if (productId) {
+            dispatch(fetchRatingAnalytics(productId));
+            dispatch(fetchDetailedRatings({ 
+                pdid: productId, 
+                page: currentPage, 
+                filterByStars: selectedStarFilter 
+            }));
         }
-    }, [userData, pdid, updateForm, form.userid, form.pdid]);
+    }, [dispatch, productId, currentPage, selectedStarFilter]);
 
-
-    // Handle star filter click
+    // Handle star filter
     const handleStarFilter = (stars) => {
-        if (selectedStarFilter === stars) {
-            clearFilter();
-        } else {
-            setStarFilter(stars);
-        }
+        setSelectedStarFilter(selectedStarFilter === stars ? null : stars);
+        setPage(1); // Reset to first page when filtering
     };
 
-    // Handle rating submission
+    // Set rating stars
+    const setStars = (rating) => {
+        setForm(prev => ({ ...prev, ratingid: rating }));
+    };
+
+    // Set description
+    const setDescription = (description) => {
+        setForm(prev => ({ ...prev, descr: description }));
+    };
+
+    // Handle submit rating
     const handleSubmitRating = async () => {
-        if (!userData?.id) {
-            alert('Please login to submit a review');
+        if (form.ratingid === 0) {
             return;
         }
 
+        setIsSubmitting(true);
+        
         try {
-            await submitRating(form).unwrap();
+            await dispatch(submitRating({
+                pdid: productId,
+                rating: form.ratingid,
+                description: form.descr
+            })).unwrap();
+
+            // Reset form and close modal
+            setForm({ ratingid: 0, descr: '' });
             setModal(false);
-            resetForm();
+            setHoverRating(0);
+
+            // Refresh the data
+            dispatch(fetchRatingAnalytics(productId));
+            dispatch(fetchDetailedRatings({ 
+                pdid: productId, 
+                page: currentPage, 
+                filterByStars: selectedStarFilter 
+            }));
         } catch (error) {
             console.error('Failed to submit rating:', error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
+    // Clear messages when component unmounts or modal closes
+    useEffect(() => {
+        if (!showModal) {
+            dispatch(clearRatingMessages());
+        }
+    }, [showModal, dispatch]);
 
     // Calculate rating distribution
     const getRatingDistribution = () => {
@@ -114,8 +107,8 @@ const ReviewsComponent = ({ pdid }) => {
                     <svg
                         key={star}
                         className={`${size} ${star <= (interactive ? hoverRating || form.ratingid : rating)
-                                ? 'text-yellow-300'
-                                : 'text-gray-300'
+                            ? 'text-yellow-300'
+                            : 'text-gray-300'
                             } ${interactive ? 'cursor-pointer hover:text-yellow-400' : ''}`}
                         aria-hidden="true"
                         xmlns="http://www.w3.org/2000/svg"
@@ -134,7 +127,7 @@ const ReviewsComponent = ({ pdid }) => {
         );
     };
 
-    if (analyticsLoading || ratingsLoading) {
+    if (loading) {
         return (
             <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -204,7 +197,8 @@ const ReviewsComponent = ({ pdid }) => {
 
                 {/* Individual Reviews */}
                 <div className="mt-6 divide-y divide-gray-200 dark:divide-gray-700">
-                    {detailedRatings?.reviews?.map((review) => (
+                    {detailedRatings?.ratings?.map((review) => (
+                        {console.log(review)}
                         <div key={review.id} className="gap-3 pb-6 sm:flex sm:items-start">
                             <div className="shrink-0 space-y-2 sm:w-48 md:w-72">
                                 {renderStars(review.rating)}
@@ -275,6 +269,13 @@ const ReviewsComponent = ({ pdid }) => {
                     ))}
                 </div>
 
+                {/* Empty state */}
+                {detailedRatings?.ratings?.length === 0 && (
+                    <div className="text-center py-8">
+                        <p className="text-gray-500 dark:text-gray-400">No reviews yet. Be the first to write a review!</p>
+                    </div>
+                )}
+
                 {/* Pagination */}
                 {detailedRatings?.totalPages > 1 && (
                     <div className="mt-6 flex justify-center">
@@ -282,7 +283,7 @@ const ReviewsComponent = ({ pdid }) => {
                             <button
                                 onClick={() => setPage(currentPage - 1)}
                                 disabled={currentPage === 1}
-                                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50"
+                                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Previous
                             </button>
@@ -294,7 +295,7 @@ const ReviewsComponent = ({ pdid }) => {
                             <button
                                 onClick={() => setPage(currentPage + 1)}
                                 disabled={currentPage === detailedRatings.totalPages}
-                                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50"
+                                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Next
                             </button>
@@ -312,7 +313,11 @@ const ReviewsComponent = ({ pdid }) => {
                                 Write a Review
                             </h3>
                             <button
-                                onClick={() => setModal(false)}
+                                onClick={() => {
+                                    setModal(false);
+                                    setForm({ ratingid: 0, descr: '' });
+                                    setHoverRating(0);
+                                }}
                                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                             >
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -324,9 +329,12 @@ const ReviewsComponent = ({ pdid }) => {
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Rating
+                                    Rating *
                                 </label>
                                 {renderStars(form.ratingid, 'h-6 w-6', true, setStars)}
+                                {form.ratingid === 0 && (
+                                    <p className="text-red-500 text-xs mt-1">Please select a rating</p>
+                                )}
                             </div>
 
                             <div>
@@ -342,11 +350,19 @@ const ReviewsComponent = ({ pdid }) => {
                                 />
                             </div>
 
-                            {submitError && (
-                                <div className="text-red-600 text-sm">{submitError}</div>
+                            {error && (
+                                <div className="text-red-600 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-md">
+                                    {error}
+                                </div>
                             )}
 
-                            <div className="flex gap-3">
+                            {successMessage && (
+                                <div className="text-green-600 text-sm bg-green-50 dark:bg-green-900/20 p-3 rounded-md">
+                                    {successMessage}
+                                </div>
+                            )}
+
+                            <div className="flex gap-3 pt-4">
                                 <button
                                     onClick={handleSubmitRating}
                                     disabled={isSubmitting || form.ratingid === 0}
@@ -355,8 +371,13 @@ const ReviewsComponent = ({ pdid }) => {
                                     {isSubmitting ? 'Submitting...' : 'Submit Review'}
                                 </button>
                                 <button
-                                    onClick={() => setModal(false)}
-                                    className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500"
+                                    onClick={() => {
+                                        setModal(false);
+                                        setForm({ ratingid: 0, descr: '' });
+                                        setHoverRating(0);
+                                    }}
+                                    disabled={isSubmitting}
+                                    className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500 disabled:opacity-50"
                                 >
                                     Cancel
                                 </button>

@@ -1,6 +1,10 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchUserAddresses } from '../../Store/addressSlice';
+import { useEffect } from 'react';
 
 export default function HomepageGrid() {
+
   return (
     <div className="bg-gradient-to-b from-white to-blue-200 min-h-screen px-4 py-6 hidden sm:block">
       {/* Top Banner Carousel */}

@@ -39,7 +39,7 @@ const RecommendedProducts = ({ productId, category = "", limit = 8, title = "Pro
                 >
                    {title}
                 </motion.h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {Array.from({ length: limit }).map((_, index) => (
                         <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
                             <div className="h-48 bg-gray-300"></div>
@@ -98,7 +98,7 @@ const RecommendedProducts = ({ productId, category = "", limit = 8, title = "Pro
       </motion.h4>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {recommendedProducts.map((product) => (
                     <DProductCard key={product.id} product={product} />
                 ))}

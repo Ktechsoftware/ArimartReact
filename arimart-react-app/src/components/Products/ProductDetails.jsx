@@ -12,6 +12,7 @@ import { GroupBuySection } from "../../pages/GroupBuy/GroupBuySection";
 import ProductReview from "../Reviews/ProductReview";
 import toast from 'react-hot-toast';
 import { createGroup } from "../../Store/groupBuySlice";
+import RecommendedProducts from "./RecommendedProducts";
 
 export default function ProductDetails({ cartIconRef }) {
   const { id } = useParams();
@@ -546,13 +547,13 @@ const handleRemove = async () => {
 
                   {activeTab === "reviews" && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="space-y-4">
-                      <ProductReview/>
+                      <ProductReview productId={product.pdid}/>
                     </motion.div>
                   )}
 
                   {activeTab === "more you like" && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-                      {/* <ProductCard customGridClass={"grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3 p-1"} /> */}
+                       <RecommendedProducts productId={product.id} className="max-w-6xl mx-auto px-4"/>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -570,7 +571,7 @@ const handleRemove = async () => {
      bg-white/80 dark:bg-gray-900/60 
      backdrop-blur-md backdrop-saturate-150 
      dark:backdrop-blur-md dark:backdrop-saturate-150 
-     p-4 shadow-lg"
+     p-4"
         >
           <div className="flex items-center justify-center gap-4 max-w-md mx-auto">
             <AnimatePresence mode="wait">
