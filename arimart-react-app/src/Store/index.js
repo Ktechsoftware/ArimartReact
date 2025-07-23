@@ -16,6 +16,7 @@ import notificationReducer from "./notificationSlice";
 import popularProductsReducer from './PopularSlice/popularProductsSlice'
 import referalReducer from './referralSlice'
 import shippingReducer from './addressSlice'
+import promocodeReducer from './promocodeSlice'
 
 const store = configureStore({
   reducer: {
@@ -35,7 +36,8 @@ const store = configureStore({
     filters : filterReducer,
     wishlist: wishlistReducer,
     group: groupReducer,
-    rating: ratingReducer
+    rating: ratingReducer,
+    promocode: promocodeReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

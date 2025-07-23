@@ -14,6 +14,8 @@ import { deductFromWallet, fetchWalletBalance } from '../../Store/walletSlice';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { refreshUserInfo } from '../../Store/authSlice';
 import { AddressSection } from '../common/AddressSection';
+import PromoCodeInput from '../Cart/PromoCodeInput';
+import { clearPromoState } from '../../Store/promocodeSlice';
 
 const paymentMethods = [
   { id: 'card', name: 'Credit/Debit Card', icon: <CreditCard className="w-5 h-5" /> },
@@ -32,6 +34,9 @@ export default function CheckoutPage() {
   const [selectedMethod, setSelectedMethod] = useState('standard');
   const [selectedSlot, setSelectedSlot] = useState('');
 
+  // Get promo code state from Redux
+  const { applyResult: appliedPromo, loading: promoLoading } = useSelector(state => state.promocode);
+
   useEffect(() => {
     if (userId) {
       dispatch(refreshUserInfo(userId));
@@ -45,7 +50,6 @@ export default function CheckoutPage() {
   const [sipid, setSipid] = useState(0);
   const [useWalletAmount, setUseWalletAmount] = useState(0);
   const walletBalance = useSelector((state) => state.wallet.balance);
-
 
   const {
     regularCartItems,
@@ -97,77 +101,83 @@ export default function CheckoutPage() {
 
   const [isProcessing, setIsProcessing] = useState(false);
 
-const handlecheckoutCart = async () => {
-  if (!sipid) {
-    toast.error("Please select delivery address to place order.");
-    return;
-  }
+  const handlecheckoutCart = async () => {
+    if (!sipid) {
+      toast.error("Please select delivery address to place order.");
+      return;
+    }
 
-  if (selectedPayment.id !== 'cod') {
-    navigate('/checkout/payment');
-    return;
-  }
+    if (selectedPayment.id !== 'cod') {
+      navigate('/checkout/payment');
+      return;
+    }
 
-  setIsProcessing(true);
-  const processingTimer = setTimeout(() => {
-    setIsProcessing(false);
-  }, 6000);
+    setIsProcessing(true);
+    const processingTimer = setTimeout(() => {
+      setIsProcessing(false);
+    }, 6000);
 
-  try {
-    const cartIds = items.map(item => item.id).join(',');
-    const isGroupOrder = items.some(item => item.groupId || item.groupid);
-    const groupId = isGroupOrder ? (items[0].groupId || items[0].groupid) : null;
+    try {
+      const cartIds = items.map(item => item.id).join(',');
+      const isGroupOrder = items.some(item => item.groupId || item.groupid);
+      const groupId = isGroupOrder ? (items[0].groupId || items[0].groupid) : null;
 
-    // Deduct wallet amount first (if applicable)
-    if (useWalletAmount > 0) {
-      try {
-        await dispatch(deductFromWallet({
-          userid: userId,
-          amount: useWalletAmount
-        })).unwrap();
-      } catch (deductError) {
-        throw new Error("Wallet deduction failed: " + (deductError?.message || ""));
+      // Deduct wallet amount first (if applicable)
+      if (useWalletAmount > 0) {
+        try {
+          await dispatch(deductFromWallet({
+            userid: userId,
+            amount: useWalletAmount
+          })).unwrap();
+        } catch (deductError) {
+          throw new Error("Wallet deduction failed: " + (deductError?.message || ""));
+        }
       }
+
+      const payload = {
+        Addid: cartIds,
+        Userid: userId,
+        Sipid: sipid
+      };
+
+      if (groupId) {
+        payload.groupId = groupId;
+      }
+
+      // Include promo code information if applied
+      if (appliedPromo) {
+        payload.promoCode = appliedPromo.code;
+        payload.discountAmount = promoDiscountAmount;
+      }
+
+      const res = await dispatch(checkoutCart(payload)).unwrap();
+      clearTimeout(processingTimer);
+      const trackId = res.orderid;
+
+      if (!trackId) {
+        throw new Error("Invalid response: Track ID missing");
+      }
+
+      setLatestTrackId(trackId);
+      setShowModal(true);
+
+      if (cartType === "both") {
+        clearCart({ clearBoth: true });
+      } else if (cartType === "group") {
+        clearCart({ clearAllGroups: true });
+      } else {
+        clearCart();
+      }
+      dispatch(clearPromoState());
+      toast.success("Order placed successfully!");
+    } catch (err) {
+      clearTimeout(processingTimer);
+      console.error("Checkout failed:", err);
+      toast.error(err.message || "Checkout failed");
+    } finally {
+      setIsProcessing(false);
     }
-
-    const payload = {
-      Addid: cartIds,
-      Userid: userId,
-      Sipid: sipid
-    };
-
-    if (groupId) {
-      payload.groupId = groupId;
-    }
-
-    const res = await dispatch(checkoutCart(payload)).unwrap();
-    clearTimeout(processingTimer);
-    const trackId = res.orderid;
-
-    if (!trackId) {
-      throw new Error("Invalid response: Track ID missing");
-    }
-
-    setLatestTrackId(trackId);
-    setShowModal(true);
-
-    if (groupId) {
-      await clearCart({ groupId });
-    } else {
-      await clearCart();
-    }
-
-    toast.success("Order placed successfully!");
-  } catch (err) {
-    clearTimeout(processingTimer);
-    console.error("Checkout failed:", err);
-    toast.error(err.message || "Checkout failed");
-  } finally {
-    setIsProcessing(false);
-  }
-};
-
-
+  };
 
   // ⏹️ Determine subtotal dynamically based on cartType
   let displaySubtotal = 0;
@@ -179,20 +189,31 @@ const handlecheckoutCart = async () => {
   } else {
     displaySubtotal = subtotal;
   }
+console.log("promocode applied : ", appliedPromo)
+  // ⏹️ Calculate promo discount amount
+  const promoDiscountAmount = appliedPromo?.discount;
 
-  // ⏹️ You can also compute shipping/tax/discount conditionally if needed
-  const shipping = 30;
-  const discount = 10;
+  // ⏹️ Calculate delivery fee based on selected method
+  const getDeliveryFee = () => {
+    switch (selectedMethod) {
+      case 'express':
+        return 49;
+      case 'scheduled':
+        return 29;
+      default:
+        return 0; // Standard delivery is free
+    }
+  };
+
+  const shipping = getDeliveryFee();
   const tax = 10;
-  const rawTotal = displaySubtotal + shipping - discount - tax;
+  const rawTotal = displaySubtotal + shipping + tax - promoDiscountAmount;
   const total = Math.max(0, rawTotal - useWalletAmount);
-
 
   return (
     <div className="max-w-6xl mx-auto p-4 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen">
       {/* Address */}
       <AddressSection userData={userData} onSelectPrimary={(id) => setSipid(id)} />
-
 
       {/* Cart Items */}
       <motion.div className="border border-orange-200 dark:border-gray-700 rounded-xl p-4 mb-6 space-y-4">
@@ -231,6 +252,9 @@ const handlecheckoutCart = async () => {
           </div>
         ))}
       </motion.div>
+      
+      {/* Promo Code Section */}
+      <PromoCodeInput subtotal={displaySubtotal} />
 
       {/* Wallet */}
       <div className="space-y-4 bg-green-50 dark:bg-gray-800 rounded-lg mb-6">
@@ -246,23 +270,22 @@ const handlecheckoutCart = async () => {
             <input
               type="number"
               min="0"
-              max={walletBalance}
+              max={Math.min(walletBalance, total)}
               value={useWalletAmount}
               onChange={(e) => {
                 const value = parseFloat(e.target.value) || 0;
-                setUseWalletAmount(Math.min(value, walletBalance)); // cap to max balance
+                setUseWalletAmount(Math.min(value, walletBalance, total));
               }}
               className="w-24 px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
             />
             <button
-              onClick={() => setUseWalletAmount(walletBalance)}
+              onClick={() => setUseWalletAmount(Math.min(walletBalance, total))}
               className="text-xs text-orange-600 hover:underline"
             >
               Apply Max
             </button>
           </div>
         </div>
-
       </div>
 
       {/* Payment Method */}
@@ -286,8 +309,9 @@ const handlecheckoutCart = async () => {
               {paymentMethods.map(method => (
                 <div
                   key={method.id}
-                  className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${selectedPayment.id === method.id ? 'bg-orange-100' : 'bg-gray-50'
-                    }`}
+                  className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
+                    selectedPayment.id === method.id ? 'bg-orange-100' : 'bg-gray-50'
+                  }`}
                   onClick={() => {
                     setSelectedPayment(method);
                     setShowPaymentOptions(false);
@@ -301,7 +325,6 @@ const handlecheckoutCart = async () => {
           )}
         </AnimatePresence>
       </motion.div>
-
 
       <div className="mt-6 space-y-6">
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Delivery Options</h3>
@@ -479,31 +502,44 @@ const handlecheckoutCart = async () => {
           </motion.div>
         )}
       </div>
+
       {/* Payment Summary */}
       <motion.div className="border-t mt-2 pt-4 space-y-3 text-sm mb-6">
         <div className="flex justify-between">
           <span>Subtotal</span>
           <span>₹{displaySubtotal.toFixed(2)}</span>
         </div>
-        {useWalletAmount > 0 ? <div className="flex justify-between">
-          <span>Wallet Used</span>
-          <span className="text-green-600">- ₹{useWalletAmount.toFixed(2)}</span>
-        </div>
-          : ""}
+        
+        {/* Show promo discount if applied */}
+        {appliedPromo && promoDiscountAmount > 0 && (
+          <div className="flex justify-between text-green-600">
+            <span>Promo Discount ({appliedPromo.code})</span>
+            <span>- ₹{promoDiscountAmount.toFixed(2)}</span>
+          </div>
+        )}
+        
         <div className="flex justify-between">
           <span>Delivery</span>
           <span>₹{shipping.toFixed(2)}</span>
         </div>
+        
         <div className="flex justify-between">
           <span>Tax</span>
           <span>₹{tax.toFixed(2)}</span>
         </div>
-        <div className="flex justify-between font-bold text-lg pt-2">
+        
+        {useWalletAmount > 0 && (
+          <div className="flex justify-between text-green-600">
+            <span>Wallet Used</span>
+            <span>- ₹{useWalletAmount.toFixed(2)}</span>
+          </div>
+        )}
+        
+        <div className="flex justify-between font-bold text-lg pt-2 border-t">
           <span>Total</span>
           <span className="text-orange-500">₹{total.toFixed(2)}</span>
         </div>
       </motion.div>
-
 
       <div className="sticky bottom-16 md:bottom-0 flex justify-center p-4 bg-white dark:bg-gray-900 z-10">
         <motion.button

@@ -1,94 +1,119 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Check, X, Sparkles } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
+import { applyPromoCode, clearPromoState } from "../../Store/promocodeSlice";
 
-const PromoCodeInput = () => {
+const PromoCodeInput = ({ subtotal = 0 }) => {
+  const dispatch = useDispatch();
+  const { applyResult: appliedPromo, loading: promoLoading, error } = useSelector(state => state.promocode);
+  const userData = useSelector(state => state.auth.userData);
+
   const [promoCode, setPromoCode] = useState("");
-  const [appliedPromo, setAppliedPromo] = useState(null);
   const [isValid, setIsValid] = useState(true);
 
-  const handleApply = () => {
-    if (promoCode.trim() === ""){
-      toast.error("Enter Promo code..")
+  useEffect(() => {
+    if (error) {
+      setIsValid(false);
+    }
+  }, [error]);
+
+  const handleApply = async () => {
+    if (promoCode.trim() === "") {
+      toast.error("Enter Promo code..");
       return;
-    };
-    
-    // Simulate validation - replace with your actual validation logic
-    const validCodes = ["FRESH50", "ARIMART25", "GROCERY10"];
-    const isValidCode = validCodes.includes(promoCode.toUpperCase());
-    setIsValid(isValidCode);
-    
-    if (isValidCode) {
-      setAppliedPromo({
+    }
+    console.log(promoCode, userData?.id, subtotal)
+    setIsValid(true);
+
+    try {
+      const result = await dispatch(applyPromoCode({
         code: promoCode.toUpperCase(),
-        discount: promoCode.toUpperCase() === "FRESH50" ? 50 : 
-                 promoCode.toUpperCase() === "ARIMART25" ? 25 : 10
-      });
+        userId: userData?.id,
+        orderAmount: subtotal
+      })).unwrap();
+
       setPromoCode("");
+      toast.success(`Promo code applied! You saved ₹${result.discount}`);
+    } catch (error) {
+      console.error("Promo code application failed:", error);
+      setIsValid(false);
     }
   };
 
   const removePromo = () => {
-    setAppliedPromo(null);
+    dispatch(clearPromoState());
     setIsValid(true);
+    toast.success("Promo code removed");
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleApply();
+    }
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 mb-6">
       <div className="flex">
         <input
           type="text"
           value={promoCode}
           onChange={(e) => setPromoCode(e.target.value)}
+          onKeyPress={handleKeyPress}
           placeholder="Enter Promo Code"
-          className={`flex-1 p-3 rounded-l-lg bg-gray-100 dark:bg-gray-700 text-sm border-none focus:ring-2 ${
-            !isValid ? "focus:ring-red-400" : "focus:ring-green-400"
-          }`}
+          disabled={promoLoading || appliedPromo}
+          className={`flex-1 p-3 rounded-l-lg bg-gray-100 dark:bg-gray-700 text-sm border-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed ${!isValid ? "focus:ring-red-400" : "focus:ring-green-400"
+            }`}
         />
         <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+          whileHover={{ scale: appliedPromo ? 1 : 1.02 }}
+          whileTap={{ scale: appliedPromo ? 1 : 0.98 }}
           onClick={handleApply}
-          className="bg-black dark:bg-white text-white dark:text-black px-4 py-3 rounded-r-lg text-sm font-medium"
+          disabled={promoLoading || appliedPromo}
+          className={`px-4 py-3 rounded-r-lg text-sm font-medium transition-colors ${appliedPromo
+              ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+              : 'bg-black dark:bg-white text-white dark:text-black'
+            }`}
         >
-          Apply
+          {appliedPromo ? "Applied" : "Apply"}
         </motion.button>
       </div>
 
-      {!isValid && (
-        <motion.p 
+      {!isValid && error && (
+        <motion.p
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-red-500 text-xs"
         >
-          Invalid promo code. Please try again.
+          {typeof error === 'string' ? error : 'Promo code could not be applied.'}
         </motion.p>
       )}
+
 
       <AnimatePresence>
         {appliedPromo && (
           <motion.div
             initial={{ opacity: 0, y: -20, scale: 0.9 }}
-            animate={{ 
-              opacity: 1, 
-              y: 0, 
+            animate={{
+              opacity: 1,
+              y: 0,
               scale: 1,
               transition: { type: "spring", stiffness: 300 }
             }}
             exit={{ opacity: 0, scale: 0.9 }}
             className="relative p-4 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/40 rounded-lg border border-green-200 dark:border-green-800"
           >
-            {/* Confetti effect container */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="absolute inset-0 overflow-hidden rounded-lg"
+              className="absolute inset-0 overflow-hidden rounded-lg pointer-events-none"
             >
               {[...Array(20)].map((_, i) => (
                 <motion.div
                   key={i}
-                  initial={{ 
+                  initial={{
                     opacity: 0,
                     x: Math.random() * 100 - 50,
                     y: Math.random() * 100 - 50,
@@ -125,11 +150,11 @@ const PromoCodeInput = () => {
                     Promo Applied: {appliedPromo.code}
                   </p>
                   <p className="text-sm text-green-600 dark:text-green-300">
-                    {appliedPromo.discount}% discount on your order!
+                    ₹{appliedPromo.discount} discount on your order!
                   </p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={removePromo}
                 className="p-1 rounded-full hover:bg-green-200/50 dark:hover:bg-green-900/30"
               >

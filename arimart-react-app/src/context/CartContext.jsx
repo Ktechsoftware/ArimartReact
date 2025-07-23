@@ -403,17 +403,66 @@ export function CartProvider({ children }) {
   };
 
   // Clear carts
-  const clearCart = async (groupId = null) => {
-    if (groupId) {
-      dispatch({ type: CART_ACTIONS.CLEAR_GROUP_CART });
-    } else {
-      dispatch({ type: CART_ACTIONS.CLEAR_REGULAR_CART });
-    }
+// Replace the clearCart function in your CartContext with this:
 
+const clearCart = async (options = {}) => {
+  const { groupId, clearBoth = false, clearAllGroups = false } = options;
+  
+  if (clearBoth) {
+    // Clear both regular and group carts
+    dispatch({ type: CART_ACTIONS.CLEAR_REGULAR_CART });
+    dispatch({ type: CART_ACTIONS.CLEAR_GROUP_CART });
+    
     if (userId) {
       try {
-        const requestData = { userId };
-        await reduxDispatch(clearCartRedux(requestData)).unwrap();
+        // Clear regular cart
+        await reduxDispatch(clearCartRedux({ userId })).unwrap();
+        
+        // Clear all group carts
+        await reduxDispatch(clearAllGroupCarts({ userId })).unwrap();
+        
+        dispatch({ type: CART_ACTIONS.SYNC_SUCCESS });
+        toast.success('Both carts cleared successfully');
+      } catch (error) {
+        dispatch({ type: CART_ACTIONS.SYNC_FAILURE, payload: error.message });
+        toast.error('Failed to clear carts on server');
+      }
+    }
+  } else if (clearAllGroups) {
+    // Clear all group carts (all groupIds)
+    dispatch({ type: CART_ACTIONS.CLEAR_GROUP_CART });
+    
+    if (userId) {
+      try {
+        await reduxDispatch(clearAllGroupCarts({ userId })).unwrap();
+        dispatch({ type: CART_ACTIONS.SYNC_SUCCESS });
+        toast.success('All group carts cleared successfully');
+      } catch (error) {
+        dispatch({ type: CART_ACTIONS.SYNC_FAILURE, payload: error.message });
+        toast.error('Failed to clear group carts on server');
+      }
+    }
+  } else if (groupId) {
+    // Clear specific group cart
+    dispatch({ type: CART_ACTIONS.CLEAR_GROUP_CART });
+    
+    if (userId) {
+      try {
+        await reduxDispatch(clearGroupCart({ userId, groupId })).unwrap();
+        dispatch({ type: CART_ACTIONS.SYNC_SUCCESS });
+        toast.success('Group cart cleared successfully');
+      } catch (error) {
+        dispatch({ type: CART_ACTIONS.SYNC_FAILURE, payload: error.message });
+        toast.error('Failed to clear group cart on server');
+      }
+    }
+  } else {
+    // Clear regular cart only
+    dispatch({ type: CART_ACTIONS.CLEAR_REGULAR_CART });
+    
+    if (userId) {
+      try {
+        await reduxDispatch(clearCartRedux({ userId })).unwrap();
         dispatch({ type: CART_ACTIONS.SYNC_SUCCESS });
         toast.success('Cart cleared successfully');
       } catch (error) {
@@ -421,7 +470,8 @@ export function CartProvider({ children }) {
         toast.error('Failed to clear cart on server');
       }
     }
-  };
+  }
+};
 
   const setCurrentGroup = (groupId) => {
     dispatch({ type: CART_ACTIONS.SET_CURRENT_GROUP, payload: groupId });

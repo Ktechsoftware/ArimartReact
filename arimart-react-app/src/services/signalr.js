@@ -8,7 +8,7 @@ let connection = null;
 
 export const startSignalRConnection = (userId) => {
   const API_KEY = API.defaults.headers["X-Api-Key"];
-  const url = `http://localhost:5015/notificationHub?userId=${userId}&apikey=${API_KEY}`;
+  const url = `https://apiari.kuldeepchaurasia.in/notificationHub?userId=${userId}&apikey=${API_KEY}`;
 
   connection = new signalR.HubConnectionBuilder()
     .withUrl(url, {

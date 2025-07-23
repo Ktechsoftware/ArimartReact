@@ -328,9 +328,6 @@ export default function CartDetails() {
           })}
         </div>
 
-        {/* Promo Code Section */}
-        <PromoCodeInput />
-
         {/* Order Summary */}
         <motion.div
           initial={{ opacity: 0 }}

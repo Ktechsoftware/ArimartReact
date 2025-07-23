@@ -50,6 +50,7 @@ const Trackorder = () => {
             ddeliverredidTime: item.ddeliverredidTime,
             addedDate: trackingData[0].orderDate // "2025-07-12T12:06:11.027"
         },
+
         // Order-level information
         orderInfo: {
             trackId: trackingData[0].trackId, // "ORD-20250712120611026-09E519"
@@ -59,6 +60,7 @@ const Trackorder = () => {
         }
     })) || [];
 
+    const appliedPromo = trackingData[0]?.appliedPromo;
     useEffect(() => {
         const uniqueGroupIds = [...new Set(products.map(p => p.groupid).filter(Boolean))];
         uniqueGroupIds.forEach(groupid => {
@@ -278,7 +280,31 @@ const Trackorder = () => {
                                 whileHover={{ scale: 1.01 }}
                             >
                                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                                    Subtotal ({products.length} item{products.length > 1 ? 's' : ''})
+                                    <div className='flex items-center gap-2'>
+                                    <span>Subtotal ({products.length} item{products.length > 1 ? 's' : ''})</span>
+                                    {appliedPromo && (
+                                        <motion.div
+                                            className="flex items-center justify-between gap-4 py-2"
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            whileHover={{ scale: 1.01 }}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                                    Applied Code
+                                                </span>
+                                                <motion.span
+                                                    className="text-xs font-medium bg-green-100 text-green-800 px-2 py-1 rounded-full dark:bg-green-900 dark:text-green-200"
+                                                    initial={{ scale: 0.8 }}
+                                                    animate={{ scale: 1 }}
+                                                    transition={{ type: "spring", stiffness: 300 }}
+                                                >
+                                                    {appliedPromo.code}
+                                                </motion.span>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                    </div>
                                 </span>
                                 <span className="text-sm text-gray-900 dark:text-white">
                                     ₹{totalAmount.toLocaleString()}

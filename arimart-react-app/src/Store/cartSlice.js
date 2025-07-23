@@ -13,12 +13,24 @@ const calculateTotalsFromItems = (items) => {
   return { totalItems, subtotal };
 };
 
+export const clearAllGroupCarts = createAsyncThunk(
+  'cart/clearAllGroupCarts',
+  async (userId, { rejectWithValue }) => {
+    try {
+      await API.delete(`/cart/allgroups/${userId}`);
+      return { success: true };
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
 export const addToCartByUser = createAsyncThunk(
   'cart/addToCartByUser',
   async (cartData, { rejectWithValue, getState }) => {
     try {
       console.log('Adding to cart:', cartData);
-      
+
       // Build request payload
       const requestData = {
         userId: cartData.userId,
@@ -33,13 +45,25 @@ export const addToCartByUser = createAsyncThunk(
       }
 
       await API.post('/cart/add/user', requestData);
-      
+
       const userId = getState().auth.userData?.id;
       if (!userId) throw new Error('User ID not found');
-      
+
       const updatedCart = await API.get(`/cart/${userId}`);
       console.log('Updated cart after add:', updatedCart.data);
       return updatedCart.data.items || [];
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
+export const clearGroupCart = createAsyncThunk(
+  'cart/clearGroupCart',
+  async ({ userId, groupId }, { rejectWithValue }) => {
+    try {
+      await API.delete(`/cart/group/${userId}/${groupId}`);
+      return { groupId };
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
     }
@@ -65,7 +89,7 @@ export const fetchCartByUserAndGroup = createAsyncThunk(
     console.log(userId)
     try {
       const response = await API.get(`/cart/groupcart?userid=${userId}`);
-      console.log("Group response data : ",response.data.items)
+      console.log("Group response data : ", response.data.items)
       return Array.isArray(response.data.items) ? response.data.items : [];
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
@@ -115,6 +139,8 @@ const cartSlice = createSlice({
     subtotal: 0,
     userId: null,
     groupId: null,
+    clearGroupCartLoading: false,
+    clearGroupCartError: null,
   },
   reducers: {
     clearCart: (state) => {
@@ -187,6 +213,15 @@ const cartSlice = createSlice({
       })
       .addCase(removeFromCart.fulfilled, (state, action) => {
         state.items = state.items.filter(item => item.Id !== action.payload && item.id !== action.payload);
+        cartSlice.caseReducers.calculateTotals(state);
+      })
+      .addCase(clearGroupCart.fulfilled, (state, action) => {
+        const { groupId } = action.payload;
+        state.items = state.items.filter(item => item.Groupid !== groupId);
+        cartSlice.caseReducers.calculateTotals(state);
+      })
+      .addCase(clearAllGroupCarts.fulfilled, (state) => {
+        state.items = state.items.filter(item => item.Groupid === null || item.Groupid === undefined);
         cartSlice.caseReducers.calculateTotals(state);
       })
       .addCase(updateCartItemQuantity.fulfilled, (state, action) => {
