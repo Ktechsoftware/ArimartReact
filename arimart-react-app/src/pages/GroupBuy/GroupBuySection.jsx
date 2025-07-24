@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Clock, Tag, Calendar, Sparkles, User, ShoppingCart, UserPlus, ChevronDown, ChevronUp } from "lucide-react";
+import { Users, Clock, Tag, Calendar, Sparkles, User, ShoppingCart, UserPlus, ChevronDown, ChevronUp, Loader } from "lucide-react";
 import {
   fetchGroupById,
   fetchGroupMembers,
@@ -17,7 +17,7 @@ export const GroupBuySection = ({ userId, product }) => {
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
+  
   const gid = product?.gid;
   // console.log(userId, gid)
 
@@ -184,7 +184,7 @@ export const GroupBuySection = ({ userId, product }) => {
 
       {/* Debug Info - Remove in production */}
       <div className="mb-2 text-xs text-gray-500 dark:text-gray-400">
-        GID: {gid} | Members: {currentMembers} | Owner: {isGroupOwner ? 'Yes' : 'No'}
+        Group Code: {referCodeData?.refercode} | Members: {currentMembers}
       </div>
 
       {/* Main Content - Always Visible */}
@@ -206,8 +206,12 @@ export const GroupBuySection = ({ userId, product }) => {
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <h3 className="text-sm font-bold text-gray-800 dark:text-white truncate">
-                {currentGroup?.vendorName || "Loading..."}
+              <h3 className="text-sm font-bold text-gray-800 dark:text-white truncate flex items-center gap-1">
+                {currentGroup?.vendorName ? (
+                  currentGroup.vendorName
+                ) : (
+                  <Loader className="w-4 h-4 animate-spin text-gray-500" />
+                )}
               </h3>
               {isGroupOwner && (
                 <span className="text-xs bg-yellow-400 text-yellow-800 px-1.5 py-0.5 rounded-full whitespace-nowrap">

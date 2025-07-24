@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowRight, Minus, Plus, MapPin, Wallet2, Truck, Zap, Calendar,
-  StickyNote, CreditCard, Smartphone, ChevronDown
+  StickyNote, CreditCard, Smartphone, ChevronDown,
+  X
 } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
@@ -42,6 +43,12 @@ export default function CheckoutPage() {
       dispatch(refreshUserInfo(userId));
     }
   }, [userId, dispatch]);
+
+  useEffect(() => {
+    return () => {
+      dispatch(clearPromoState());
+    };
+  }, [dispatch]);
 
   const [showModal, setShowModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(paymentMethods[2]);
@@ -189,7 +196,7 @@ export default function CheckoutPage() {
   } else {
     displaySubtotal = subtotal;
   }
-console.log("promocode applied : ", appliedPromo)
+  console.log("promocode applied : ", appliedPromo)
   // ⏹️ Calculate promo discount amount
   const promoDiscountAmount = appliedPromo?.discount;
 
@@ -205,10 +212,13 @@ console.log("promocode applied : ", appliedPromo)
     }
   };
 
-  const shipping = getDeliveryFee();
+  const shipping = isNaN(getDeliveryFee()) ? 0 : getDeliveryFee();
   const tax = 10;
-  const rawTotal = displaySubtotal + shipping + tax - promoDiscountAmount;
-  const total = Math.max(0, rawTotal - useWalletAmount);
+  const discount = isNaN(promoDiscountAmount) ? 0 : promoDiscountAmount;
+  const wallet = isNaN(useWalletAmount) ? 0 : useWalletAmount;
+  const rawTotal = (displaySubtotal || 0) + shipping + tax - discount;
+  const total = Math.max(0, rawTotal - wallet);
+
 
   return (
     <div className="max-w-6xl mx-auto p-4 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen">
@@ -238,7 +248,7 @@ console.log("promocode applied : ", appliedPromo)
         {console.log("group cart items : ", groupCartItems)}
         {items.map(item => (
           <div key={item.id} className="flex items-center gap-4">
-            <img src={"http://localhost:5015/Uploads/" + item.image} className="w-14 h-14 rounded-md object-cover" />
+            <img src={"https://apiari.kuldeepchaurasia.in/Uploads/" + item.image} className="w-14 h-14 rounded-md object-cover" />
             <div className="flex-1">
               <p className="font-semibold">{item.name}</p>
               <p className="text-sm text-gray-500">{item.categoryName}</p>
@@ -246,13 +256,13 @@ console.log("promocode applied : ", appliedPromo)
             </div>
             <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
               <button><Minus className="w-4 h-4" /></button>
-              <span className="font-medium">{item.quantity}</span>
+              <span className="font-medium"><X className='w-4 h-4'/>{item.quantity} {item.wweight}</span>
               <button><Plus className="w-4 h-4" /></button>
             </div>
           </div>
         ))}
       </motion.div>
-      
+
       {/* Promo Code Section */}
       <PromoCodeInput subtotal={displaySubtotal} />
 
@@ -309,9 +319,8 @@ console.log("promocode applied : ", appliedPromo)
               {paymentMethods.map(method => (
                 <div
                   key={method.id}
-                  className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
-                    selectedPayment.id === method.id ? 'bg-orange-100' : 'bg-gray-50'
-                  }`}
+                  className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${selectedPayment.id === method.id ? 'bg-orange-100' : 'bg-gray-50'
+                    }`}
                   onClick={() => {
                     setSelectedPayment(method);
                     setShowPaymentOptions(false);
@@ -509,7 +518,7 @@ console.log("promocode applied : ", appliedPromo)
           <span>Subtotal</span>
           <span>₹{displaySubtotal.toFixed(2)}</span>
         </div>
-        
+
         {/* Show promo discount if applied */}
         {appliedPromo && promoDiscountAmount > 0 && (
           <div className="flex justify-between text-green-600">
@@ -517,24 +526,24 @@ console.log("promocode applied : ", appliedPromo)
             <span>- ₹{promoDiscountAmount.toFixed(2)}</span>
           </div>
         )}
-        
+
         <div className="flex justify-between">
           <span>Delivery</span>
           <span>₹{shipping.toFixed(2)}</span>
         </div>
-        
+
         <div className="flex justify-between">
           <span>Tax</span>
           <span>₹{tax.toFixed(2)}</span>
         </div>
-        
+
         {useWalletAmount > 0 && (
           <div className="flex justify-between text-green-600">
             <span>Wallet Used</span>
             <span>- ₹{useWalletAmount.toFixed(2)}</span>
           </div>
         )}
-        
+
         <div className="flex justify-between font-bold text-lg pt-2 border-t">
           <span>Total</span>
           <span className="text-orange-500">₹{total.toFixed(2)}</span>

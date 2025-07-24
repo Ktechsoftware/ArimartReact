@@ -58,7 +58,7 @@ export default function CartDetails() {
 
   const handleTabSwitch = async (tab) => {
     setSelectedTab(tab);
-    
+
     if (tab === "group") {
       if (userId) {
         try {
@@ -254,11 +254,15 @@ export default function CartDetails() {
                   )}
 
                   {cartType === "group" && item.groupId && (
-                    <p className="text-xs text-blue-500 dark:text-blue-400 mb-1">
-                      Group Code: {item.groupId}
+                    <p className="text-xs text-orange-500 dark:text-orange-400 mb-1">
+                      Group Code:{' '}
+                      <span className="inline-block bg-green-100 dark:bg-blue-700 text-green-800 dark:text-green-100 px-2 py-0.5 rounded-full text-[11px] font-semibold">
+                        {item.originalItem.groupcode}
+                      </span>
                       {item.gprice && <span></span>}
                     </p>
                   )}
+
 
                   <div className="flex items-center justify-between">
                     <p className="font-bold text-lg text-green-600 dark:text-green-400">
@@ -288,7 +292,7 @@ export default function CartDetails() {
                           animate={{ scale: 1 }}
                           className="text-sm font-semibold min-w-[2rem] text-center text-gray-900 dark:text-white"
                         >
-                          {isItemLoading ? '...' : item.quantity}
+                          {isItemLoading ? '...' : item.quantity + item.originalItem.unittype}
                         </motion.span>
 
                         <motion.button

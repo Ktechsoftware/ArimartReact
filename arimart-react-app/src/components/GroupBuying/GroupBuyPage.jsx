@@ -3,7 +3,106 @@ import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import HeroBanner from './HeroBanner';
 import { GroupBuySection } from '../../pages/GroupBuy/GroupBuySection';
-import { fetchCurrentRunningGroups } from '../../Store/groupBuySlice';
+import { fetchCurrentRunningGroups, fetchGroupByReferCode } from '../../Store/groupBuySlice';
+import { useNavigate } from 'react-router-dom';
+function GroupSearch() {
+  const [code, setCode] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (!code.trim()) {
+      setError('Please enter a group code');
+      return;
+    }
+
+    setIsLoading(true);
+
+    const { payload } = await dispatch(fetchGroupByReferCode(code));
+
+    setIsLoading(false);
+
+    if (payload?.status === 1 && payload?.gid) {
+      navigate(`/group/join/${payload.gid}/${code}`);
+    } else {
+      setError(payload?.message || "Invalid group code");
+    }
+
+  };
+
+  return (
+    <div className="flex items-center justify-center p-4 dark:bg-gray-900">
+      <div className="w-full max-w-md">
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 text-center">
+          Join a Group
+        </h1>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="relative">
+            <input
+              type="text"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="Enter group code"
+              className={`w-full pr-32 pl-4 py-3 rounded-lg border focus:outline-none focus:ring-2 transition-all ${error
+                ? 'border-red-500 focus:ring-red-300 dark:focus:ring-red-700'
+                : 'border-gray-300 focus:ring-blue-300 dark:focus:ring-blue-700 dark:border-gray-600'
+                } bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200`}
+            />
+            <button
+              type="submit"
+              disabled={isLoading}
+              className={`absolute top-1/2 right-2 transform -translate-y-1/2 px-4 py-2 text-sm font-medium rounded-md transition-colors ${isLoading
+                ? 'bg-blue-400 dark:bg-blue-600 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800'
+                } text-white`}
+            >
+              {isLoading ? (
+                <svg
+                  className="animate-spin h-4 w-4 mx-auto"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 
+                      5.291A7.962 7.962 0 014 12H0c0 
+                      3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+              ) : (
+                'Join'
+              )}
+            </button>
+          </div>
+
+          {error && (
+            <div className="mt-2 text-sm text-red-600 dark:text-red-400">
+              {error}
+            </div>
+          )}
+        </form>
+      </div>
+    </div>
+  );
+}
+
 
 export const GroupBuyPage = () => {
   const dispatch = useDispatch();
@@ -42,8 +141,9 @@ export const GroupBuyPage = () => {
       <HeroBanner />
 
       <div className="container mx-auto px-4 py-6">
+        <GroupSearch />
         {/* Compact Header */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="mb-6"
@@ -82,7 +182,7 @@ export const GroupBuyPage = () => {
                 <p className="text-gray-500 dark:text-gray-400">No active group buys available</p>
               </div>
             ) : (
-              <div className="grid gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-4">
                 {currentRunningGroups.map((product, index) => (
                   <motion.div
                     key={product.gid || product.Gid || product.id || index}
@@ -143,39 +243,38 @@ export const GroupBuyPage = () => {
                             </p>
                           </div>
                         </div>
-
-                        {/* Group Buy Section */}
-                        <div className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-700">
-                          <GroupBuySection
-                            userId={userData?.userId || userData?.id}
-                            product={product}
-                          />
-                        </div>
                       </div>
+                    </div>
+
+                    {/* Group Buy Section */}
+                    <div className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-700">
+                      <GroupBuySection
+                        userId={userData?.userId || userData?.id}
+                        product={product}
+                      />
                     </div>
                   </motion.div>
                 ))}
-
-                {/* Load More */}
-                {currentRunningGroupsPagination.hasNextPage && (
-                  <div className="mt-4 flex justify-center">
-                    <button
-                      onClick={handleLoadMore}
-                      disabled={loadingMore}
-                      className="text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg transition-colors"
-                    >
-                      {loadingMore ? 'Loading...' : 'Load More'}
-                    </button>
-                  </div>
-                )}
-
-                {/* Count */}
-                {currentRunningGroupsPagination.totalCount > 0 && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-4">
-                    Showing {currentRunningGroups.length} of {currentRunningGroupsPagination.totalCount} deals
-                  </p>
-                )}
               </div>
+            )}
+            {/* Load More */}
+            {currentRunningGroupsPagination.hasNextPage && (
+              <div className="mt-4 flex justify-center">
+                <button
+                  onClick={handleLoadMore}
+                  disabled={loadingMore}
+                  className="text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg transition-colors"
+                >
+                  {loadingMore ? 'Loading...' : 'Load More'}
+                </button>
+              </div>
+            )}
+
+            {/* Count */}
+            {currentRunningGroupsPagination.totalCount > 0 && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-4">
+                Showing {currentRunningGroups.length} of {currentRunningGroupsPagination.totalCount} deals
+              </p>
             )}
           </motion.div>
         </AnimatePresence>

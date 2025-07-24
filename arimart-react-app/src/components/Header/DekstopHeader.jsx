@@ -11,6 +11,7 @@ import { SearchDropdown } from "./SearchDropdown";
 import { useCart } from "../../context/CartContext";
 import CartIcon from "../common/CartIcon";
 import NotificationDropdown from "../ui/NotificationDropdown";
+import DeliveryInfo from "./DeliveryInfo";
 
 
 export default function DesktopHeader() {
@@ -42,28 +43,7 @@ export default function DesktopHeader() {
           </motion.div>
 
           {/* Delivery Info with animated chevron */}
-          <div className="hidden md:flex flex-col relative group">
-            <div className="flex items-center gap-1 cursor-pointer">
-              <span className="text-sm font-semibold text-black dark:text-white">Delivery in 22 minutes</span>
-              <motion.div
-                animate={{ rotate: isHoveringCart ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-              </motion.div>
-            </div>
-            <span className="text-xs text-gray-600 dark:text-gray-300">B5, Ghazipur Village, Ghazi...</span>
-
-            {/* Animated dropdown (hidden by default) */}
-            <motion.div
-              className="absolute top-full mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"
-              initial={{ y: -10, opacity: 0 }}
-              whileHover={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.2 }}
-            >
-              <p className="text-sm text-gray-700 dark:text-gray-300">Your delivery address</p>
-            </motion.div>
-          </div>
+         <DeliveryInfo/>
 
           {/* Search Box with focus animation */}
           {/* <motion.div

@@ -120,6 +120,20 @@ export const fetchGroupStatus = createAsyncThunk("group/fetchStatus", async (gid
   }
 });
 
+
+export const fetchGroupByReferCode = createAsyncThunk(
+  "group/fetchByReferCode",
+  async (referCode, thunkAPI) => {
+    try {
+      const res = await API.get(`/group/by-refercode/${referCode}`);
+      return res.data;
+    } catch (err) {
+      return thunkAPI.rejectWithValue(err.response?.data || "Failed to fetch group by refer code");
+    }
+  }
+);
+
+
 // ---------------------- SLICE ----------------------
 
 const groupSlice = createSlice({
@@ -133,6 +147,7 @@ const groupSlice = createSlice({
     isLoadingMembers: false,
     isLoadingMyGroups: false,
     isLoadingReferCodes: false,
+    lastFetchedReferGid: null,
 
     // Success states
     createSuccess: false,
@@ -182,6 +197,7 @@ const groupSlice = createSlice({
       state.joinSuccess = false;
       state.leaveSuccess = false;
       state.error = null;
+      state.lastFetchedReferGid = null;
     },
 
     // Clear error
@@ -563,6 +579,25 @@ const groupSlice = createSlice({
           state.loadingStatesByGid[gid].isLoadingStatus = false;
         }
         state.error = action.payload;
+      });
+    // Fetch group by refer code
+    builder
+      .addCase(fetchGroupByReferCode.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchGroupByReferCode.fulfilled, (state, action) => {
+        state.isLoading = false;
+
+        const { gid, STATUS } = action.payload || {};
+
+        // Optional: set last fetched refer GID or status
+        if (STATUS === 1 && gid) {
+          state.lastFetchedReferGid = gid;
+        }
+      })
+      .addCase(fetchGroupByReferCode.rejected, (state, action) => {
+        state.isLoading = false;
       });
 
   },

@@ -62,9 +62,9 @@ export const trackOrder = createAsyncThunk('order/trackOrder', async (trackId, t
 
 export const getOrderHistory = createAsyncThunk('order/history', async (userId, thunkAPI) => {
   try {
-    console.log("Fetching order history for userId:", userId);
+    // console.log("Fetching order history for userId:", userId);
     const res = await API.get(`/order/history/${userId}`);
-    console.log("Order history response:", res.data);
+    // console.log("Order history response:", res.data);
     
     // Handle different response structures
     if (res.data && Array.isArray(res.data)) {
@@ -86,7 +86,7 @@ export const getOrderHistory = createAsyncThunk('order/history', async (userId, 
 export const getGroupOrderHistory = createAsyncThunk('order/history/group', async ({ userId, groupId }, thunkAPI) => {
   try {
     const res = await API.get(`/order/history/${userId}/${groupId}`);
-    console.log("Group order history response:", res.data);
+    // console.log("Group order history response:", res.data);
     
     // Handle different response structures
     if (res.data && Array.isArray(res.data)) {

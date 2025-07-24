@@ -1,12 +1,13 @@
-import { Clock, ChevronRight, Package, AlertCircle, Loader2, ShoppingBag, Truck, CheckCircle2, XCircle, Users, Share2, Copy, MessageCircle } from "lucide-react";
+import { Clock, ChevronRight, Package, AlertCircle, Loader2, ShoppingBag, Truck, CheckCircle2, XCircle, Users, Share2, Copy, MessageCircle, Redo2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getOrderHistory, getGroupOrderHistory, clearOrderError } from "../../Store/orderSlice";
 import { fetchGroupStatus } from '../../Store/groupBuySlice'
 import { Navigate, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
-const statusTabs = ["All", "Pending to share", "Placed", "Assigned", "Picked Up", "Shipped", "Delivered"];
+const statusTabs = ["All", "Pending to share", "Placed", "Assigned", "Picked Up", "Shipped", "Delivered", "Canceled"];
 
 export default function OrdersPage() {
   const dispatch = useDispatch();
@@ -90,7 +91,7 @@ export default function OrdersPage() {
     );
 
     if (groupIdsToFetch.length > 0) {
-      console.log("Group IDs to fetch:", groupIdsToFetch);
+      // console.log("Group IDs to fetch:", groupIdsToFetch);
       groupIdsToFetch.forEach(groupid => {
         dispatch(fetchGroupStatus(groupid));
       });
@@ -187,19 +188,22 @@ export default function OrdersPage() {
     }
   };
 
-  const shareGroup = (groupCode, productName) => {
-    const shareText = `Join my group order for ${productName}! Use code: ${groupCode}`;
+  const shareGroup = (groupCode, productName, gid) => {
+    const url = `${window.location.origin}/group/join/${gid}/${groupCode}`;
+    const shareText = `🛒 Join Group Order\nProduct: ${productName}\nCode: ${groupCode}\n${url}`;
 
     if (navigator.share) {
       navigator.share({
-        title: 'Join Group Order',
         text: shareText,
-        url: window.location.origin
+        url
+      }).catch(() => {
+        copyToClipboard(shareText, 'share');
       });
     } else {
       copyToClipboard(shareText, 'share');
     }
   };
+
 
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
@@ -293,7 +297,7 @@ export default function OrdersPage() {
         >
           {item.productImage ? (
             <img
-              src={"http://localhost:5015/Uploads/" + item.productImage}
+              src={"https://apiari.kuldeepchaurasia.in/Uploads/" + item.productImage}
               alt={item.productName}
               className="w-full h-full object-cover"
             />
@@ -352,11 +356,10 @@ export default function OrdersPage() {
             <div>
               <p className="text-[10px] text-gray-500 dark:text-gray-400">Qty</p>
               <p className="font-medium text-xs text-gray-900 dark:text-white">
-                {item.qty || 'N/A'}
+                {item.qty || 'N/A'}{item?.unit}
               </p>
             </div>
           </div>
-
           {/* Group Status and Actions for each item */}
           {isGroupOrder && groupStatus && item.groupid && (
             <div className="mt-2 p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-100 dark:border-orange-900/30">
@@ -374,21 +377,21 @@ export default function OrdersPage() {
                       whileTap={{ scale: 0.95 }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        const groupCode = `GROUP-${item.groupid}`;
+                        const groupCode = `${item?.groupCode}`;
                         copyToClipboard(groupCode, 'code');
                       }}
                       className="text-xs px-2 py-1 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors flex items-center gap-1"
                     >
                       <Copy className="w-3 h-3" />
-                      Copy Code
+                      Copy <span className="hidden sm:inline">Code</span>
                     </motion.button>
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        const groupCode = `GROUP-${item.groupid}`;
-                        shareGroup(groupCode, item.productName || 'Product');
+                        const groupCode = `${item?.groupCode}`;
+                        shareGroup(groupCode, item.productName || 'Product', item.groupid);
                       }}
                       className="text-xs px-2 py-1 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors flex items-center gap-1"
                     >
@@ -575,7 +578,7 @@ export default function OrdersPage() {
                 if (isGroupOrderCheck && groupStatus && groupStatus.status === 'pending') {
                   displayStatus = 'Pending to share';
                 }
-
+                const isCanceled = order.status?.toLowerCase() === 'canceled';
                 return (
                   <motion.div
                     key={order.id || order.trackId || index}
@@ -585,80 +588,103 @@ export default function OrdersPage() {
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ type: "spring", stiffness: 300, delay: index * 0.03 }}
                     whileHover={{ y: -3 }}
-                    className={`group p-4 rounded-lg bg-white dark:bg-gray-900 shadow-xs border cursor-pointer hover:shadow-sm transition-all ${isGroupOrderCheck
+                    className={`relative group p-4 rounded-lg bg-white dark:bg-gray-900 shadow-xs border cursor-pointer transition-all overflow-hidden ${isGroupOrderCheck
                       ? 'border-orange-200 dark:border-orange-800/50 bg-gradient-to-r from-orange-50/30 to-white dark:from-orange-900/10 dark:to-gray-900'
                       : 'border-gray-200 dark:border-gray-800'
-                      }`}
+                      } ${isCanceled ? 'pointer-events-none' : ''}`}
                     onClick={() => {
-                      if (order.trackId) {
-                        navigate("/orders/track/" + order.trackId)
+                      if (!isCanceled && order.trackId) {
+                        navigate("/orders/track/" + order.trackId);
                       }
                     }}
                   >
-                    <div className="flex flex-col gap-3">
-                      {/* Order header with tracking info and group indicator */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <p className="text-xs text-gray-600 dark:text-gray-400">
-                            {order.trackId || order.id?.slice(0, 8) || 'N/A'}
-                          </p>
-                          {order.trackId && (
-                            <span className="text-[10px] px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-full">
-                              Trackable
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400">
-                          <Clock className="w-3 h-3" />
-                          <span>{formatDate(order.orderDate || order.addedDate, true)}</span>
+                    {/* Modern Canceled Overlay */}
+                    {isCanceled && (
+                      <div className="absolute inset-0 z-10 backdrop-blur-[2px] bg-white/40 dark:bg-gray-900/80 flex flex-col items-center justify-center gap-2 p-4">
+                        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-full max-w-[280px] text-center">
+                          <div className="flex flex-col items-center">
+                            <XCircle className="w-8 h-8 text-red-500 mb-2" />
+                            <h3 className="font-medium text-gray-900 dark:text-white">Order Canceled</h3>
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="text-xs px-2 py-1 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors flex items-center gap-1"
+                            >
+                              <Redo2 className="w-3 h-3" />
+                              Order again
+                            </motion.button>
+                          </div>
                         </div>
                       </div>
+                    )}
 
-                      {/* Items list */}
+                    {/* Original Content (slightly desaturated when canceled) */}
+                    <div className={`relative z-0 ${isCanceled ? 'opacity-80' : ''}`}>
                       <div className="flex flex-col gap-3">
-                        {order.items?.length === 1 ? (
-                          // Single item display
-                          <div className="flex items-start gap-3">
-                            <ProductItem
-                              item={order.items[0]}
-                              isGroupOrder={isGroupOrderItem(order.items[0])}
-                            />
+                        {/* Order header with tracking info and group indicator */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-xs text-gray-600 dark:text-gray-400">
+                              {order.trackId || order.id?.slice(0, 8) || 'N/A'}
+                            </p>
+                            {order.trackId && (
+                              <span className="text-[10px] px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-full">
+                                Trackable
+                              </span>
+                            )}
                           </div>
-                        ) : (
-                          // Multiple items display
-                          order.items?.map((item, itemIndex) => (
-                            <div key={item.id} className="flex items-start gap-3 border-b border-gray-100 dark:border-gray-800 pb-3 last:border-0 last:pb-0">
-                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 mr-1">
-                                {itemIndex + 1}.
-                              </div>
+                          <div className="flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400">
+                            <Clock className="w-3 h-3" />
+                            <span>{formatDate(order.orderDate || order.addedDate, true)}</span>
+                          </div>
+                        </div>
+
+                        {/* Items list */}
+                        <div className="flex flex-col gap-3">
+                          {order.items?.length === 1 ? (
+                            // Single item display
+                            <div className="flex items-start gap-3">
                               <ProductItem
-                                item={item}
-                                isGroupOrder={isGroupOrderItem(item)}
+                                item={order.items[0]}
+                                isGroupOrder={isGroupOrderItem(order.items[0])}
                               />
                             </div>
-                          ))
-                        )}
-                      </div>
-
-                      {/* Order footer with summary and status */}
-                      <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800">
-                        <div className="text-sm">
-                          <span className="text-gray-500 dark:text-gray-400 mr-1">Total:</span>
-                          <span className="font-medium text-gray-900 dark:text-white">
-                            ₹{order.totalAmount?.toLocaleString() || 'N/A'}
-                          </span>
-                          <span className="text-gray-500 dark:text-gray-400 text-xs ml-1.5">
-                            ({order.totalItems || order.items?.length || 0} items)
-                          </span>
+                          ) : (
+                            // Multiple items display
+                            order.items?.map((item, itemIndex) => (
+                              <div key={item.id} className="flex items-start gap-3 border-b border-gray-100 dark:border-gray-800 pb-3 last:border-0 last:pb-0">
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 mr-1">
+                                  {itemIndex + 1}.
+                                </div>
+                                <ProductItem
+                                  item={item}
+                                  isGroupOrder={isGroupOrderItem(item)}
+                                />
+                              </div>
+                            ))
+                          )}
                         </div>
 
-                        <motion.div
-                          whileHover={{ scale: 1.02 }}
-                          className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium w-fit ${getStatusColor(displayStatus)}`}
-                        >
-                          {getStatusIcon(displayStatus)}
-                          <span>{displayStatus || 'Unknown'}</span>
-                        </motion.div>
+                        {/* Order footer with summary and status */}
+                        <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800">
+                          <div className="text-sm">
+                            <span className="text-gray-500 dark:text-gray-400 mr-1">Total:</span>
+                            <span className="font-medium text-gray-900 dark:text-white">
+                              ₹{order.totalAmount?.toLocaleString() || 'N/A'}
+                            </span>
+                            <span className="text-gray-500 dark:text-gray-400 text-xs ml-1.5">
+                              ({order.totalItems || order.items?.length || 0} items)
+                            </span>
+                          </div>
+
+                          <motion.div
+                            whileHover={{ scale: 1.02 }}
+                            className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium w-fit ${getStatusColor(displayStatus)}`}
+                          >
+                            {getStatusIcon(displayStatus)}
+                            <span>{displayStatus || 'Unknown'}</span>
+                          </motion.div>
+                        </div>
                       </div>
                     </div>
                   </motion.div>
