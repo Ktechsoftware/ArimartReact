@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Clock, Tag, Calendar, Sparkles, User, ShoppingCart, UserPlus, ChevronDown, ChevronUp, Loader } from "lucide-react";
+import { Users, Clock, Tag, Calendar, Sparkles, User, ShoppingCart, UserPlus, ChevronDown, ChevronUp, Loader, Copy, Share2, MessageCircle } from "lucide-react";
 import {
   fetchGroupById,
   fetchGroupMembers,
@@ -12,12 +12,12 @@ import {
   fetchMyJoinedGroups,
 } from "../../Store/groupBuySlice";
 
-export const GroupBuySection = ({ userId, product }) => {
+export const GroupBuySection = ({ userId, product, type = "" }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  
+
   const gid = product?.gid;
   // console.log(userId, gid)
 
@@ -166,6 +166,52 @@ export const GroupBuySection = ({ userId, product }) => {
     navigate(`/group/join/${gid}${referCode ? `/${referCode}` : ''}`);
   };
 
+  const copyToClipboard = async (text, type = 'code') => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedCode(type);
+      setTimeout(() => setCopiedCode(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  const shareGroup = (groupCode, productName, gid) => {
+    const url = `${window.location.origin}/group/join/${gid}/${groupCode}`;
+    const shareText = `🛒 Join Group Order\nProduct: ${productName}\nCode: ${groupCode}\n${url}`;
+
+    if (navigator.share) {
+      navigator.share({
+        text: shareText,
+        url
+      }).catch(() => {
+        copyToClipboard(shareText, 'share');
+      });
+    } else {
+      copyToClipboard(shareText, 'share');
+    }
+  };
+  // Enhanced version with price information
+  const shareToWhatsApp = (groupCode, productName, gid, regularPrice, groupPrice) => {
+    const discountPercentage = Math.round(((regularPrice - groupPrice) / regularPrice) * 100);
+    const shareUrl = `${window.location.origin}/group/join/${gid}/${groupCode}`;
+
+    const whatsappMessage = `Hii, Join my group on Arimart to get up to ${discountPercentage}% extra discount! My group expires in 24 hrs - HURRY!!*
+
+*Product:* ${productName}
+*Regular Price:* ₹${regularPrice}
+*Group Price:* ₹${groupPrice} (Save ₹${regularPrice - groupPrice}!)
+*Group Code:* ${groupCode}
+
+Click to join:
+${shareUrl}`;
+
+    const encoded = encodeURIComponent(whatsappMessage);
+    const link = `https://wa.me/?text=${encoded}`;
+    window.open(link, '_blank');
+  };
+
+
   // ✅ ENHANCED: Early return if no gid or essential product data
   if (!gid || !product?.gprice || !product?.gqty) return null;
 
@@ -183,8 +229,58 @@ export const GroupBuySection = ({ userId, product }) => {
     <div className="border border-purple-200 dark:border-purple-700 p-3 rounded-lg bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 shadow-sm max-w-4xl mx-auto">
 
       {/* Debug Info - Remove in production */}
-      <div className="mb-2 text-xs text-gray-500 dark:text-gray-400">
+      <div className="flex items-center justify-between mb-2 text-xs text-gray-500 dark:text-gray-400">
         Group Code: {referCodeData?.refercode} | Members: {currentMembers}
+        {type == "joined" ?
+          <div className="flex items-center gap-1">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                const groupCode = `${referCodeData?.refercode}`;
+                copyToClipboard(groupCode, 'code');
+              }}
+              className="text-xs px-2 py-1 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors flex items-center gap-1"
+            >
+              <Copy className="w-3 h-3" />
+              Copy <span className="hidden sm:inline">Code</span>
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                const groupCode = `${referCodeData?.refercode}`;
+                shareGroup(groupCode, product.productname || 'Product', gid);
+              }}
+              className="text-xs px-2 py-1 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors flex items-center gap-1"
+            >
+              <Share2 className="w-3 h-3" />
+              Share
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                const groupCode = `${referCodeData?.refercode}`;
+                shareToWhatsApp(
+                  groupCode,
+                  product.productName || 'Product',
+                  gid,
+                  product.price,
+                  product.gprice
+                );
+              }}
+              className="text-xs px-2 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors flex items-center gap-1"
+            >
+              <MessageCircle className="w-3 h-3" />
+              <span className="hidden sm:inline">WhatsApp</span>
+            </motion.button>
+
+          </div>
+          : ""}
       </div>
 
       {/* Main Content - Always Visible */}
@@ -329,7 +425,7 @@ export const GroupBuySection = ({ userId, product }) => {
             onClick={handleJoinToOrder}
             className="flex items-center gap-2 px-4 py-1.5 rounded-full text-sm bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:opacity-90 transition-all shadow-md"
           >
-            <ShoppingCart className="w-4 h-4" /> Join to order
+            <ShoppingCart className="w-4 h-4" /> {type == "joined" ? "view Detail" : "Join to order"}
           </button>
         </div>
       </div>

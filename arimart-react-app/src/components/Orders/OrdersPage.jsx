@@ -204,6 +204,20 @@ export default function OrdersPage() {
     }
   };
 
+  const shareToWhatsApp = (groupCode, productName, gid) => {
+    // const discountPercentage = Math.round(((regularPrice - groupPrice) / regularPrice) * 100);
+    const shareUrl = `${window.location.origin}/group/join/${gid}/${groupCode}`;
+
+    const whatsappMessage = `Hii, Join my group on Arimart to get extra discount! My group expires in 24 hrs - HURRY!!*
+
+Click to join:
+${shareUrl}`;
+
+    const encoded = encodeURIComponent(whatsappMessage);
+    const link = `https://wa.me/?text=${encoded}`;
+    window.open(link, '_blank');
+  };
+
 
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
@@ -289,122 +303,138 @@ export default function OrdersPage() {
     const groupStatus = isGroupOrder && item.groupid ? statusByGid[item.groupid] : null;
 
     return (
-      <>
-        {/* Product Image */}
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          className="w-16 h-16 rounded-md bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 flex items-center justify-center flex-shrink-0 overflow-hidden relative"
-        >
-          {item.productImage ? (
-            <img
-              src={"https://apiari.kuldeepchaurasia.in/Uploads/" + item.productImage}
-              alt={item.productName}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <Package className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-          )}
-          {isGroupOrder && (
-            <div className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
-              <Users className="w-2.5 h-2.5 text-white" />
-            </div>
-          )}
-        </motion.div>
-
-        {/* Product Details */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between mb-1">
-            <div className="flex-1">
-              <div className="flex gap-4">
-                <h3 className="font-medium text-gray-900 dark:text-white text-sm leading-tight line-clamp-2">
-                  {item.productName || 'Product Name N/A'}
-                </h3>
-
-                {/* Group Order Badge with specific group status */}
-                {isGroupOrder && item.groupid && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-full font-medium"
-                  >
-                    <Users className="w-2.5 h-2.5" />
-                    <span>{getGroupStatusText(item.groupid)}</span>
-                  </motion.div>
-                )}
+      <div className="flex flex-col sm:flex-row gap-3">
+        {/* Top: Image and details in a row */}
+        <div className="flex gap-3">
+          {/* Product Image */}
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            className="w-16 h-16 rounded-md bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 flex items-center justify-center flex-shrink-0 overflow-hidden relative"
+          >
+            {item.productImage ? (
+              <img
+                src={"https://apiari.kuldeepchaurasia.in/Uploads/" + item.productImage}
+                alt={item.productName}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Package className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+            )}
+            {isGroupOrder && (
+              <div className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
+                <Users className="w-2.5 h-2.5 text-white" />
               </div>
-              {/* Category Tags */}
-              <div className="flex flex-wrap gap-1 mt-1 mb-1.5">
-                {[item.categoryName, item.subCategoryName, item.childCategoryName]
-                  .filter(Boolean)
-                  .map((cat, i) => (
-                    <span key={i} className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 text-[10px] rounded-full text-gray-600 dark:text-gray-300">
-                      {cat}
-                    </span>
-                  ))}
-              </div>
-            </div>
-          </div>
+            )}
+          </motion.div>
 
-          {/* Price and Quantity */}
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400">Price</p>
-              <p className="font-medium text-xs text-gray-900 dark:text-white">
-                ₹{item.deliveryprice?.toLocaleString() || 'N/A'}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400">Qty</p>
-              <p className="font-medium text-xs text-gray-900 dark:text-white">
-                {item.qty || 'N/A'}{item?.unit}
-              </p>
-            </div>
-          </div>
-          {/* Group Status and Actions for each item */}
-          {isGroupOrder && groupStatus && item.groupid && (
-            <div className="mt-2 p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-100 dark:border-orange-900/30">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
-                  <span className="text-xs text-orange-700 dark:text-orange-300">
-                    {getGroupStatusText(item.groupid)}
-                  </span>
+          {/* Product Details */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between mb-1">
+              <div className="flex-1">
+                <div className="flex gap-4">
+                  <h3 className="font-medium text-gray-900 dark:text-white text-sm leading-tight line-clamp-2">
+                    {item.productName || 'Product Name N/A'}
+                  </h3>
+                  {/* Group Order Badge */}
+                  {isGroupOrder && item.groupid && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-full font-medium"
+                    >
+                      <Users className="w-2.5 h-2.5" />
+                      <span>{getGroupStatusText(item.groupid)}</span>
+                    </motion.div>
+                  )}
                 </div>
-                {groupStatus.status === 'pending' && (
-                  <div className="flex items-center gap-1">
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const groupCode = `${item?.groupCode}`;
-                        copyToClipboard(groupCode, 'code');
-                      }}
-                      className="text-xs px-2 py-1 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors flex items-center gap-1"
-                    >
-                      <Copy className="w-3 h-3" />
-                      Copy <span className="hidden sm:inline">Code</span>
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const groupCode = `${item?.groupCode}`;
-                        shareGroup(groupCode, item.productName || 'Product', item.groupid);
-                      }}
-                      className="text-xs px-2 py-1 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors flex items-center gap-1"
-                    >
-                      <Share2 className="w-3 h-3" />
-                      Share
-                    </motion.button>
-                  </div>
-                )}
+
+                {/* Categories */}
+                <div className="flex flex-wrap gap-1 mt-1 mb-1.5">
+                  {[item.categoryName, item.subCategoryName, item.childCategoryName]
+                    .filter(Boolean)
+                    .map((cat, i) => (
+                      <span key={i} className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 text-[10px] rounded-full text-gray-600 dark:text-gray-300">
+                        {cat}
+                      </span>
+                    ))}
+                </div>
               </div>
             </div>
-          )}
+
+            {/* Price and Qty */}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400">Price</p>
+                <p className="font-medium text-xs text-gray-900 dark:text-white">
+                  ₹{item.deliveryprice?.toLocaleString() || 'N/A'}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400">Qty</p>
+                <p className="font-medium text-xs text-gray-900 dark:text-white">
+                  {item.qty || 'N/A'}{item?.unit}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-      </>
+
+        {/* Bottom: Group Actions */}
+        {isGroupOrder && groupStatus && item.groupid && (
+          <div className="mt-3 p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-100 dark:border-orange-900/30">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
+                <span className="text-xs text-orange-700 dark:text-orange-300">
+                  {getGroupStatusText(item.groupid)}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    copyToClipboard(item?.groupCode, 'code');
+                  }}
+                  className="text-xs px-2 py-1 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors flex items-center gap-1"
+                >
+                  <Copy className="w-3 h-3" /> Copy Code
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    shareGroup(item.groupCode, item.productName, item.groupid);
+                  }}
+                  className="text-xs px-2 py-1 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors flex items-center gap-1"
+                >
+                  <Share2 className="w-3 h-3" /> Share
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    shareToWhatsApp(
+                      item.groupCode,
+                      item.productName || 'Product',
+                      item.groupid
+                    );
+                  }}
+                  className="text-xs px-2 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors flex items-center gap-1"
+                >
+                  <MessageCircle className="w-3 h-3" />
+                  WhatsApp
+                </motion.button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     );
   };
 

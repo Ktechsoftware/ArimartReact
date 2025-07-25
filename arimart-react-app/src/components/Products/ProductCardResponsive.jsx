@@ -82,7 +82,7 @@ console.log(wishlistItems)
   };
 
   const generateProductLink = () => {
-    const marketParam = product.categoryName || "";
+    const marketParam = product.categoryNAme || "";
     const subcategoryParam = product.subcategoryName || product.name || "";
     return `/category/${encodeURIComponent(marketParam)}/${encodeURIComponent(subcategoryParam)}/product/${productId}`;
   };

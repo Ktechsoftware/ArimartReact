@@ -2,9 +2,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 const TabBar = ({ activeTab, setActiveTab }) => {
   const tabs = [
-    { id: "group-buys", label: "Group Buys" },
-    { id: "hot-deals", label: "Hot Deals" },
-    { id: "today-deals", label: "Today's Deals" }
+    { id: "group_buys", label: "All Group Buys" },
+    { id: "group_joined", label: "My joined Groups" },
   ];
 
   return (

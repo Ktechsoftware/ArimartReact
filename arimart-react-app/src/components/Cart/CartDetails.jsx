@@ -3,7 +3,7 @@
 import { Trash2, Plus, Minus, RefreshCw, Group, ShoppingBasket } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import PromoCodeInput from './PromoCodeInput';
 import EmptyCart from './EmptyCart';
@@ -11,6 +11,16 @@ import { useCart } from '../../context/CartContext';
 import CheckoutConfirmModal from './CheckoutConfirmModal';
 
 export default function CartDetails() {
+  const location = useLocation();
+  
+  // Check URL params for tab, default to "cart"
+  const getInitialTab = () => {
+    const urlParams = new URLSearchParams(location.search);
+    const tab = urlParams.get('tab');
+    return tab === 'group' ? 'group' : 'cart';
+  };
+  
+  const [selectedTab, setSelectedTab] = useState(getInitialTab());
   const {
     regularCartItems,
     groupCartItems,
@@ -30,7 +40,6 @@ export default function CartDetails() {
 
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
   const [localLoading, setLocalLoading] = useState({});
-  const [selectedTab, setSelectedTab] = useState("cart");
   const userId = useSelector((state) => state.auth.userData?.id);
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
   const navigate = useNavigate();

@@ -17,6 +17,7 @@ import popularProductsReducer from './PopularSlice/popularProductsSlice'
 import referalReducer from './referralSlice'
 import shippingReducer from './addressSlice'
 import promocodeReducer from './promocodeSlice'
+import analyticsReducer from './analyticsSlice'
 
 const store = configureStore({
   reducer: {
@@ -38,6 +39,7 @@ const store = configureStore({
     group: groupReducer,
     rating: ratingReducer,
     promocode: promocodeReducer,
+    analytics : analyticsReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

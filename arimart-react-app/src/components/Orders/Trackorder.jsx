@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
-import { Link, useParams } from 'react-router-dom';
-import { trackOrder } from '../../Store/orderSlice';
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { cancelOrder, trackOrder } from '../../Store/orderSlice';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
@@ -18,6 +18,9 @@ const stages = [
 const Trackorder = () => {
     const { trackId } = useParams();
     const dispatch = useDispatch();
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [cancelLoading, setCancelLoading] = useState(false);
+   const navigate = useNavigate();
     // Get tracking data from Redux - now expecting an array
     const { track: trackingData, loading, error } = useSelector(state => state.order);
     const groupState = useSelector((state) => state.group);
@@ -94,6 +97,20 @@ const Trackorder = () => {
             return `${remaining} members pending`;
         }
         return groupStatus.status;
+    };
+
+    const handleCancelOrder = async (orderId) => {
+        setCancelLoading(true);
+        try {
+            const res = await dispatch(cancelOrder(orderId)).unwrap();
+            toast.success("Order canceled successfully");
+            navigate('/orders')
+            setShowCancelModal(false);
+        } catch (err) {
+            toast.error(err.message || "Failed to cancel order");
+        } finally {
+            setCancelLoading(false);
+        }
     };
 
 
@@ -281,29 +298,29 @@ const Trackorder = () => {
                             >
                                 <span className="text-sm text-gray-600 dark:text-gray-400">
                                     <div className='flex items-center gap-2'>
-                                    <span>Subtotal ({products.length} item{products.length > 1 ? 's' : ''})</span>
-                                    {appliedPromo && (
-                                        <motion.div
-                                            className="flex items-center justify-between gap-4 py-2"
-                                            initial={{ opacity: 0, x: -10 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            whileHover={{ scale: 1.01 }}
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-sm text-gray-600 dark:text-gray-400">
-                                                    Applied Code
-                                                </span>
-                                                <motion.span
-                                                    className="text-xs font-medium bg-green-100 text-green-800 px-2 py-1 rounded-full dark:bg-green-900 dark:text-green-200"
-                                                    initial={{ scale: 0.8 }}
-                                                    animate={{ scale: 1 }}
-                                                    transition={{ type: "spring", stiffness: 300 }}
-                                                >
-                                                    {appliedPromo.code}
-                                                </motion.span>
-                                            </div>
-                                        </motion.div>
-                                    )}
+                                        <span>Subtotal ({products.length} item{products.length > 1 ? 's' : ''})</span>
+                                        {appliedPromo && (
+                                            <motion.div
+                                                className="flex items-center justify-between gap-4 py-2"
+                                                initial={{ opacity: 0, x: -10 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                whileHover={{ scale: 1.01 }}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                                                        Applied Code
+                                                    </span>
+                                                    <motion.span
+                                                        className="text-xs font-medium bg-green-100 text-green-800 px-2 py-1 rounded-full dark:bg-green-900 dark:text-green-200"
+                                                        initial={{ scale: 0.8 }}
+                                                        animate={{ scale: 1 }}
+                                                        transition={{ type: "spring", stiffness: 300 }}
+                                                    >
+                                                        {appliedPromo.code}
+                                                    </motion.span>
+                                                </div>
+                                            </motion.div>
+                                        )}
                                     </div>
                                 </span>
                                 <span className="text-sm text-gray-900 dark:text-white">
@@ -493,15 +510,17 @@ const Trackorder = () => {
                                 </ol>
                             </div>
 
-                            <div className="gap-4 sticky bottom-5 md:flex sm:items-center">
+                            <div className="gap-4 sticky bottom-20 md:bottom-5 md:flex sm:items-center">
                                 <motion.button
                                     type="button"
                                     className="w-full rounded-lg border border-gray-200 bg-white px-5 py-4 text-sm font-medium text-gray-900 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
+                                    onClick={() => setShowCancelModal(true)}
                                 >
                                     Cancel the order
                                 </motion.button>
+
                                 {/* <motion.a
                                     href="#"
                                     className="mt-4 flex w-full items-center justify-center rounded-lg bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-800 dark:bg-primary-600 dark:hover:bg-primary-700 sm:mt-0"
@@ -515,6 +534,64 @@ const Trackorder = () => {
                     </div>
                 </div>
             </div>
+            {showCancelModal && (
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center">
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.9, opacity: 0 }}
+                        className="bg-white dark:bg-gray-900 rounded-xl p-6 w-[90%] max-w-md shadow-lg"
+                    >
+                        <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">
+                            Confirm Cancelation
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                            Are you sure you want to cancel this order?
+                        </p>
+
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setShowCancelModal(false)}
+                                disabled={cancelLoading}
+                                className="px-4 py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                            >
+                                No
+                            </button>
+                            <button
+                                onClick={() => handleCancelOrder(products[0]?.id)}
+                                disabled={cancelLoading}
+                                className="px-4 py-2 rounded-lg text-sm bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 flex items-center gap-2"
+                            >
+                                {cancelLoading ? (
+                                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                                        <circle
+                                            className="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            strokeWidth="4"
+                                        ></circle>
+                                        <path
+                                            className="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 
+                  0 0 5.373 0 12h4zm2 
+                  5.291A7.962 7.962 0 
+                  014 12H0c0 
+                  3.042 1.135 5.824 3 
+                  7.938l3-2.647z"
+                                        ></path>
+                                    </svg>
+                                ) : (
+                                    "Yes, Cancel"
+                                )}
+                            </button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+
         </section>
     )
 }

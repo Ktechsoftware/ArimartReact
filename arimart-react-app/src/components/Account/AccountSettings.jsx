@@ -17,7 +17,8 @@ import {
   User,
   SunMoon,
   User2Icon,
-  UserCircle
+  UserCircle,
+  UserCog2Icon
 } from "lucide-react";
 import LogoutModal from "../Auth/LogoutModal";
 import { Link, useNavigate } from "react-router-dom";
@@ -33,9 +34,10 @@ const settings = [
   { label: "My Wallet", icon: <Wallet size={20} />, to: "/home/wallet" },
   { label: "Wishlist", icon: <Heart size={20} />, to: "/wishlist" },
   { label: "Followed Shop", icon: <Store size={20} />, to: "#" },
+  { label: "My Joined Groups", icon: <UserCog2Icon size={20} />, to: "/group-buying?tab=my-joined" },
   { label: "Delivery Address", icon: <MapPin size={20} />, to: "#" },
   { label: "Share & Earn", icon: <Share2 size={20} />, to: "/home/referandearn" },
-  { label: "Promocodes & Gift Cards", icon: <Gift size={20} />, to: "/promocodes" },
+  { label: "My Rewards", icon: <Gift size={20} />, to: "/promocodes" },
   { label: "Rate Us", icon: <Star size={20} />, to: "#" },
   { label: "Logout", icon: <LogOut size={20} />, to: "#", isDestructive: true },
 ];
