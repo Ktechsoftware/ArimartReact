@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Arimart App</string>
+    <string name="title_activity_main">Arimart App</string>
+    <string name="package_name">com.arimart.app</string>
+    <string name="custom_url_scheme">com.arimart.app</string>
+</resources>

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "180223243655",
+    "project_id": "arimartretailapp",
+    "storage_bucket": "arimartretailapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:180223243655:android:4351894c3ada8d0baacf22",
+        "android_client_info": {
+          "package_name": "com.arimart.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC4CuhRNFPl9USmIDN7heRpe1teEIbZuyc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

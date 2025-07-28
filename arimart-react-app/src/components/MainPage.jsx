@@ -4,7 +4,7 @@ import CarouselComponent from './CarouselComponent';
 import { Link } from 'react-router-dom';
 
 export default function MainPage() {
-    const prices = [9, 49, 99, 199];
+    const prices = [9, 49, 99, 999];
 
     return (
         <motion.div 

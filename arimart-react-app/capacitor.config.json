@@ -1,0 +1,10 @@
+{
+  "appId": "com.arimart.app",
+  "appName": "Arimart App",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "https://arimartreact.kuldeepchaurasia.in",
+    "cleartext": true
+  }
+}

@@ -1,10 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import Cookies from 'js-cookie';
-import { getUserInfo, updateUserInfo } from '../api/auth'
+import { getUserInfo, updateUserInfo } from '../api/auth';
+import { FirebaseX } from '@awesome-cordova-plugins/firebase-x';
+import API from '../api';
 
 const COOKIE_NAME = 'userLoginDataArimart';
 
-const getUserFromCookie = () => {
+export const getUserFromCookie = () => {
   try {
     const cookie = Cookies.get(COOKIE_NAME);
     return cookie ? JSON.parse(cookie) : null;
@@ -26,18 +28,36 @@ export const updateUserInfoAsync = createAsyncThunk(
   }
 );
 
+export const sendFcmTokenToBackend = createAsyncThunk(
+  'auth/sendFcmTokenToBackend',
+  async (userId, { rejectWithValue }) => {
+    try {
+      if (window.cordova && userId) {
+        const fcmToken = await FirebaseX.getToken();
+        if (fcmToken) {
+          await API.post('/user/save-token', {
+            userId,
+            fToken: fcmToken,
+            deviceType: 'android',
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Failed to send FCM token:', error);
+      return rejectWithValue(error.message);
+    }
+  }
+);
 
 const initialUser = getUserFromCookie();
 
 const initialState = {
   isAuthenticated: !!initialUser,
   userData: initialUser,
-  // Optionally, add loading/error
   loading: false,
   error: null,
 };
 
-// Async thunk to fetch and refresh user info
 export const refreshUserInfo = createAsyncThunk(
   'auth/refreshUserInfo',
   async (userId, { rejectWithValue }) => {
@@ -71,7 +91,6 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.userData = null;
     },
-    // Optionally, allow updating user in state and cookie
     updateUser: (state, action) => {
       const user = action.payload;
       Cookies.set(COOKIE_NAME, JSON.stringify(user), { expires: 7 });
@@ -87,7 +106,6 @@ const authSlice = createSlice({
       .addCase(refreshUserInfo.fulfilled, (state, action) => {
         state.loading = false;
         state.userData = action.payload;
-        // Also update cookie so next reload is up to date
         Cookies.set(COOKIE_NAME, JSON.stringify(action.payload), { expires: 7 });
       })
       .addCase(refreshUserInfo.rejected, (state, action) => {
@@ -107,7 +125,6 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       });
-
   }
 });
 

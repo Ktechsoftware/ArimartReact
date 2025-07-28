@@ -4,7 +4,8 @@ import { ArrowLeft, MoreHorizontal, ChevronRight } from "lucide-react";
 import onboarding1 from '../../assets/images/onboarding-screen/onboarding-1.png';
 import onboarding2 from '../../assets/images/onboarding-screen/onboarding-2.png';
 import onboarding3 from '../../assets/images/onboarding-screen/onboarding-3.png';
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { Preferences } from '@capacitor/preferences';
 
 const onboardingSlides = [
   {
@@ -37,27 +38,22 @@ const Onboarding = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const nextSlide = () => {
-    setDirection(1);
-    setCurrentSlide((prev) => (prev + 1) % onboardingSlides.length);
-  };
+  const navigate = useNavigate();
 
-  const prevSlide = () => {
-    setDirection(-1);
-    setCurrentSlide((prev) => (prev - 1 + onboardingSlides.length) % onboardingSlides.length);
+  const handleContinue = async () => {
+    if (currentSlide < onboardingSlides.length - 1) {
+      setDirection(1);
+      setCurrentSlide((prev) => prev + 1);
+    } else {
+      await Preferences.set({ key: 'hasOnboarded', value: 'true' });
+      navigate("/auth");
+    }
   };
 
   return (
     <div className="min-h-screen max-w-md mx-auto bg-white dark:bg-gray-950 text-gray-800 dark:text-gray-100 flex flex-col justify-between overflow-hidden">
       {/* Top nav */}
       <div className="flex justify-between items-center p-6">
-        <button 
-          onClick={prevSlide}
-          className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </button>
         <button className="text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
           Skip
         </button>
@@ -84,7 +80,7 @@ const Onboarding = () => {
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, type: "spring" }}
               />
-              <motion.div 
+              <motion.div
                 className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-24 h-24 bg-purple-100 dark:bg-purple-900 rounded-full blur-2xl opacity-30 -z-10"
                 initial={{ scale: 0.8 }}
                 animate={{ scale: 1 }}
@@ -93,7 +89,7 @@ const Onboarding = () => {
             </div>
 
             {/* Text */}
-            <motion.h1 
+            <motion.h1
               className="text-2xl font-bold mb-3"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -101,7 +97,7 @@ const Onboarding = () => {
             >
               {onboardingSlides[currentSlide].title}
             </motion.h1>
-            <motion.p 
+            <motion.p
               className="text-sm text-gray-600 dark:text-gray-400 max-w-xs mb-8"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -121,9 +117,8 @@ const Onboarding = () => {
                 setDirection(index > currentSlide ? 1 : -1);
                 setCurrentSlide(index);
               }}
-              className={`w-2 h-2 rounded-full cursor-pointer ${
-                index === currentSlide ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-700'
-              }`}
+              className={`w-2 h-2 rounded-full cursor-pointer ${index === currentSlide ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-700'
+                }`}
               whileHover={{ scale: 1.2 }}
               transition={{ type: "spring", stiffness: 500 }}
             />
@@ -132,27 +127,29 @@ const Onboarding = () => {
       </div>
 
       {/* Action buttons */}
-      <Link to="/auth" className="px-6 pb-8 flex flex-col gap-4">
+      <div className="px-6 pb-8 flex flex-col gap-4">
         <motion.button
-          onClick={nextSlide}
+          onClick={handleContinue}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           className="w-full max-w-md mx-auto py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2"
-        > Continue with Mobile
+        >
+          {currentSlide < onboardingSlides.length - 1 ? 'Continue' : 'Get Started'}
           <ChevronRight className="w-4 h-4" />
         </motion.button>
-          <motion.p 
-            className="text-xs text-center text-gray-600 dark:text-gray-400"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          >
-            Already a Arimart Member?{" "}
-            <span className="text-purple-600 dark:text-purple-400 font-medium hover:underline cursor-pointer">
-              Log in
-            </span>
-          </motion.p>
-      </Link>
+
+        <motion.p
+          className="text-xs text-center text-gray-600 dark:text-gray-400"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          Already a Arimart Member?{" "}
+          <span className="text-purple-600 dark:text-purple-400 font-medium hover:underline cursor-pointer">
+            Log in
+          </span>
+        </motion.p>
+      </div>
     </div>
   );
 };

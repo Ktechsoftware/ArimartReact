@@ -42,14 +42,12 @@ import Trackorders from '../pages/Orders/Trackorders';
 import PaymentOrder from '../pages/PaymentScreen/PaymentOrder';
 import JointoGroup from '../pages/GroupBuy/JointoGroup';
 import SubcategoryExplore from '../pages/Explore/SubcategoryExplore';
+import TopPriceProducts from '../pages/TopStores/TopPriceProducts';
+import { Preferences } from '@capacitor/preferences';
 
 const publicRoutes = [
   "/", "/home", "/onboard", "/auth", "/about", "/contactus", "/faq", "/privacypolicy",
   "/search", "/categories", "/topstore/:price", "/explore"
-];
-
-const hideBottomNavRoutes = [
-  '/', '/onboard', '/auth'
 ];
 
 export default function AppRoutes() {
@@ -57,34 +55,39 @@ export default function AppRoutes() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { isAuthenticated } = useSelector((state) => state.auth);
-  const device = useDeviceType();
   const [isLoading, setIsLoading] = useState(false);
 
+  const isProductPage = location.pathname.startsWith("/category");
 
-  // ✅ Unified auth & route protection
+  const isPublic = isProductPage || publicRoutes.some(route =>
+    matchPath({ path: route, end: true }, location.pathname)
+  );
+
   useEffect(() => {
     dispatch(checkAuth());
 
-    const isProductPage = location.pathname.startsWith("/category");
+    const handleRouting = async () => {
+      const onboarded = await Preferences.get({ key: 'hasOnboarded' });
 
-    const isPublic = isProductPage || publicRoutes.some(route =>
-      matchPath({ path: route, end: true }, location.pathname)
-    );
+      if (location.pathname === '/' && onboarded.value !== 'true') {
+        navigate("/onboard", { replace: true });
+        return;
+      }
 
+      if (!isPublic && !isAuthenticated) {
+        toast.error("Login Please");
+        navigate("/auth", { replace: true });
+        return;
+      }
 
-    if (!isPublic && !isAuthenticated) {
-      toast.error("Login Please");
-      navigate("/auth", { replace: true });
-    }
+      if (isAuthenticated && ['/', '/auth', '/onboard'].includes(location.pathname)) {
+        navigate("/home", { replace: true });
+      }
+    };
 
-
-    // Redirect authenticated users away from landing/onboarding
-    if (isAuthenticated && ['/', '/auth', '/onboard'].includes(location.pathname)) {
-      navigate('/home', { replace: true });
-    }
+    handleRouting();
   }, [location.pathname, isAuthenticated]);
 
-  // ✅ Loading bar on route change
   useEffect(() => {
     setIsLoading(true);
     const timer = setTimeout(() => setIsLoading(false), 800);
@@ -120,7 +123,7 @@ export default function AppRoutes() {
               <Route path="/contactus" element={<Contactusscreen />} />
               <Route path="/faq" element={<Faqscreen />} />
               <Route path="/privacypolicy" element={<PrivacyPolicyScreen />} />
-              <Route path="/topstore/:price" element={<TopProductStore />} />
+              <Route path="/topstore/:price" element={<TopPriceProducts />} />
               <Route path="/notification" element={<NotificationScreen />} />
               <Route path="/home" element={<Home />} />
               <Route path="/foryou" element={<Foryoupagescreeen />} />
@@ -129,7 +132,7 @@ export default function AppRoutes() {
               <Route path="/account" element={<AccountIndex />} />
               <Route path="/account/editprofile" element={<EditProfilescreen />} />
               <Route path="/explore" element={<ExploreIndex />} />
-             <Route path="/subcategory/:subcategoryId" element={<SubcategoryExplore />} />  
+              <Route path="/subcategory/:subcategoryId" element={<SubcategoryExplore />} />
               <Route path="/cart" element={<Cartpage />} />
               <Route path="/wishlist" element={<WishlistScreen />} />
               <Route path="/promocodes" element={<PromocodeScreen />} />

@@ -210,11 +210,6 @@ export default function AuthFlow() {
                           {mobile.length > 0 ? 'Invalid mobile number' : 'Mobile number required'}
                         </p>
                       )}
-                      {isLocalhost && (
-                        <div className="text-center text-sm text-green-600 dark:text-green-400">
-                          Demo Mobile Number is <strong>8799690044</strong>
-                        </div>
-                      )}
                     </div>
                   )}
 
@@ -248,11 +243,6 @@ export default function AuthFlow() {
                         >
                           Resend OTP
                         </button>
-                      )}
-                      {isLocalhost && (
-                        <div className="text-center text-sm text-green-600 dark:text-green-400">
-                          Mock OTP is <strong>123456</strong>
-                        </div>
                       )}
                     </div>
                   )}
