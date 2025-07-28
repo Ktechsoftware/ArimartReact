@@ -11,8 +11,8 @@ export default function Wallet() {
   const dispatch = useDispatch();
   const { balance, walletAmount, referAmount, loading } = useSelector(state => state.wallet);
   useEffect(() => {
-    if (userData.id) {
-      dispatch(fetchWalletBalance(userData.id));
+    if (userData?.id) {
+      dispatch(fetchWalletBalance(userData?.id));
     }
   }, [userData, dispatch]);
 

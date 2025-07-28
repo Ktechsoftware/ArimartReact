@@ -47,7 +47,7 @@ import { Preferences } from '@capacitor/preferences';
 
 const publicRoutes = [
   "/", "/home", "/onboard", "/auth", "/about", "/contactus", "/faq", "/privacypolicy",
-  "/search", "/categories", "/topstore/:price", "/explore"
+  "/search", "/categories", "/topstore/:price", "/explore","/foryou",""
 ];
 
 export default function AppRoutes() {

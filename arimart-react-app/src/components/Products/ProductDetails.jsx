@@ -421,26 +421,38 @@ export default function ProductDetails({ cartIconRef }) {
 
                 <div className="flex items-center justify-between my-3">
                   <div className="flex items-end flex-wrap gap-2">
-                    <span className="text-3xl font-bold text-green-600">₹{product.price}</span>
+                    {/* Regular price */}
+                    <div className="flex flex-col">
+                      <span className="text-3xl font-bold text-green-600">₹{product.price}</span>
 
-                    {product.originalPrice > 0 && product.originalPrice !== product.price && (
-                      <span className="text-sm text-gray-500 line-through">₹{product.originalPrice}</span>
-                    )}
+                      {/* Original price and discount badge */}
+                      {product.originalPrice > 0 && product.originalPrice !== product.price && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-500 line-through">₹{product.originalPrice}</span>
+                          {calculateDiscountPercentage() > 0 && (
+                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                              {calculateDiscountPercentage()}% OFF
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
 
-                    {calculateDiscountPercentage() > 0 && (
-                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                        {calculateDiscountPercentage()}% OFF
-                      </span>
-                    )}
-
+                    {/* Group price - more prominent */}
                     {product.gprice > 0 && (
-                      <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
-                        Group ₹{product.gprice}
-                      </span>
+                      <div className="flex flex-col ml-2 border-l pl-2 border-gray-200">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xl font-bold text-purple-600">₹{product.gprice}</span>
+                          <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
+                            GROUP PRICE
+                          </span>
+                        </div>
+                        <span className="text-xs text-purple-600 font-medium">
+                          Save {discountPercentage}% when you buy with friends
+                        </span>
+                      </div>
                     )}
                   </div>
-
-                  <p className="text-sm text-purple-600 bg-purple-100 px-2 py-1 rounded-full">{product.delivery}</p>
                 </div>
 
                 {/* Category breadcrumb */}
@@ -464,7 +476,7 @@ export default function ProductDetails({ cartIconRef }) {
 
                 {/* Cashback section */}
                 <div className="text-sm text-orange-600 bg-orange-50 dark:bg-orange-900/10 border border-orange-300 dark:border-orange-500 px-3 py-2 rounded-md mb-3">
-                  Cashback: Get 5% back with Amazon Pay ICICI Bank credit card for Prime members.
+                  Cashback: Get 5% back with Arimart Pay ICICI Bank credit card for Prime members.
                 </div>
 
                 {/* Features */}

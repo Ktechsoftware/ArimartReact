@@ -137,12 +137,33 @@ export default function CategoryLayout() {
           </div>
         ) : (
           // Subcategories View
-          <div className="h-full fixed overflow-y-auto">
-            <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 shadow-sm px-4 py-3">
-              <h1 className="text-lg font-semibold text-gray-800 dark:text-white">
-                {selectedCategory?.categoryName || "Loading..."}
-              </h1>
-            </div>
+          <div className="h-full px-3 fixed overflow-y-auto">
+            <motion.div
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        className="mb-6"
+      >
+        <div className="w-full bg-gradient-to-r from-green-400 to-blue-500 dark:from-green-600 dark:to-blue-700 text-white p-6 rounded-2xl shadow-lg relative overflow-hidden">
+          <div className="absolute -right-10 -top-10 w-32 h-32 bg-white bg-opacity-10 rounded-full"></div>
+          <div className="absolute -right-5 -top-5 w-20 h-20 bg-white bg-opacity-15 rounded-full"></div>
+          <motion.h2
+            initial={{ x: -10 }}
+            animate={{ x: 0 }}
+            className="text-xl font-bold relative z-10"
+          >
+             {selectedCategory?.categoryName || "Loading..."}
+          </motion.h2>
+          <motion.p
+            initial={{ x: -10 }}
+            animate={{ x: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-sm mt-1 relative z-10"
+          >
+            Here are some picks just for you 🎉
+          </motion.p>
+        </div>
+      </motion.div>
 
             {loadingSubcategories ? (
               <div className="flex justify-center items-center h-64">
