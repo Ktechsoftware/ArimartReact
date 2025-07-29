@@ -44,10 +44,11 @@ import JointoGroup from '../pages/GroupBuy/JointoGroup';
 import SubcategoryExplore from '../pages/Explore/SubcategoryExplore';
 import TopPriceProducts from '../pages/TopStores/TopPriceProducts';
 import { Preferences } from '@capacitor/preferences';
+import ArimartPayscreen from '../pages/PaymentScreen/ArimartPayscreen';
 
 const publicRoutes = [
   "/", "/home", "/onboard", "/auth", "/about", "/contactus", "/faq", "/privacypolicy",
-  "/search", "/categories", "/topstore/:price", "/explore","/foryou",""
+  "/search", "/categories", "/topstore/:price", "/explore","/foryou","group-buying","group/join/:groupid/:grouprefercode"
 ];
 
 export default function AppRoutes() {
@@ -132,6 +133,7 @@ export default function AppRoutes() {
               <Route path="/account" element={<AccountIndex />} />
               <Route path="/account/editprofile" element={<EditProfilescreen />} />
               <Route path="/explore" element={<ExploreIndex />} />
+              <Route path="/arimartpay" element={<ArimartPayscreen />} />
               <Route path="/subcategory/:subcategoryId" element={<SubcategoryExplore />} />
               <Route path="/cart" element={<Cartpage />} />
               <Route path="/wishlist" element={<WishlistScreen />} />

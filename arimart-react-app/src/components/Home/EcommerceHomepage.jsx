@@ -4,23 +4,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { fetchCategories } from '../../Store/categoriesSlice';
 
-import {
-  ShoppingCart,
-  Smartphone,
-  Tv,
-  Lamp,
-  Shirt,
-  Sparkles,
-  Laptop2Icon,
-  HeartPulse,
-  Dog,
-  Baby,
-  Book,
-  Dumbbell,
-  Sofa,
-  Puzzle,
-  Tag, Clock,ChevronLeft, ChevronRight
-} from 'lucide-react';
+import { Tag, Clock,ChevronLeft, ChevronRight} from 'lucide-react';
+import * as categoryIcons from "lucide-react";
 import { useEffect, useState } from 'react';
 const EcommerceHomepage = () => {
   const dispatch = useDispatch();
@@ -29,23 +14,6 @@ const EcommerceHomepage = () => {
   useEffect(() => {
     dispatch(fetchCategories());
   }, [dispatch]);
-
-  const categoryIcons = {
-    "Grocery": ShoppingCart,
-    "Mobiles & Tablets": Smartphone,
-    "Electronics": Tv,
-    "Home & Kitchen": Lamp,
-    "Fashion": Shirt,
-    "Beauty & Personal Care": Sparkles,
-    "Appliances": Laptop2Icon,
-    "Pharmacy & Health": HeartPulse,
-    "Pet Supplies": Dog,
-    "Baby Care": Baby,
-    "Books & Stationery": Book,
-    "Sports & Fitness": Dumbbell,
-    "Furniture": Sofa,
-    "Toys & Games": Puzzle
-  };
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const itemsPerSlide = 12; // 6 per row × 2 rows
@@ -66,7 +34,7 @@ const EcommerceHomepage = () => {
   );
 
   const CategoryCard = ({ category }) => {
-  const IconComponent = categoryIcons[category.categoryName] || Tag;
+  const IconComponent = categoryIcons[category.iconLabel] || Tag;
 
   return (
     <Link to={`/category/${category.categoryName}/${category.id}`}

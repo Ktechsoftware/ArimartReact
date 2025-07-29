@@ -35,7 +35,6 @@ const sidebarItems = [
             { label: "Arimart Wallet", link: "/home/wallet" },
             { label: "Arimart Pay", link: "/arimartpay" },
             { label: "Arimart Business", link: "/business" },
-            { label: "Shopper Toolkit", link: "/toolkit" },
         ],
     },
     {
