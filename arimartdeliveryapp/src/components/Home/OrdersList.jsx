@@ -1,6 +1,8 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, ChevronUp, Utensils, Store, Info, Clock, MapPin, Package, CreditCard, Calendar } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 
 const statusStyles = {
   'Pickup Pending': 'bg-amber-100 text-amber-800',
@@ -14,6 +16,10 @@ const statusStyles = {
 };
 
 export const OrdersList = ({ orders, expandedOrder, toggleExpand }) => {
+  const navigate = useNavigate();
+  const handlepickup = () => {
+    navigate('/order/pickup')
+  }
   return (
     <div className="px-4 space-y-3">
       <AnimatePresence>
@@ -159,6 +165,13 @@ export const OrdersList = ({ orders, expandedOrder, toggleExpand }) => {
                       </motion.button>
                     </div>
                   </div>
+                  <motion.button 
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handlepickup}
+                        className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium shadow-xs"
+                      >
+                        Pick up order
+                      </motion.button>
                 </motion.div>
               )}
             </AnimatePresence>

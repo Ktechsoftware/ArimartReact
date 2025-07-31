@@ -1,1 +1,6 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+/* In App.css or index.css */
+#reader {
+  width: 100%;
+}

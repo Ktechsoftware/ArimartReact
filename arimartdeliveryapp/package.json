@@ -10,11 +10,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@mapbox/mapbox-sdk": "^0.16.1",
     "@tailwindcss/vite": "^4.1.11",
     "framer-motion": "^12.23.12",
+    "html5-qrcode": "^2.3.8",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.534.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-leaflet": "^5.0.0",
+    "react-map-gl": "^8.0.4",
     "react-router-dom": "^7.7.1"
   },
   "devDependencies": {

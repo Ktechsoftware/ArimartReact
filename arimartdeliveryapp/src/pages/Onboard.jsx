@@ -3,7 +3,7 @@ import OnboardForm from "../components/onboard/OnboardForm";
 
 export default function Onboard() {
   return (
-    <div className="flex justify-center items-center h-full">
+    <div className="container h-full">
       <OnboardForm />
     </div>
   );

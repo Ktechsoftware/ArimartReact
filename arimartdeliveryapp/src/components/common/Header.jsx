@@ -55,16 +55,15 @@ export const Header = ({ title }) => {
           whileTap={{ scale: 0.95 }}
           className="p-2 rounded-full text-gray-600 hover:bg-gray-100 relative"
         >
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+          <Search className="w-5 h-5" />
         </motion.button>
-
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="p-1 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white"
+          className="p-2 rounded-full text-gray-600 hover:bg-gray-100 relative"
         >
-          <User className="w-5 h-5" />
+          <Bell className="w-5 h-5" />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
         </motion.button>
       </div>
     </motion.header>

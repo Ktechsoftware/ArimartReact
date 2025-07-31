@@ -1,26 +1,51 @@
 import { Routes, Route } from 'react-router-dom';
-import Onboard from '../pages/Onboard'
-import Otp from '../pages/Otp'
+
+// Existing pages
+import Onboard from '../pages/Onboard';
+import Otp from '../pages/Otp';
 import { PersonalInfomation } from '../pages/PersonalInfomation';
 import Infodoc from '../pages/Infodoc';
 import { DocumentSelector } from '../components/informationforms/DocumentSelector';
 import { UploadDocument } from '../components/informationforms/UploadDocument';
 import RegistrationStatus from '../components/informationforms/RegistrationStatus';
-import Orderpage from '../pages/Home/Orderpage';
-import Account from '../pages/Home/Account';
+import ArimartDeliveryLanding from '../components/landing/ArimartDeliveryLanding';
+import { AccountPage } from '../components/Home/AccountPage';
+import { ReferAndEarn } from '../components/Home/ReferAndEarn';
+import { LeaveApplicationPage } from '../components/Applicationpage/LeaveApplicationPage';
+import { WalletPage } from '../components/wallet/WalletPage';
+import NotificationsPage from '../components/notifications/NotificationsPage';
+import { PickupPage } from '../components/delivery/PickupPage';
+import DeliveryNavigation from '../components/delivery/DeliveryNavigation';
+import { DeliveryScanPage } from '../components/delivery/DeliveryScanPage';
+import { ArimartHome } from '../components/Home/Home';
+import { OrdersPage } from '../components/Home/OrdersPage';
 
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={< Onboard />} />
+      {/* Landing & Onboarding */}
+      <Route path="/" element={<ArimartDeliveryLanding />} />
+      <Route path="/delivery" element={<Onboard />} />
       <Route path="/otp" element={<Otp />} />
       <Route path="/info" element={<PersonalInfomation />} />
       <Route path="/info/docs" element={<Infodoc />} />
       <Route path="/info/docs/upload" element={<DocumentSelector />} />
       <Route path="/info/docs/upload/:type" element={<UploadDocument />} />
       <Route path="/info/docs/register" element={<RegistrationStatus />} />
-      <Route path="/orders" element={<Orderpage />} />
-      <Route path="/account" element={<Account />} />
+
+      {/* Orders & Account */}
+      <Route path="/orders" element={<OrdersPage />} />
+      <Route path="/home" element={<ArimartHome />} />
+      <Route path="/account" element={<AccountPage />} />
+      <Route path="/refer&earn" element={<ReferAndEarn />} />
+      <Route path="/leaveapplication" element={<LeaveApplicationPage />} />
+      <Route path="/wallet" element={<WalletPage />} />
+      <Route path="/notification" element={<NotificationsPage />} />
+
+      {/* 🚚 Delivery Workflow */}
+      <Route path="/order/pickup" element={<PickupPage />} />
+      <Route path="/order/navigate" element={<DeliveryNavigation />} />
+      <Route path="/order/scan" element={<DeliveryScanPage />} />
     </Routes>
   );
 }
