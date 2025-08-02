@@ -19,6 +19,11 @@ import DeliveryNavigation from '../components/delivery/DeliveryNavigation';
 import { DeliveryScanPage } from '../components/delivery/DeliveryScanPage';
 import { ArimartHome } from '../components/Home/Home';
 import { OrdersPage } from '../components/Home/OrdersPage';
+import EditProfile from '../components/Account/EditProfile';
+import Support from '../components/Account/Support';
+import TermsAndConditions from '../components/Account/TermsAndConditions';
+import AllottedArea from '../components/Account/AllottedArea';
+import FAQ from '../components/Account/FAQ';
 
 export default function AppRoutes() {
   return (
@@ -41,6 +46,11 @@ export default function AppRoutes() {
       <Route path="/leaveapplication" element={<LeaveApplicationPage />} />
       <Route path="/wallet" element={<WalletPage />} />
       <Route path="/notification" element={<NotificationsPage />} />
+      <Route path="/editprofile" element={<EditProfile />} />
+      <Route path="/support" element={<Support />} />
+      <Route path="/termandcondition" element={<TermsAndConditions />} />
+      <Route path="/allotedarea" element={<AllottedArea />} />
+      <Route path="/faq" element={<FAQ />} />
 
       {/* 🚚 Delivery Workflow */}
       <Route path="/order/pickup" element={<PickupPage />} />

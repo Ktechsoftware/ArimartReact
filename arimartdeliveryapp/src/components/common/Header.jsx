@@ -1,7 +1,10 @@
 import { motion } from "framer-motion";
-import { ChevronRight, Menu, Search, Bell, User } from "lucide-react";
+import { ChevronRight, Menu, Search, Bell, User, ArrowLeft, ArrowLeftCircle, BikeIcon } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 
-export const Header = ({ title }) => {
+export const Header = ({ title, showBack}) => {
+  const navigate = useNavigate();
+
   return (
     <motion.header
       initial={{ opacity: 0, y: -20 }}
@@ -13,18 +16,23 @@ export const Header = ({ title }) => {
         <motion.button
           whileTap={{ scale: 0.9 }}
           className="p-2 rounded-full text-gray-600 hover:bg-gray-100"
+          onClick={() => (showBack ? navigate(-1) : null)}
         >
-          <Menu className="w-5 h-5" />
+          {showBack ? (
+            <ArrowLeftCircle className="w-6 h-6" />
+          ) : (
+            <BikeIcon className="w-5 h-5" />
+          )}
         </motion.button>
-        
-        <motion.div 
+
+        <motion.div
           initial={{ x: -10 }}
           animate={{ x: 0 }}
           className="flex items-center gap-1"
         >
           <ChevronRight className="w-4 h-4 text-gray-400" />
           <h1 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <motion.span 
+            <motion.span
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.1 }}
@@ -36,6 +44,7 @@ export const Header = ({ title }) => {
       </div>
 
       <div className="flex-1 flex justify-end items-center gap-2">
+        {/* Search field (optional on large screen) */}
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -57,6 +66,7 @@ export const Header = ({ title }) => {
         >
           <Search className="w-5 h-5" />
         </motion.button>
+        <Link to='/notification'>
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -65,6 +75,7 @@ export const Header = ({ title }) => {
           <Bell className="w-5 h-5" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
         </motion.button>
+        </Link>
       </div>
     </motion.header>
   );

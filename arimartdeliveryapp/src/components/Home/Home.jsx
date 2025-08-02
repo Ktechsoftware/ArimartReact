@@ -18,7 +18,8 @@ import {
   Menu,
   Home,
   BarChart3,
-  Settings
+  Settings,
+  IndianRupee
 } from 'lucide-react';
 
 export const ArimartHome = () => {
@@ -155,7 +156,7 @@ export const ArimartHome = () => {
                   animate={{ scale: 1, color: "#ffffff" }}
                   transition={{ duration: 0.3 }}
                 >
-                  ${earnings}
+                  ₹{earnings}
                 </motion.p>
               </div>
               <motion.div 
@@ -217,7 +218,7 @@ export const ArimartHome = () => {
             >
               <Gift className="w-8 h-8 mb-3" />
               <p className="font-semibold">Refer Friends</p>
-              <p className="text-purple-100 text-sm">Earn $39 bonus</p>
+              <p className="text-purple-100 text-sm">Earn ₹39 bonus</p>
             </motion.button>
           </div>
         </motion.div>
@@ -236,7 +237,7 @@ export const ArimartHome = () => {
                   animate={{ rotateY: [0, 360] }}
                   transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
                 >
-                  <DollarSign className="w-8 h-8 text-white" />
+                  <IndianRupee className="w-8 h-8 text-white" />
                 </motion.div>
                 <motion.p 
                   className="text-2xl font-bold text-gray-800"
@@ -362,7 +363,7 @@ export const ArimartHome = () => {
                 animate={{ scale: 1, color: "#059669" }}
                 transition={{ duration: 0.3 }}
               >
-                +$79.90
+                +₹79.90
               </motion.p>
             </motion.div>
             
@@ -379,7 +380,7 @@ export const ArimartHome = () => {
                   <p className="text-gray-600 text-sm">Yesterday</p>
                 </div>
               </div>
-              <p className="text-blue-600 font-bold">+$25.00</p>
+              <p className="text-blue-600 font-bold">+₹25.00</p>
             </motion.div>
           </div>
         </motion.div>

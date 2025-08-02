@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, ChevronUp, Utensils, Store, Info, Clock, MapPin, Package, CreditCard, Calendar } from "lucide-react";
+import {  Package} from "lucide-react";
 import { useState } from "react";
 import { OrdersList } from "./OrdersList";
 
@@ -29,7 +29,7 @@ export const OrdersPage = () => {
               }`}
               whileTap={{ scale: 0.95 }}
             >
-              <Utensils className="w-4 h-4 mr-2" />
+              <Package className="w-4 h-4 mr-2" />
               Meal
             </motion.button>
 
@@ -40,7 +40,7 @@ export const OrdersPage = () => {
               }`}
               whileTap={{ scale: 0.95 }}
             >
-              <Store className="w-4 h-4 mr-2" />
+              <Package className="w-4 h-4 mr-2" />
               Store
             </motion.button>
 
@@ -80,8 +80,8 @@ export const OrdersPage = () => {
             animate={{ opacity: 1 }}
             className="px-6 text-center text-gray-400 text-sm mb-2 mt-2 flex items-center justify-center"
           >
-            <Info className="w-4 h-4 mr-1.5 text-gray-300" /> 
-            Tap to view order details
+            <Package className="w-4 h-4 mr-1.5 text-gray-300" /> 
+            Tap to view pickup details
           </motion.p>
           <OrdersList
             orders={orders}
@@ -125,3 +125,5 @@ const sampleOrders = [
     },
   },
 ];
+
+export default OrdersPage;

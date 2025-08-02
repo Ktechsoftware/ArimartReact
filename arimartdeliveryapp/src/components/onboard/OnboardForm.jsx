@@ -26,7 +26,6 @@ export default function OnboardForm() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ type: 'spring', stiffness: 100 }}
                     >
-                        <div className="absolute bottom-0 left-0 right-0 h-8 bg-white rounded-t-3xl"></div>
                         
                         {/* Image centered in the colored area */}
                         <motion.div 
