@@ -477,8 +477,8 @@ const JoinGroupOrder = () => {
                 <title>Group Buy – {group.productName}</title>
                 <meta property="og:title" content={`Group Buy – ${group.productName}`} />
                 <meta property="og:description" content={`Get ₹${regularPrice} product for ₹${groupPrice}. Save ₹${regularPrice - groupPrice}!`} />
-                <meta property="og:image" content="https://apiari.kuldeepchaurasia.in/uploads/SAVE_20240708_173706_20240714200812.jpg" />
-                <meta property="og:url" content={`http://arimartreact.kuldeepchaurasia.in/group/join/${gid}/${groupCode}`} />
+                <meta property="og:image" content="https://www.alpropharmacy.com/wp-content/uploads/2021/10/Group-buy-mid-banner-01-1-1024x536.jpg" />
+                <meta property="og:url" content={`http://arimartreact.kuldeepchaurasia.in/group/join/${groupid}/${grouprefercode}`} />
                 <meta property="og:type" content="website" />
             </Helmet>
             <div className="max-w-6xl mx-auto px-4 py-8">

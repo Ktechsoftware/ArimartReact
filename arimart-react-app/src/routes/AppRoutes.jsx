@@ -45,10 +45,12 @@ import SubcategoryExplore from '../pages/Explore/SubcategoryExplore';
 import TopPriceProducts from '../pages/TopStores/TopPriceProducts';
 import { Preferences } from '@capacitor/preferences';
 import ArimartPayscreen from '../pages/PaymentScreen/ArimartPayscreen';
+import { Capacitor } from '@capacitor/core';
+
 
 const publicRoutes = [
   "/", "/home", "/onboard", "/auth", "/about", "/contactus", "/faq", "/privacypolicy",
-  "/search", "/categories", "/topstore/:price", "/explore","/foryou","group-buying","group/join/:groupid/:grouprefercode"
+  "/search", "/categories", "/topstore/:price", "/explore", "/foryou", "group-buying", "group/join/:groupid/:grouprefercode"
 ];
 
 export default function AppRoutes() {
@@ -57,6 +59,8 @@ export default function AppRoutes() {
   const dispatch = useDispatch();
   const { isAuthenticated } = useSelector((state) => state.auth);
   const [isLoading, setIsLoading] = useState(false);
+
+  const isNativeApp = Capacitor.isNativePlatform();
 
   const isProductPage = location.pathname.startsWith("/category");
 
@@ -70,7 +74,13 @@ export default function AppRoutes() {
     const handleRouting = async () => {
       const onboarded = await Preferences.get({ key: 'hasOnboarded' });
 
-      if (location.pathname === '/' && onboarded.value !== 'true') {
+      if (location.pathname === '/onboard' && !Capacitor.isNativePlatform()) {
+        // Block /onboard on web
+        navigate("/", { replace: true });
+        return;
+      }
+
+      if (location.pathname === '/' && onboarded.value !== 'true' && Capacitor.isNativePlatform()) {
         navigate("/onboard", { replace: true });
         return;
       }
@@ -88,6 +98,7 @@ export default function AppRoutes() {
 
     handleRouting();
   }, [location.pathname, isAuthenticated]);
+
 
   useEffect(() => {
     setIsLoading(true);
@@ -118,7 +129,7 @@ export default function AppRoutes() {
             <ScrollToTop />
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/onboard" element={<Onboarding />} />
+              {Capacitor.isNativePlatform() && <Route path="/onboard" element={<Onboarding />} />}
               <Route path="/auth" element={<AuthFlow />} />
               <Route path="/about" element={<AboutScreen />} />
               <Route path="/contactus" element={<Contactusscreen />} />

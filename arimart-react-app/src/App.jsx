@@ -6,7 +6,7 @@ import { Provider, useDispatch, useSelector } from 'react-redux';
 import store from './Store';
 import { useEffect } from 'react';
 import { CartProvider } from './context/CartContext';
-import { checkAuth } from './Store/authSlice';
+import { checkAuth, sendFcmTokenToBackend } from './Store/authSlice';
 import { startSignalRConnection } from './services/signalr';
 import { fetchNotifications, fetchUnreadCount } from './Store/notificationSlice';
 import { PushNotifications } from '@capacitor/push-notifications';
@@ -37,16 +37,33 @@ function AppContent() {
   }, [userId]);
 
   useEffect(() => {
-    PushNotifications.requestPermissions().then(result => {
-      if (result.receive === 'granted') {
-        PushNotifications.register();
-      }
-    });
+  // Request permissions
+  PushNotifications.requestPermissions().then(result => {
+    if (result.receive === 'granted') {
+      PushNotifications.register();
+    }
+  });
 
-    PushNotifications.addListener('registration', token => {
-      console.log('🔑 Capacitor Token:', token.value);
-    });
-  }, []);
+  // Get device token
+  PushNotifications.addListener('registration', token => {
+    console.log('🔑 Capacitor Token:', token.value);
+  });
+
+  // Foreground Notification Handler
+  PushNotifications.addListener('pushNotificationReceived', notification => {
+    console.log('📲 Notification received in foreground:', notification);
+    alert(`🔔 ${notification.title}\n${notification.body}`);
+  });
+
+  // Background / Clicked Notification Handler
+  PushNotifications.addListener('pushNotificationActionPerformed', notification => {
+    console.log('✅ Notification tapped from background:', notification);
+    alert(`🕘 Opened from Notification:\n${notification.notification.title}\n${notification.notification.body}`);
+    
+    // Optional: Navigate to Orders or Notification Page
+    // navigate('/my-orders');
+  });
+}, []);
   return (
     <>
       <DealAlertModal />

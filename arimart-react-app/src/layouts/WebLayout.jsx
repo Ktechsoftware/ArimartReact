@@ -6,7 +6,7 @@ export default function WebLayout({ children }) {
   const location = useLocation();
 
   // Add all routes you want to hide header/footer for
-  const hideHeaderFooterRoutes = ["/auth", "/onboard", "/login", "/about","/contactus"];
+  const hideHeaderFooterRoutes = ["/auth", "/login", "/about","/contactus"];
 
   // If path matches any in the list
   const shouldHideHeaderFooter = hideHeaderFooterRoutes.some(route =>

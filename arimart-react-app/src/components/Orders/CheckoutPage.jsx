@@ -160,6 +160,7 @@ export default function CheckoutPage() {
       const res = await dispatch(checkoutCart(payload)).unwrap();
       clearTimeout(processingTimer);
       const trackId = res.orderid;
+      console.log(res.message);
 
       if (!trackId) {
         throw new Error("Invalid response: Track ID missing");
