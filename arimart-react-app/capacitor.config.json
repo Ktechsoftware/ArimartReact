@@ -4,7 +4,7 @@
   "webDir": "dist",
   "bundledWebRuntime": false,
   "server": {
-    "url": "https://arimartreact.kuldeepchaurasia.in",
-    "cleartext": true
+    "cleartext": true,
+    "androidScheme": "https"
   }
 }

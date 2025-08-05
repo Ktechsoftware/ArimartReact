@@ -17,10 +17,16 @@ export default function AuthFlow() {
   const [isValid, setIsValid] = useState(false);
   const [isTouched, setIsTouched] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   const navigate = useNavigate();
   const isMobile = window.innerWidth < 768;
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const referCode = params.get('refercode');
+    if (referCode) {
+      setForm(prev => ({ ...prev, referral: referCode }));
+    }
+  }, []);
   const validateIndianMobile = (number) => {
     const indianMobileRegex = /^[6-9]\d{9}$/;
     return indianMobileRegex.test(number);
@@ -256,13 +262,12 @@ export default function AuthFlow() {
                         </label>
                         <input
                           type="text"
-                          className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors dark:bg-gray-800 dark:text-white ${
-                            form.fullName.length > 0
+                          className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors dark:bg-gray-800 dark:text-white ${form.fullName.length > 0
                               ? form.fullName.length >= 3
                                 ? 'border-green-500 focus:ring-green-200 dark:focus:ring-green-800'
                                 : 'border-red-500 focus:ring-red-200 dark:focus:ring-red-800'
                               : 'border-gray-200 dark:border-gray-700 focus:border-green-500'
-                          }`}
+                            }`}
                           placeholder="John Doe"
                           value={form.fullName}
                           onChange={(e) => setForm({ ...form, fullName: e.target.value })}
@@ -284,13 +289,12 @@ export default function AuthFlow() {
                         </label>
                         <input
                           type="email"
-                          className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors dark:bg-gray-800 dark:text-white ${
-                            form.email.length > 0
+                          className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors dark:bg-gray-800 dark:text-white ${form.email.length > 0
                               ? /^\S+@\S+\.\S+$/.test(form.email)
                                 ? 'border-green-500 focus:ring-green-200 dark:focus:ring-green-800'
                                 : 'border-red-500 focus:ring-red-200 dark:focus:ring-red-800'
                               : 'border-gray-200 dark:border-gray-700 focus:border-green-500'
-                          }`}
+                            }`}
                           placeholder="example@mail.com"
                           value={form.email}
                           onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -347,11 +351,10 @@ export default function AuthFlow() {
                   }
                 }}
                 disabled={!isValid}
-                className={`w-full py-3 rounded-2xl font-semibold text-white transition-all ${
-                  isValid
+                className={`w-full py-3 rounded-2xl font-semibold text-white transition-all ${isValid
                     ? 'bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 active:scale-95'
                     : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
-                }`}
+                  }`}
               >
                 Continue
               </button>
@@ -392,11 +395,10 @@ export default function AuthFlow() {
                   }
                 }}
                 disabled={otp.join('').length < 6}
-                className={`w-full py-3 rounded-2xl font-semibold text-white transition-all ${
-                  otp.join('').length === 6
+                className={`w-full py-3 rounded-2xl font-semibold text-white transition-all ${otp.join('').length === 6
                     ? 'bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 active:scale-95'
                     : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
-                }`}
+                  }`}
               >
                 Verify
               </button>
@@ -405,11 +407,10 @@ export default function AuthFlow() {
               <button
                 onClick={handleContinue}
                 disabled={form.fullName.length < 3 || !/^\S+@\S+\.\S+$/.test(form.email)}
-                className={`w-full py-3 rounded-2xl font-semibold text-white transition-all ${
-                  form.fullName.length >= 3 && /^\S+@\S+\.\S+$/.test(form.email)
+                className={`w-full py-3 rounded-2xl font-semibold text-white transition-all ${form.fullName.length >= 3 && /^\S+@\S+\.\S+$/.test(form.email)
                     ? 'bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 active:scale-95'
                     : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
-                }`}
+                  }`}
               >
                 Complete Registration
               </button>

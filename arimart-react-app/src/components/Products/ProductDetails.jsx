@@ -38,6 +38,8 @@ export default function ProductDetails({ cartIconRef }) {
   const [userRating, setUserRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
   const [isCelebrating, setIsCelebrating] = useState(false);
+  const [saveloading, setsaveLoading] = useState(false);
+
 
   const productDetailState = useSelector((state) => state.productDetail) || {};
   const { product = null, loading = false, error = null } = productDetailState;
@@ -46,7 +48,7 @@ export default function ProductDetails({ cartIconRef }) {
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
   const cartItem = product ? getCartItemInfo(product.id) : null;
   const itemInCart = !!cartItem;
-  const itemQuantity = cartItem ? cartItem.quantity : 0;
+  const itemQuantity = cartItem ? cartItem.quantity : 1;
   // console.log(cartItem, product, itemInCart)
   // Demo images for left side
   const demoImages = [
@@ -116,9 +118,11 @@ export default function ProductDetails({ cartIconRef }) {
   }, [shouldShowGroupBuySection, validGroupBuys]);
 
   if (loading) {
-    return <div className="flex justify-center items-center h-screen">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-    </div>
+    return (
+      <div className="fixed inset-0 z-[9999] h-screen flex justify-center items-center bg-white/70 dark:bg-black/70">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+      </div>
+    );
   }
 
   if (error) {
@@ -154,9 +158,10 @@ export default function ProductDetails({ cartIconRef }) {
   // Fixed quantity handler functions for ProductDetails component
 
   const handleIncrease = async () => {
+    console.log("clicked", product.id)
     const cartItemInfo = getCartItemInfo(product.id);
+    console.log(cartItemInfo)
     if (!cartItemInfo) return toast.error("Cart item not found");
-
     try {
       // Pass the cart item ID (not the whole object) and new quantity
       await updateQuantity(cartItemInfo.cartItemId, cartItemInfo.quantity + 1);
@@ -205,15 +210,16 @@ export default function ProductDetails({ cartIconRef }) {
     }
 
     const payload = {
-      pid: product.id,          // product id
-      pdid: product.pdid || product.id, // product detail id fallback
-      userid: userId,           // user id
-      qty: 1,                   // default group qty
-      acctt: true,              // assuming true for active
-      sipid: product.sipid || 0 // optional; adjust if needed
+      pid: product.id,
+      pdid: product.pdid || product.id,
+      userid: userId,
+      qty: 1,
+      acctt: true,
+      sipid: product.sipid || 0
     };
 
     try {
+      setsaveLoading(true);
       const resultAction = await dispatch(createGroup(payload)).unwrap();
       toast.success("Group created successfully!");
       console.log("Created group:", resultAction);
@@ -221,8 +227,11 @@ export default function ProductDetails({ cartIconRef }) {
     } catch (error) {
       console.error("Group creation failed:", error);
       toast.error(error?.message || "Failed to create group");
+    } finally {
+      setsaveLoading(false);
     }
   };
+
 
   const handleWishlist = async () => {
     if (!isAuthenticated) {
@@ -308,14 +317,6 @@ export default function ProductDetails({ cartIconRef }) {
       ))}
     </>
   );
-
-  if (loading) {
-    return (
-      <div className="md:hidden block bg-white dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen flex items-center justify-center">
-        <LoaderCircle className="animate-spin" size={40} />
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -587,8 +588,7 @@ export default function ProductDetails({ cartIconRef }) {
         <motion.div
           initial={{ y: 100 }}
           animate={{ y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="fixed bottom-16 left-0 right-0 z-50 
+          className="fixed bottom-0 left-0 right-0 z-50 
      bg-white/80 dark:bg-gray-900/60 
      backdrop-blur-md backdrop-saturate-150 
      dark:backdrop-blur-md dark:backdrop-saturate-150 
@@ -671,14 +671,26 @@ export default function ProductDetails({ cartIconRef }) {
               whileTap={{ scale: 0.95 }}
               whileHover={{ scale: 1.05 }}
               onClick={handleCreateGroup}
-              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-2 px-5 rounded-full font-semibold shadow-lg flex flex-col items-center justify-center gap-0 transition-all duration-200"
+              disabled={saveloading}
+              className={`bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-2 px-5 rounded-full font-semibold shadow-lg flex flex-col items-center justify-center gap-0 transition-all duration-200 ${loading ? "opacity-70 cursor-not-allowed" : ""
+                }`}
             >
-              <div className="flex items-center gap-1.5">
-                <Users size={20} />
-                <span>Save {discountPercentage}%</span>
-              </div>
-              <span className="text-[10px] leading-none mt-0.1">on group buy</span>
+              {saveloading ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm">Creating...</span>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-1.5">
+                    <Users size={20} />
+                    <span>Save {discountPercentage}%</span>
+                  </div>
+                  <span className="text-[10px] leading-none mt-0.5">on group buy</span>
+                </>
+              )}
             </motion.button>
+
           </div>
 
           {/* Cart Success Indicator */}

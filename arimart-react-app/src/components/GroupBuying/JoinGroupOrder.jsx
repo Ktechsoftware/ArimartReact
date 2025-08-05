@@ -256,11 +256,24 @@ const JoinGroupOrder = () => {
         setTimeout(() => setCopiedCode(false), 2000);
     };
 
-    const copyShareUrl = () => {
-        navigator.clipboard.writeText(shareUrl);
-        setCopiedUrl(true);
-        toast.success("Share link copied!");
-        setTimeout(() => setCopiedUrl(false), 2000);
+    const copyShareUrl = async () => {
+        try {
+            // Try using Web Share API if available
+            if (navigator.share) {
+                await navigator.share({
+                    title: "Join this Group Buy!",
+                    text: "Check out this deal and join me on Arimart!",
+                    url: shareUrl,
+                });
+            } else {
+                // Fallback: Copy to clipboard
+                await navigator.clipboard.writeText(shareUrl);
+                setCopiedUrl(true);
+                setTimeout(() => setCopiedUrl(false), 2000);
+            }
+        } catch (err) {
+            console.error("Share failed:", err);
+        }
     };
 
     // Render user status based on membership
@@ -685,7 +698,7 @@ const JoinGroupOrder = () => {
                                                 whileTap={{ scale: 0.97 }}
                                             >
                                                 <Share2 className="w-4 h-4" />
-                                                {copiedUrl ? 'Copied!' : 'Share'}
+                                                {copiedUrl ? "Copied!" : "Share"}
                                             </motion.button>
                                         </div>
                                     </div>
@@ -847,7 +860,7 @@ const JoinGroupOrder = () => {
                                 <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800">
                                     <span className="text-sm text-gray-600 dark:text-gray-400">You Save</span>
                                     <span className="text-sm font-bold text-purple-600 dark:text-purple-400">
-                                        ₹{regularPrice - groupPrice} ({discountPercentage}%)
+                                        ₹{(regularPrice - groupPrice).toFixed(2)} ({discountPercentage}%)
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800">

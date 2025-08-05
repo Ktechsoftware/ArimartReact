@@ -188,21 +188,26 @@ export default function OrdersPage() {
     }
   };
 
-  const shareGroup = (groupCode, productName, gid) => {
-    const url = `${window.location.origin}/group/join/${gid}/${groupCode}`;
-    const shareText = `🛒 Join Group Order\nProduct: ${productName}\nCode: ${groupCode}\n${url}`;
+const shareGroup = (groupCode, productName, gid) => {
+  const url = `${window.location.origin}/group/join/${gid}/${groupCode}`;
+  const shareText = `🛒 Join Group Order!\n\n🧾 Product: ${productName}\n📦 Group Code: ${groupCode}\n🔗 ${url}`;
 
-    if (navigator.share) {
-      navigator.share({
+  if (navigator.share) {
+    navigator
+      .share({
+        title: `Join Group Order - ${productName}`,
         text: shareText,
-        url
-      }).catch(() => {
+        url,
+      })
+      .catch((err) => {
+        console.warn("Share failed, copying to clipboard:", err);
         copyToClipboard(shareText, 'share');
       });
-    } else {
-      copyToClipboard(shareText, 'share');
-    }
-  };
+  } else {
+    copyToClipboard(shareText, 'share');
+  }
+};
+
 
   const shareToWhatsApp = (groupCode, productName, gid) => {
     // const discountPercentage = Math.round(((regularPrice - groupPrice) / regularPrice) * 100);

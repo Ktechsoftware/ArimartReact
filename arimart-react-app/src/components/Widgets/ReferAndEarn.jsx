@@ -53,6 +53,25 @@ export default function ReferAndEarn() {
     },
   ];
 
+  const referralLink = `${window.location.origin}/auth?refercode=${referCode}`;
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Join and Earn ₹50!',
+          text: `Use my referral code ${referCode} and get ₹50 bonus.`,
+          url: referralLink,
+        });
+      } catch (err) {
+        console.error('Error sharing:', err);
+      }
+    } else {
+      // fallback if not supported
+      alert('Sharing not supported in this browser. Copy the link manually.');
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -115,6 +134,7 @@ export default function ReferAndEarn() {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            onClick={handleShare}
             className="bg-green-500 hover:bg-green-600 text-white text-sm px-6 py-3 rounded-xl flex items-center gap-2 font-medium"
           >
             <Share2 size={18} />

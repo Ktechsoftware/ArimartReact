@@ -246,7 +246,7 @@ export default function CheckoutPage() {
             <> (<span className="text-purple-600">{groupCartItems.length} items</span>)</>
           )}
         </p>
-        {console.log("group cart items : ", groupCartItems)}
+        {console.log("group cart items : ", items)}
         {items.map(item => (
           <div key={item.id} className="flex items-center gap-4">
             <img src={"https://apiari.kuldeepchaurasia.in/Uploads/" + item.image} className="w-14 h-14 rounded-md object-cover" />
@@ -255,11 +255,13 @@ export default function CheckoutPage() {
               <p className="text-sm text-gray-500">{item.categoryName}</p>
               <p className="font-bold mt-1">₹{item.price}</p>
             </div>
-            <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
-              <button><Minus className="w-4 h-4" /></button>
-              <span className="font-medium"><X className='w-4 h-4'/>{item.quantity} {item.wweight}</span>
-              <button><Plus className="w-4 h-4" /></button>
+            <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-full">
+              <div className="flex items-center gap-1 text-sm font-medium text-gray-800 dark:text-gray-100">
+                <X className="w-4 h-4" />
+                <span>{item.quantity} {item.originalItem.unittype}</span>
+              </div>
             </div>
+
           </div>
         ))}
       </motion.div>
