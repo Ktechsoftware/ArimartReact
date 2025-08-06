@@ -63,8 +63,6 @@ export default function CartDetails() {
     }
   }, [selectedTab, isAuthenticated, userId]);
 
-  console.log("Group cart items:", groupCartItems);
-
   const handleTabSwitch = async (tab) => {
     setSelectedTab(tab);
 
@@ -301,7 +299,7 @@ export default function CartDetails() {
                           animate={{ scale: 1 }}
                           className="text-sm font-semibold min-w-[2rem] text-center text-gray-900 dark:text-white"
                         >
-                          {isItemLoading ? '...' : item.quantity + item.originalItem.unittype}
+                          {isItemLoading ? '...' : item.quantity + " " + item.originalItem.unittype}
                         </motion.span>
 
                         <motion.button

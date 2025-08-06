@@ -5,7 +5,12 @@ export const DealAlertModal = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentDeal, setCurrentDeal] = useState(0);
   const LOCAL_STORAGE_KEY = "deal_modal_shown";
+  const HIDE_ON_PATHS = ['/auth', '/onboard'];
 
+  // Don't show on certain paths
+  const shouldHide = HIDE_ON_PATHS.some(path => location.pathname.startsWith(path));
+  if (shouldHide) return null;
+  
   const deals = [
     {
       id: 1,
@@ -114,7 +119,7 @@ export const DealAlertModal = () => {
 
             <div className="flex flex-col md:flex-row">
               <div className="p-8 flex-1">
-                <motion.span 
+                <motion.span
                   animate={{ scale: [1, 1.05, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
                   className="inline-block bg-black bg-opacity-20 px-3 py-1 rounded-full text-sm mb-4"
@@ -129,9 +134,9 @@ export const DealAlertModal = () => {
                 </button>
               </div>
               <div className="flex-1">
-                <img 
-                  src={deals[currentDeal].image} 
-                  alt="Deal" 
+                <img
+                  src={deals[currentDeal].image}
+                  alt="Deal"
                   className="w-full h-full object-cover"
                 />
               </div>

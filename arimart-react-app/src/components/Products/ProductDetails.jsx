@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Heart, Star, Plus, Minus, ShoppingCart, LoaderCircle, Trash2, Users, ChevronsUp } from "lucide-react";
+import { ArrowLeft, Heart, Star, Plus, Minus, ShoppingCart, LoaderCircle, Trash2, Users, ChevronsUp, Trash2Icon } from "lucide-react";
 import ProductCard from "./ProductCard";
 import { fetchProductById } from "../../Store/productDetailSlice";
 import { addToWishlist } from "../../Store/wishlistSlice";
@@ -501,14 +501,17 @@ export default function ProductDetails({ cartIconRef }) {
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
                     If you don't have your own group, you can join any running group
                   </p>
-                  {validGroupBuys.map((groupBuy, index) => (
-                    <div key={groupBuy.gid || index} className="mb-4">
-                      <GroupBuySection
-                        userId={userData?.userId || userData?.id}
-                        product={{ ...product, gid: groupBuy.gid }}
-                      />
-                    </div>
-                  ))}
+                  <div className="h-[400px] overflow-y-auto">
+                    {validGroupBuys.map((groupBuy, index) => (
+                      <div key={groupBuy.gid || index} className="mb-4">
+                        <GroupBuySection
+                          userId={userData?.userId || userData?.id}
+                          product={{ ...product, gid: groupBuy.gid }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+
                 </motion.div>
               )}
 
@@ -613,7 +616,7 @@ export default function ProductDetails({ cartIconRef }) {
                     disabled={isAddingToCart}
                     title={itemQuantity > 1 ? "Decrease quantity" : "Remove from cart"}
                   >
-                    {itemQuantity > 1 ? <Minus size={18} /> : <Trash2 size={18} />}
+                    {itemQuantity > 1 ? <Minus size={18} /> : <Trash2Icon className="text-gray-800" size={18} />}
                   </motion.button>
 
                   <motion.div

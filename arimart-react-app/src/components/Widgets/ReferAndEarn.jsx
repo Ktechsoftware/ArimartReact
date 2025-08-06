@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { clearReferralState, fetchReferralCode, fetchReferralStats } from "../../Store/referralSlice";
 import { useDispatch, useSelector } from "react-redux";
+import { Share } from '@capacitor/share';
 
 export default function ReferAndEarn() {
   // const referralCode = "1575YOG81";
@@ -56,21 +57,30 @@ export default function ReferAndEarn() {
   const referralLink = `${window.location.origin}/auth?refercode=${referCode}`;
 
   const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Join and Earn ₹50!',
-          text: `Use my referral code ${referCode} and get ₹50 bonus.`,
-          url: referralLink,
-        });
-      } catch (err) {
-        console.error('Error sharing:', err);
-      }
-    } else {
-      // fallback if not supported
-      alert('Sharing not supported in this browser. Copy the link manually.');
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: 'Join and Earn ₹50!',
+        text: `Use my referral code ${referCode} and get ₹50 bonus.`,
+        url: referralLink,
+      });
+    } catch (err) {
+      console.error('Error sharing:', err);
     }
-  };
+  } else {
+    try {
+      await Share.share({
+        title: 'Join and Earn ₹50!',
+        text: `Use my referral code ${referCode} and get ₹50 bonus.`,
+        url: referralLink,
+        dialogTitle: 'Share Referral Link',
+      });
+    } catch (err) {
+      console.error('Share plugin error:', err);
+    }
+  }
+};
+
 
   return (
     <motion.div

@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Share } from '@capacitor/share';
+import { Capacitor } from '@capacitor/core';
 import { Users, Clock, Tag, Calendar, Sparkles, User, ShoppingCart, UserPlus, ChevronDown, ChevronUp, Loader, Copy, Share2, MessageCircle } from "lucide-react";
 import {
   fetchGroupById,
@@ -16,6 +18,7 @@ export const GroupBuySection = ({ userId, product, type = "" }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
+  const [CopiedCode , setCopiedCode ] = useState("");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   const gid = product?.gid;
@@ -171,24 +174,37 @@ export const GroupBuySection = ({ userId, product, type = "" }) => {
       await navigator.clipboard.writeText(text);
       setCopiedCode(type);
       setTimeout(() => setCopiedCode(null), 2000);
+      toast.success("Group code copied..")
     } catch (err) {
       console.error('Failed to copy:', err);
     }
   };
 
-  const shareGroup = (groupCode, productName, gid) => {
+  const shareGroup = async (groupCode, productName, gid, navigate) => {
     const url = `${window.location.origin}/group/join/${gid}/${groupCode}`;
     const shareText = `🛒 Join Group Order\nProduct: ${productName}\nCode: ${groupCode}\n${url}`;
 
-    if (navigator.share) {
-      navigator.share({
-        text: shareText,
-        url
-      }).catch(() => {
+    try {
+      if (Capacitor.isNativePlatform()) {
+        await Share.share({
+          title: 'Join Group Order',
+          text: shareText,
+          url: url,
+          dialogTitle: 'Share with friends',
+        });
+        navigate(`/group/join/${gid}/${groupCode}`);
+      } else if (navigator.share) {
+        await navigator.share({
+          text: shareText,
+          url: url,
+        });
+        navigate(`/group/join/${gid}/${groupCode}`);
+      } else {
         copyToClipboard(shareText, 'share');
-      });
-    } else {
-      copyToClipboard(shareText, 'share');
+        navigate(`/group/join/${gid}/${groupCode}`);
+      }
+    } catch (error) {
+      console.log('Share failed or cancelled:', error);
     }
   };
   // Enhanced version with price information

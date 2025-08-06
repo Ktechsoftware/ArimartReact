@@ -86,7 +86,6 @@ export const fetchCartByUserId = createAsyncThunk(
 export const fetchCartByUserAndGroup = createAsyncThunk(
   'cart/fetchCartByUserAndGroup',
   async ({ userId }, { rejectWithValue }) => {
-    console.log(userId)
     try {
       const response = await API.get(`/cart/groupcart?userid=${userId}`);
       console.log("Group response data : ", response.data.items)

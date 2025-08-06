@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { sendOtp, verifyOtp, registerUser } from '../../api/auth'
 import toast from 'react-hot-toast';
 import { Phone, ArrowLeft, Shield, CheckCircle } from 'lucide-react';
+import { Keyboard } from '@capacitor/keyboard';
+import { Capacitor } from '@capacitor/core';
 
 export default function AuthFlow() {
   const [step, setStep] = useState(1);
@@ -17,8 +19,11 @@ export default function AuthFlow() {
   const [isValid, setIsValid] = useState(false);
   const [isTouched, setIsTouched] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const navigate = useNavigate();
   const isMobile = window.innerWidth < 768;
+  const isNativeApp = Capacitor.isNativePlatform();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -26,7 +31,26 @@ export default function AuthFlow() {
     if (referCode) {
       setForm(prev => ({ ...prev, referral: referCode }));
     }
+
+    // Capacitor Keyboard listeners
+    if (isNativeApp) {
+      const showListener = Keyboard.addListener('keyboardWillShow', info => {
+        setKeyboardHeight(info.keyboardHeight);
+        setIsKeyboardVisible(true);
+      });
+
+      const hideListener = Keyboard.addListener('keyboardWillHide', () => {
+        setKeyboardHeight(0);
+        setIsKeyboardVisible(false);
+      });
+
+      return () => {
+        showListener.remove();
+        hideListener.remove();
+      };
+    }
   }, []);
+
   const validateIndianMobile = (number) => {
     const indianMobileRegex = /^[6-9]\d{9}$/;
     return indianMobileRegex.test(number);
@@ -104,6 +128,14 @@ export default function AuthFlow() {
     }
   };
 
+  // Handle mobile keyboard "Enter" key
+  const handleKeyPress = (e, action) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (action) action();
+    }
+  };
+
   useEffect(() => {
     if (step === 2 && countdown > 0) {
       const timer = setInterval(() => setCountdown((prev) => prev - 1), 1000);
@@ -127,6 +159,12 @@ export default function AuthFlow() {
       ))}
     </div>
   );
+
+  // const buttonBottomPosition = isNativeApp && isKeyboardVisible 
+  //   ? `${keyboardHeight + 20}px` 
+  //   : isMobile 
+  //     ? '20px' 
+  //     : 'auto';
 
   return (
     <div className="max-w-6xl mx-auto bg-white dark:bg-gray-900 min-h-screen md:min-h-[600px] md:rounded-2xl md:shadow-xl dark:md:shadow-gray-800/30 md:px-5 relative overflow-hidden">
@@ -158,7 +196,7 @@ export default function AuthFlow() {
         )}
 
         {/* Right Side - Auth Flow */}
-        <div className="md:w-1/2 p-6 pb-20 md:pb-6 relative">
+        <div className="md:w-1/2 p-6 pb-32 md:pb-6 relative">
           {/* Header */}
           <div className="mb-4">
             {step === 2 && (
@@ -201,12 +239,35 @@ export default function AuthFlow() {
                     <div className="space-y-4 max-w-xs mx-auto">
                       <input
                         type="tel"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         value={mobile}
                         onChange={(e) => handleChange(e.target.value)}
                         onBlur={handleBlur}
-                        className="w-full p-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl text-black dark:text-white dark:bg-gray-800 focus:border-green-500 focus:outline-none transition-colors"
+                        onKeyPress={(e) => handleKeyPress(e, async () => {
+                          if (isValid) {
+                            setIsLoading(true);
+                            try {
+                              const res = await sendOtp(mobile);
+                              if (res?.status === 200 && res.data?.message?.includes("OTP sent")) {
+                                handleStepChange(2);
+                              } else {
+                                toast.error(res.data?.message || "Failed to send OTP. Please try again.");
+                              }
+                            } catch (err) {
+                              console.error("Send OTP Error:", err);
+                              const errorMessage =
+                                err?.response?.data?.message || "Error sending OTP. Please try again.";
+                              toast.error(errorMessage);
+                            } finally {
+                              setIsLoading(false);
+                            }
+                          }
+                        })}
+                        className="w-full p-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl text-black dark:text-white dark:bg-gray-800 focus:border-green-500 focus:outline-none transition-colors text-lg"
                         placeholder="Enter phone number"
                         maxLength={10}
+                        autoComplete="tel"
                       />
                       {isTouched && !isValid && (
                         <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center justify-center">
@@ -221,19 +282,29 @@ export default function AuthFlow() {
 
                   {step === 2 && (
                     <div className="space-y-6 max-w-xs mx-auto">
-                      <div className="flex justify-between space-x-3">
+                      <div className="flex justify-between space-x-2">
                         {[...Array(6)].map((_, index) => (
                           <input
                             key={index}
                             id={`otp-input-${index}`}
                             type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
                             maxLength={1}
                             value={otp[index] || ''}
                             onChange={(e) => handleOTPChange(index, e.target.value)}
                             onKeyDown={(e) => handleOTPKeyDown(e, index)}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter' && otp.join('').length === 6) {
+                                e.preventDefault();
+                                // Trigger verify OTP
+                                document.querySelector('[data-verify-btn]').click();
+                              }
+                            }}
                             onPaste={handleOTPPaste}
-                            className="w-12 h-14 text-center text-black dark:text-white text-xl font-semibold border-2 border-gray-200 dark:border-gray-700 dark:bg-gray-800 rounded-xl focus:border-green-500 focus:outline-none transition-colors"
+                            className="w-12 h-16 text-center text-black dark:text-white text-xl font-semibold border-2 border-gray-200 dark:border-gray-700 dark:bg-gray-800 rounded-xl focus:border-green-500 focus:outline-none transition-colors"
                             autoFocus={index === 0}
+                            autoComplete="one-time-code"
                           />
                         ))}
                       </div>
@@ -262,7 +333,14 @@ export default function AuthFlow() {
                         </label>
                         <input
                           type="text"
-                          className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors dark:bg-gray-800 dark:text-white ${form.fullName.length > 0
+                          inputMode="text"
+                          autoComplete="name"
+                          onKeyPress={(e) => handleKeyPress(e, () => {
+                            if (form.fullName.length >= 3 && /^\S+@\S+\.\S+$/.test(form.email)) {
+                              handleContinue();
+                            }
+                          })}
+                          className={`w-full px-4 py-4 border-2 rounded-xl focus:outline-none transition-colors dark:bg-gray-800 dark:text-white text-lg ${form.fullName.length > 0
                               ? form.fullName.length >= 3
                                 ? 'border-green-500 focus:ring-green-200 dark:focus:ring-green-800'
                                 : 'border-red-500 focus:ring-red-200 dark:focus:ring-red-800'
@@ -289,7 +367,14 @@ export default function AuthFlow() {
                         </label>
                         <input
                           type="email"
-                          className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors dark:bg-gray-800 dark:text-white ${form.email.length > 0
+                          inputMode="email"
+                          autoComplete="email"
+                          onKeyPress={(e) => handleKeyPress(e, () => {
+                            if (form.fullName.length >= 3 && /^\S+@\S+\.\S+$/.test(form.email)) {
+                              handleContinue();
+                            }
+                          })}
+                          className={`w-full px-4 py-4 border-2 rounded-xl focus:outline-none transition-colors dark:bg-gray-800 dark:text-white text-lg ${form.email.length > 0
                               ? /^\S+@\S+\.\S+$/.test(form.email)
                                 ? 'border-green-500 focus:ring-green-200 dark:focus:ring-green-800'
                                 : 'border-red-500 focus:ring-red-200 dark:focus:ring-red-800'
@@ -315,7 +400,13 @@ export default function AuthFlow() {
                         </label>
                         <input
                           type="text"
-                          className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-green-500 focus:outline-none transition-colors dark:bg-gray-800 dark:text-white"
+                          inputMode="text"
+                          onKeyPress={(e) => handleKeyPress(e, () => {
+                            if (form.fullName.length >= 3 && /^\S+@\S+\.\S+$/.test(form.email)) {
+                              handleContinue();
+                            }
+                          })}
+                          className="w-full px-4 py-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-green-500 focus:outline-none transition-colors dark:bg-gray-800 dark:text-white text-lg"
                           placeholder="Enter referral code if any"
                           value={form.referral}
                           onChange={(e) => setForm({ ...form, referral: e.target.value })}
@@ -328,8 +419,10 @@ export default function AuthFlow() {
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="mt-8">
+          {/* Fixed Action Buttons */}
+          <div 
+            className={`${isMobile ? 'fixed' : 'absolute'} bottom-0 left-0 right-0 p-6 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700`}
+          >
             {step === 1 && (
               <button
                 onClick={async () => {
@@ -351,7 +444,7 @@ export default function AuthFlow() {
                   }
                 }}
                 disabled={!isValid}
-                className={`w-full py-3 rounded-2xl font-semibold text-white transition-all ${isValid
+                className={`w-full py-4 rounded-2xl font-semibold text-white text-lg transition-all ${isValid
                     ? 'bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 active:scale-95'
                     : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
                   }`}
@@ -361,6 +454,7 @@ export default function AuthFlow() {
             )}
             {step === 2 && (
               <button
+                data-verify-btn
                 onClick={async () => {
                   setIsLoading(true);
                   const code = otp.join('');
@@ -395,7 +489,7 @@ export default function AuthFlow() {
                   }
                 }}
                 disabled={otp.join('').length < 6}
-                className={`w-full py-3 rounded-2xl font-semibold text-white transition-all ${otp.join('').length === 6
+                className={`w-full py-4 rounded-2xl font-semibold text-white text-lg transition-all ${otp.join('').length === 6
                     ? 'bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 active:scale-95'
                     : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
                   }`}
@@ -407,7 +501,7 @@ export default function AuthFlow() {
               <button
                 onClick={handleContinue}
                 disabled={form.fullName.length < 3 || !/^\S+@\S+\.\S+$/.test(form.email)}
-                className={`w-full py-3 rounded-2xl font-semibold text-white transition-all ${form.fullName.length >= 3 && /^\S+@\S+\.\S+$/.test(form.email)
+                className={`w-full py-4 rounded-2xl font-semibold text-white text-lg transition-all ${form.fullName.length >= 3 && /^\S+@\S+\.\S+$/.test(form.email)
                     ? 'bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 active:scale-95'
                     : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
                   }`}
