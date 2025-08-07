@@ -7,6 +7,8 @@ import { Toaster, toast } from 'react-hot-toast';
 import { useDeviceType } from '../hooks/useDeviceType';
 import ScrollToTop from '../utils/ScrollToTop';
 import ResponsiveLayout from '../layouts/ResponsiveLayout';
+import { Capacitor } from '@capacitor/core';
+import { Preferences } from '@capacitor/preferences';
 
 // Pages
 import OnboardingScreen from '../components/OnboardingScreen';
@@ -43,10 +45,8 @@ import PaymentOrder from '../pages/PaymentScreen/PaymentOrder';
 import JointoGroup from '../pages/GroupBuy/JointoGroup';
 import SubcategoryExplore from '../pages/Explore/SubcategoryExplore';
 import TopPriceProducts from '../pages/TopStores/TopPriceProducts';
-import { Preferences } from '@capacitor/preferences';
 import ArimartPayscreen from '../pages/PaymentScreen/ArimartPayscreen';
-import { Capacitor } from '@capacitor/core';
-
+import SplashScreen from '../components/Onboarding/SplashScreen';
 
 const publicRoutes = [
   "/", "/home", "/onboard", "/auth", "/about", "/contactus", "/faq", "/privacypolicy",
@@ -59,16 +59,36 @@ export default function AppRoutes() {
   const dispatch = useDispatch();
   const { isAuthenticated } = useSelector((state) => state.auth);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Splash Screen State - Only for Capacitor (Native)
+  const [showSplash, setShowSplash] = useState(Capacitor.isNativePlatform());
+  const [isAppReady, setIsAppReady] = useState(false);
 
   const isNativeApp = Capacitor.isNativePlatform();
-
   const isProductPage = location.pathname.startsWith("/category");
 
   const isPublic = isProductPage || publicRoutes.some(route =>
     matchPath({ path: route, end: true }, location.pathname)
   );
 
+  // Handle splash screen timing
   useEffect(() => {
+    if (isNativeApp && showSplash) {
+      const splashTimer = setTimeout(() => {
+        setShowSplash(false);
+        setIsAppReady(true);
+      }, 3000); // 3 seconds splash duration
+
+      return () => clearTimeout(splashTimer);
+    } else if (!isNativeApp) {
+      setIsAppReady(true);
+    }
+  }, [isNativeApp, showSplash]);
+
+  // Main app logic - only runs after splash is done
+  useEffect(() => {
+    if (!isAppReady) return; // Wait for app to be ready
+
     dispatch(checkAuth());
 
     const handleRouting = async () => {
@@ -97,14 +117,26 @@ export default function AppRoutes() {
     };
 
     handleRouting();
-  }, [location.pathname, isAuthenticated]);
+  }, [location.pathname, isAuthenticated, isAppReady]);
 
-
+  // Page loading animation
   useEffect(() => {
+    if (!isAppReady) return;
+    
     setIsLoading(true);
     const timer = setTimeout(() => setIsLoading(false), 800);
     return () => clearTimeout(timer);
-  }, [location.key]);
+  }, [location.key, isAppReady]);
+
+  // Show splash screen only on native platforms
+  if (isNativeApp && showSplash) {
+    return <SplashScreen />;
+  }
+
+  // Don't render anything until app is ready
+  if (!isAppReady) {
+    return null;
+  }
 
   return (
     <div className="relative">
@@ -170,6 +202,8 @@ export default function AppRoutes() {
           </ResponsiveLayout>
         </motion.div>
       </AnimatePresence>
+      
+      <Toaster position="bottom-center" />
     </div>
   );
 }

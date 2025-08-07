@@ -515,19 +515,18 @@ const clearCart = async (options = {}) => {
 
   const isItemInCart = (id, groupId = null) => {
     if (!groupId) {
-      return !!state.regularCartItems.find(item => item.id === id);
+      return !!state.regularCartItems.find(item => item.originalItem.pid === id);
     } else {
-      console.log("check cart items : ",groupId,id, state.groupCartItems) 
-      return !!state.groupCartItems.find(item => item.originalItem.pdid === id && item.groupId == groupId);
+      return !!state.groupCartItems.find(item => item.originalItem.pid === id && item.groupId == groupId);
     }
   };
 
   const getItemQuantity = (id, groupId = null) => {
     if (!groupId) {
-      const item = state.regularCartItems.find(item => item.id === id);
+      const item = state.regularCartItems.find(item => item.originalItem.pid === id);
       return item ? item.quantity : 0;
     } else {
-      const item = state.groupCartItems.find(item => item.id === id && item.groupId === groupId);
+      const item = state.groupCartItems.find(item => item.originalItem.pid === id && item.groupId === groupId);
       return item ? item.quantity : 0;
     }
   };

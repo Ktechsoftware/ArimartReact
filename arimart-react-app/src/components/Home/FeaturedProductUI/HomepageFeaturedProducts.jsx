@@ -123,7 +123,7 @@ const HomepageFeaturedProducts = () => {
             ? `https://apiari.kuldeepchaurasia.in/Uploads/${product.image}`
             : '/placeholder-image.jpg';
 
-        const inCart = getCartItemInfo(productId);
+        const inCart = isItemInCart(productId);
         const quantity = getItemQuantity(productId);
         const loading = loadingStates[productId] || false;
         const qtyLoading = loadingStates[`${productId}_qty`] || false;
@@ -215,10 +215,9 @@ const HomepageFeaturedProducts = () => {
                                 <Plus size={12} />
                             </button>
                             <span className="text-sm font-medium text-gray-800 dark:text-white">
-                                {console.log(inCart)}
-                                {inCart.quantity}
+                                {quantity}
                             </span>
-                            {inCart.quantity <= 1 ? (
+                            {quantity <= 1 ? (
                                 <button
                                     onClick={() => handleRemoveFromCart(product.id)}
                                     disabled={loadingStates[`${product.id}_remove`]}

@@ -188,7 +188,7 @@ export default function AuthFlow() {
               <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-8 shadow-lg">
                 <img src={logo} alt="Logo" className="w-12 h-12 object-contain" />
               </div>
-              <h1 className="text-3xl font-bold mb-4">Arimart Retail Shopping App</h1>
+              <h1 className="text-3xl font-bold mb-4">Arimart</h1>
               <p className="text-green-100 dark:text-green-200 mb-8">Experience lightning fast shopping</p>
               <ProductGrid />
             </div>
@@ -219,7 +219,7 @@ export default function AuthFlow() {
               </div>
 
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                {isMobile ? "Arimart Retail Shopping app" : "Welcome to AriMart"}
+                Welcome to AriMart
               </h1>
               <p className="text-gray-600 dark:text-gray-400 mb-8 whitespace-pre-line">
                 {step === 1 && (isMobile ? 'Log in or sign up' : 'Enter your phone number to get started')}
