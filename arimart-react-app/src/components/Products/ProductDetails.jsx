@@ -245,7 +245,7 @@ export default function ProductDetails({ cartIconRef }) {
     }
 
     if (isWishlisted) {
-      toast.info('Already in wishlist');
+      toast.error('Already in wishlist');
       return;
     }
 
@@ -501,7 +501,7 @@ export default function ProductDetails({ cartIconRef }) {
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
                     If you don't have your own group, you can join any running group
                   </p>
-                  <div className="h-[400px] overflow-y-auto">
+                  <div className="max-h-[400px] overflow-y-auto">
                     {validGroupBuys.map((groupBuy, index) => (
                       <div key={groupBuy.gid || index} className="mb-4">
                         <GroupBuySection
@@ -511,6 +511,7 @@ export default function ProductDetails({ cartIconRef }) {
                       </div>
                     ))}
                   </div>
+
 
                 </motion.div>
               )}
@@ -528,7 +529,7 @@ export default function ProductDetails({ cartIconRef }) {
                 ))}
               </div>
 
-              <div className="my-4">
+              <div className="md:my-4">
                 <AnimatePresence mode="wait">
                   {activeTab === "description" && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
@@ -578,7 +579,7 @@ export default function ProductDetails({ cartIconRef }) {
 
                   {activeTab === "more you like" && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-                      <RecommendedProducts productId={product.id} className="max-w-6xl mx-auto px-4" />
+                      <RecommendedProducts productId={product.id} className="max-w-6xl mx-auto md:px-4" />
                     </motion.div>
                   )}
                 </AnimatePresence>

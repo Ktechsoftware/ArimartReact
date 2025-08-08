@@ -63,7 +63,6 @@ export const fetchGroupMembers = createAsyncThunk("group/fetchMembers", async (g
 export const fetchMyJoinedGroups = createAsyncThunk("group/fetchMyJoined", async (userId, thunkAPI) => {
   try {
     const res = await API.get(`/group/my-joined/${userId}`);
-    console.log(res.data)
     return res.data;
   } catch (err) {
     return thunkAPI.rejectWithValue(err.response?.data || "Failed to fetch joined groups");
@@ -101,12 +100,10 @@ export const fetchGroupReferCodeByProduct = createAsyncThunk("group/fetchReferCo
 export const fetchCurrentRunningGroups = createAsyncThunk(
   "group/fetchCurrentRunning",
   async ({ page = 1, pageSize = 10, append = false } = {}, thunkAPI) => {
-    console.log("its running.....")
     try {
       const res = await API.get(`/group/current-running`, {
         params: { page, pageSize }
       });
-      console.log("runnign group buys :",res.data);
       return { ...res.data, append };
     } catch (err) {
       return thunkAPI.rejectWithValue(err.response?.data || "Failed to fetch current running groups");

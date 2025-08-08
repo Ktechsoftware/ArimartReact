@@ -29,10 +29,10 @@ const RecommendedProducts = ({ productId, category = "", limit = 8, title = "Pro
 
     if (isLoading) {
         return (
-            <div className={`py-8 ${className}`}>
+            <div className={`md:py-8 ${className}`}>
 
                 <motion.h4
-                    className="mt-6 text-xl font-semibold text-gray-700 dark:text-gray-300"
+                    className="md:mt-6 text-xl font-semibold text-gray-700 dark:text-gray-300"
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.7 }}
@@ -60,7 +60,7 @@ const RecommendedProducts = ({ productId, category = "", limit = 8, title = "Pro
 
     if (error) {
         return (
-            <div className={`py-8 ${className}`}>
+            <div className={`md:py-8 ${className}`}>
                 <h2 className="text-2xl font-bold text-gray-800 mb-6">{title}</h2>
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
                     <p className="text-red-600 mb-2">Failed to load recommendations</p>
@@ -77,7 +77,7 @@ const RecommendedProducts = ({ productId, category = "", limit = 8, title = "Pro
 
     if (!recommendedProducts || recommendedProducts.length === 0) {
         return (
-            <div className={`py-8 ${className}`}>
+            <div className={`md:py-8 ${className}`}>
                 <h2 className="text-2xl font-bold text-gray-800 mb-6">{title}</h2>
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
                     <p className="text-gray-600">No recommendations available at the moment.</p>
@@ -87,7 +87,7 @@ const RecommendedProducts = ({ productId, category = "", limit = 8, title = "Pro
     }
 
     return (
-        <div className={`py-8 ${className}`}>
+        <div className={`md:py-8 ${className}`}>
             <div className="flex items-center justify-between mb-6">                
       <motion.h4
         className="mt-6 text-xl font-semibold text-gray-700 dark:text-gray-300"

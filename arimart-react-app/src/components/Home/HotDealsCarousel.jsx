@@ -80,7 +80,7 @@ export default function CompactProductCarousel() {
 
   const handleWishlist = (product) => {
     if (!userData?.id) return toast.error("Please login to use wishlist.");
-    dispatch(addToWishlist({ userid: userData.id, pdid: product.id }));
+    dispatch(addToWishlist({ userid: userData.id, pdid: product.pdid }));
   };
 
   const handleAddToCart = async (product) => {
@@ -201,17 +201,6 @@ export default function CompactProductCarousel() {
                         </span>
                       )}
                     </div>
-
-                    {/* Wishlist Button */}
-                    <button
-                      onClick={() => handleWishlist(product)}
-                      className={`absolute top-3 right-3 p-2 rounded-full ${isWishlisted(product.id)
-                        ? 'text-red-500 bg-white/90 dark:bg-gray-700/90'
-                        : 'text-gray-400 bg-white/80 dark:bg-gray-700/80 hover:text-red-500'
-                        }`}
-                    >
-                      <Heart className="w-4 h-4" fill={isWishlisted(product.id) ? 'currentColor' : 'none'} />
-                    </button>
                   </div>
 
                   {/* Product Details */}

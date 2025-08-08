@@ -21,6 +21,7 @@ const ProductCardResponsive = ({ product }) => {
   const [quantityLoading, setQuantityLoading] = useState(false);
 
   const productId = product?.pdid;
+  const linkproductid = product?.pid;
   const cartItem = product ? getCartItemInfo(productId) : null;
   const itemInCart = !!cartItem;
   const itemQuantity = cartItem ? cartItem.quantity : 0;
@@ -34,7 +35,7 @@ const ProductCardResponsive = ({ product }) => {
   useEffect(() => {
     setIsWishlisted(wishlistItems.some((item) => item.pdid === productId));
   }, [wishlistItems, productId]);
-console.log(wishlistItems)
+  console.log(wishlistItems)
   const handleWishlist = async () => {
     if (!userData?.id) return toast.error("Please login to use wishlist.");
 
@@ -84,7 +85,7 @@ console.log(wishlistItems)
   const generateProductLink = () => {
     const marketParam = product.categoryNAme || "";
     const subcategoryParam = product.subcategoryName || product.name || "";
-    return `/category/${encodeURIComponent(marketParam)}/${encodeURIComponent(subcategoryParam)}/product/${productId}`;
+    return `/category/${encodeURIComponent(marketParam)}/${encodeURIComponent(subcategoryParam)}/product/${linkproductid}`;
   };
 
   return (

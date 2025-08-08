@@ -26,6 +26,7 @@ const DProductCard = ({ product }) => {
 
   // Safe product property access
   const productId = product?.id;
+  const addtowishlistproductId = product?.pdid;
   const productName = product?.productName || product?.name || 'Unknown Product';
   const categoryName = product?.categoryName || 'Category';
   const subcategoryName = product?.subcategoryName || product?.subCategory || '';
@@ -87,7 +88,7 @@ const DProductCard = ({ product }) => {
 
       await dispatch(addToWishlist({
         userid: userId,
-        pdid: productId
+        pdid: addtowishlistproductId
       })).unwrap();
 
       setIsWishlisted(true);

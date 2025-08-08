@@ -24,6 +24,7 @@ const ProductCard = ({ key, product }) => {
   const [quantityLoading, setQuantityLoading] = useState(false);
 
   const productId = product?.id;
+  const addtowishlistproductId = product?.pdid;
   const cartItem = product ? getCartItemInfo(product.id) : null;
   const itemInCart = !!cartItem;
   const itemQuantity = cartItem ? cartItem.quantity : 0;
@@ -37,7 +38,7 @@ const ProductCard = ({ key, product }) => {
 
   const handleWishlist = () => {
     if (!userData?.id) return toast.error("Please login to use wishlist.");
-    dispatch(addToWishlist({ userid: userData.id, pdid: productId }));
+    dispatch(addToWishlist({ userid: userData.id, pdid: addtowishlistproductId }));
     setIsWishlisted(true);
   };
 
