@@ -23,9 +23,51 @@ import EditProfile from '../components/Account/EditProfile';
 import Support from '../components/Account/Support';
 import TermsAndConditions from '../components/Account/TermsAndConditions';
 import AllottedArea from '../components/Account/AllottedArea';
+import SplashScreen from '../components/onboard/SplashScreen'
 import FAQ from '../components/Account/FAQ';
+import { useEffect, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 
 export default function AppRoutes() {
+  // Splash Screen State - Only for Capacitor (Native)
+  const [showSplash, setShowSplash] = useState(Capacitor.isNativePlatform());
+  const [isAppReady, setIsAppReady] = useState(false);
+  const isNativeApp = Capacitor.isNativePlatform();
+  const [isLoading, setIsLoading] = useState(false);
+
+   // Handle splash screen timing
+  useEffect(() => {
+    if (isNativeApp && showSplash) {
+      const splashTimer = setTimeout(() => {
+        setShowSplash(false);
+        setIsAppReady(true);
+      }, 3000); // 3 seconds splash duration
+
+      return () => clearTimeout(splashTimer);
+    } else if (!isNativeApp) {
+      setIsAppReady(true);
+    }
+  }, [isNativeApp, showSplash]);
+
+    // Page loading animation
+  useEffect(() => {
+    if (!isAppReady) return;
+    
+    setIsLoading(true);
+    const timer = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, [location.key, isAppReady]);
+
+  // Show splash screen only on native platforms
+  if (isNativeApp && showSplash) {
+    return <SplashScreen />;
+  }
+
+  // Don't render anything until app is ready
+  if (!isAppReady) {
+    return null;
+  }
+
   return (
     <Routes>
       {/* Landing & Onboarding */}

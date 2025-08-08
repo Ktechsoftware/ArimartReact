@@ -1,18 +1,34 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { sendOtpAsync } from '../../Store/authSlice';
 
 export default function OnboardForm() {
     const navigate = useNavigate();
     const [mobile, setMobile] = useState('');
     const [checked, setChecked] = useState(false);
+    const dispatch = useDispatch();
 
-    const handleSubmit = (e) => {
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (mobile.length === 10 && checked) {
-            navigate('/otp');
+
+        if (mobile.length !== 10 || !checked) return;
+
+        try {
+            const resultAction = await dispatch(sendOtpAsync(mobile));
+            if (sendOtpAsync.fulfilled.match(resultAction)) {
+                navigate('/otp', { state: { mobile } });
+            } else {
+                alert(resultAction.payload || 'Failed to send OTP');
+            }
+        } catch (error) {
+            console.error('OTP sending failed:', error);
+            alert('Unexpected error occurred. Please try again.');
         }
     };
+
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -20,15 +36,15 @@ export default function OnboardForm() {
             <div className="block md:hidden">
                 <div className="relative w-full flex flex-col">
                     {/* Curved background container */}
-                    <motion.div 
+                    <motion.div
                         className="w-full h-64 bg-gradient-to-b from-[#FF6B74] to-[#FC848B] rounded-b-3xl"
                         initial={{ opacity: 0, y: -50 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ type: 'spring', stiffness: 100 }}
                     >
-                        
+
                         {/* Image centered in the colored area */}
-                        <motion.div 
+                        <motion.div
                             className="absolute top-10 left-1/2 transform -translate-x-1/2"
                             whileHover={{ scale: 1.05 }}
                         >
@@ -100,7 +116,7 @@ export default function OnboardForm() {
             <div className="hidden md:flex min-h-screen">
                 {/* Left side - Hero image and content */}
                 <div className="flex-1 bg-gradient-to-br from-[#FF4D4D] to-[#F97878] flex flex-col justify-center p-12">
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, x: -50 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.6 }}
@@ -108,7 +124,7 @@ export default function OnboardForm() {
                     >
                         <h1 className="text-4xl font-bold mb-4">Earn up to ₹30,000/month as a delivery partner</h1>
                         <p className="text-xl mb-8">Flexible hours · Weekly payments · Growth opportunities</p>
-                        
+
                         <div className="space-y-4">
                             <div className="flex items-start">
                                 <div className="flex-shrink-0 bg-white/20 p-2 rounded-full mr-4">
@@ -136,7 +152,7 @@ export default function OnboardForm() {
                             </div>
                         </div>
                     </motion.div>
-                    
+
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -200,8 +216,8 @@ export default function OnboardForm() {
                             <motion.button
                                 type="submit"
                                 className={`w-full py-3 px-4 rounded-lg font-semibold text-white shadow-md transition-all
-                                    ${checked && mobile.length === 10 ? 
-                                        'bg-gradient-to-r from-[#FF4D4D] to-[#F97878] hover:shadow-red-200' : 
+                                    ${checked && mobile.length === 10 ?
+                                        'bg-gradient-to-r from-[#FF4D4D] to-[#F97878] hover:shadow-red-200' :
                                         'bg-gray-300 cursor-not-allowed'}`}
                                 whileHover={checked && mobile.length === 10 ? { scale: 1.02 } : {}}
                                 whileTap={checked && mobile.length === 10 ? { scale: 0.98 } : {}}

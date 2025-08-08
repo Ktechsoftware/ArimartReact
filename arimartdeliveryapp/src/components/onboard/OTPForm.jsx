@@ -1,13 +1,20 @@
 import { motion } from 'framer-motion';
 import { ArrowLeftCircle } from 'lucide-react';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { verifyOtp } from '../../api/auth';
+import { useDispatch } from 'react-redux';
+import { verifyOtpAsync } from '../../Store/authSlice';
 
 export default function OtpForm() {
     const navigate = useNavigate();
     const [otp, setOtp] = useState(Array(6).fill(''));
     const [resendDisabled, setResendDisabled] = useState(false);
     const [resendTimer, setResendTimer] = useState(30);
+    const { state } = useLocation();
+    const { mobile } = location.state || {};
+    const dispatch = useDispatch();
+console.log(mobile)
 
     const handleChange = (index, value) => {
         if (/^\d*$/.test(value) && value.length <= 1) {
@@ -22,10 +29,31 @@ export default function OtpForm() {
         }
     };
 
-    const handleVerify = () => {
-        if (otp.every(digit => digit !== '')) {
-            alert('OTP Verified!');
-            navigate('/info')
+    const handleVerify = async (e) => {
+        e.preventDefault();
+
+        if (otp.length !== 6) return alert('Enter valid 6-digit OTP');
+
+        try {
+            if (!mobile) {
+                navigate('/'); // Optional fallback
+            }
+            const resultAction = await dispatch(verifyOtpAsync({ phoneNumber: mobile, otp }));
+
+            if (verifyOtpAsync.fulfilled.match(resultAction)) {
+                const { isExistingUser } = resultAction.payload;
+
+                if (isExistingUser) {
+                    navigate('/home'); // or dashboard
+                } else {
+                    navigate('/complete-profile'); // or wherever registration starts
+                }
+            } else {
+                alert(resultAction.payload || 'OTP verification failed.');
+            }
+        } catch (error) {
+            console.error('OTP verification failed:', error);
+            alert('Unexpected error. Try again.');
         }
     };
 

@@ -135,15 +135,16 @@ export const GroupBuyPage = () => {
 
     if (tabParam === 'my-joined') {
       setActiveTab('group_joined');
+    } else {
+      setActiveTab('group_buys'); // Set default tab explicitly
     }
 
-    setTabInitialized(true); // ✅ Mark as ready
+    setTabInitialized(true);
   }, [location.search, userData]);
 
   // Fetch data when tab is initialized and userData is ready
   useEffect(() => {
     if (!tabInitialized || !userData?.userId) return;
-
     if (activeTab === 'group_buys') {
       dispatch(fetchCurrentRunningGroups({ page: 1, pageSize: 10 }));
     } else if (activeTab === 'group_joined') {
@@ -151,25 +152,19 @@ export const GroupBuyPage = () => {
     }
   }, [dispatch, activeTab, userData?.userId, tabInitialized]);
 
-  // Handle data fetching based on active tab
-  useEffect(() => {
-    if (!userData?.userId) return;
-
-    if (activeTab === 'group_buys') {
-      dispatch(fetchCurrentRunningGroups({ page: 1, pageSize: 10 }));
-    } else if (activeTab === 'group_joined') {
-      dispatch(fetchMyJoinedGroups(userData.userId));
-    }
-  }, [dispatch, activeTab, userData?.userId]);
-
 
   // Add tab change handler
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
 
-    if (tabId === 'group_joined' && userData?.userId) {
-      dispatch(fetchMyJoinedGroups(userData.userId));
+    // Optional: Update URL without causing page reload
+    const newUrl = new URL(window.location);
+    if (tabId === 'group_joined') {
+      newUrl.searchParams.set('tab', 'my-joined');
+    } else {
+      newUrl.searchParams.delete('tab');
     }
+    window.history.pushState({}, '', newUrl);
   };
   const handleLoadMore = async () => {
     if (loadingMore || !currentRunningGroupsPagination.hasNextPage) return;
