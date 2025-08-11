@@ -5,7 +5,7 @@ import { GroupBuyPage } from '../../components/GroupBuying/GroupBuyPage'
 const GroupDealScreen = () => {
   return (
     <div>
-       <Header title={"Group buy deals"} setbaricon={false}/>
+       {/* <Header title={"Group buy deals"} setbaricon={false}/> */}
         <GroupBuyPage/>
     </div>
   )

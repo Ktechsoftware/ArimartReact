@@ -6,7 +6,7 @@ import MobileSearchPage from '../../components/SearchResult/MobileSearchPage'
 function SubcategoryExplore() {
   return (
     <div className='mb-20'>
-       <Header title={"Explore"} setbaricon={false} />
+       {/* <Header title={"Explore"} setbaricon={false} /> */}
         <TopProducts/>
     </div>
   )

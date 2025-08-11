@@ -42,3 +42,9 @@ body {
 .animate-heartBeat {
     animation: heartBeat 0.5s ease-in-out;
 }
+
+.single-line-ellipsis {
+  white-space: nowrap;       /* Prevent text from wrapping */
+  overflow: hidden;          /* Hide overflowing text */
+  text-overflow: ellipsis;   /* Add "..." */
+}

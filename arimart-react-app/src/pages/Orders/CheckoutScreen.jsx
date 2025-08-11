@@ -5,7 +5,7 @@ import CheckoutPage from '../../components/Orders/CheckoutPage'
 function CheckoutScreen() {
   return (
     <div className=''>
-        <Header title="Checkout" setbaricon={false} setcarticon={false} />
+        {/* <Header title="Checkout" setbaricon={false} setcarticon={false} /> */}
         <CheckoutPage/>
     </div>
   )

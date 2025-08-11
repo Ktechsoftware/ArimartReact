@@ -18,6 +18,7 @@ import { DeliveryInfo } from "../ui/DeliveryInfo";
 import DealAlert from "../GroupBuying/DealAlert";
 import DProductCard from "../Products/DProductcards";
 import EcommerceHomepage from "./EcommerceHomepage";
+import DynamicSlideCarousel from "../CarouselComponent";
 
 export default function GroceryHome() {
   const [showFilter, setShowFilter] = useState(false);
@@ -31,11 +32,10 @@ export default function GroceryHome() {
 
   return (
     <div className="bg-white dark:bg-gray-900 min-h-screen text-gray-900 dark:text-white">
-      <HomepageGrid/>
-      <Intro />
+      <HomepageGrid />
       <SearchItems />
-      <DeliveryInfo/>
-      <HorizontalCategoryBar/>
+      <DeliveryInfo />
+      <HorizontalCategoryBar />
       {loading ? (
         <div className="bg-gray-100 p-4 rounded-xl flex items-center justify-between mb-6 animate-pulse">
           <div className="flex-1 space-y-2">
@@ -46,31 +46,20 @@ export default function GroceryHome() {
           <div className="w-20 h-20 bg-gray-300 rounded-lg ml-4"></div>
         </div>
       ) : (
-        <div className="m-3 bg-gradient-to-br from-green-50 to-green-200 dark:from-green-900 dark:to-green-600 p-4 rounded-xl flex items-center justify-between mb-6">
-          <div>
-            <p className="font-semibold text-gray-800 dark:text-gray-200">Get Fresh Grocery</p>
-            <p className="text-sm dark:text-gray-300">in your Door</p>
-            <span className="text-orange-600 dark:text-orange-400 font-semibold text-sm mt-1 block">
-              49% Discount
-            </span>
-          </div>
-          <img
-            src="https://via.placeholder.com/100x100?text=Grocery+Guy"
-            alt="promo"
-            className="w-20 h-20 object-cover rounded-lg"
-          />
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="m-3 rounded-xl overflow-hidden shadow-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+        >
+          <DynamicSlideCarousel />
+        </motion.div>
       )}
-      {/* <div className="m-3 bg-gradient-to-br from-green-50 to-green-200 dark:from-green-900 dark:to-green-600 p-4 rounded-xl flex items-center justify-between mb-6">
-          <img
-            src="https://m.media-amazon.com/images/G/31/img24/Fresh/April/Pc_6.jpg"
-            alt="promo"
-          />
-        </div> */}
+
       <MainPage />
       {/* <DealAlert/> */}
       <HotDealsCarousel />
-      <EcommerceHomepage/>
+      <EcommerceHomepage />
       <FilterSheet isOpen={showFilter} onClose={() => setShowFilter(false)} />
       <div className="flex mx-auto">
         <img src="https://m.media-amazon.com/images/G/31/img18/Fresh/Oct20/UNREC/1500x150_strip.jpg" alt="Special Offer" className="w-full mx-auto object-cover rounded-lg" />

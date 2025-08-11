@@ -10,7 +10,7 @@ import Header from '../../components/Header/Header'
 const CategoryProductscreen = () => {
   return (
     <div>
-       <Header title={"Product"} setbaricon={false}  setcarticon={false}/>
+       {/* <Header title={"Product"} setbaricon={false}  setcarticon={false}/> */}
         <TopNavBar/>
         <CategoryTabs/>
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 p-4">

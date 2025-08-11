@@ -18,7 +18,7 @@ export const GroupBuySection = ({ userId, product, type = "" }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
-  const [CopiedCode , setCopiedCode ] = useState("");
+  const [CopiedCode, setCopiedCode] = useState("");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   const gid = product?.gid;
@@ -229,6 +229,7 @@ ${shareUrl}`;
 
 
   // ✅ ENHANCED: Early return if no gid or essential product data
+  // ✅ ENHANCED: Early return if no gid or essential product data
   if (!gid || !product?.gprice || !product?.gqty) return null;
 
   const regularPrice = product.netprice || product.price || 0;
@@ -240,6 +241,8 @@ ${shareUrl}`;
   const requiredMembers = product.gqty || 5;
   const remainingMembers = Math.max(0, requiredMembers - currentMembers);
   const isGroupBuyActive = !!timeLeft;
+  
+  if (!isGroupBuyActive) return null;
 
   return (
     <div className="border border-purple-200 dark:border-purple-700 p-3 rounded-lg bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 shadow-sm max-w-4xl mx-auto">

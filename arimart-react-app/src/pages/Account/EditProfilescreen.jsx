@@ -5,7 +5,7 @@ import UserProfileSettings from '../../components/Account/UserProfileSettings'
 function EditProfilescreen() {
   return (
     <div>
-       <Header title={"Edit Profile"} setbaricon={false}  setcarticon={false}/>
+       {/* <Header title={"Edit Profile"} setbaricon={false}  setcarticon={false}/> */}
         <UserProfileSettings/>
     </div>
   )

@@ -5,7 +5,7 @@ import PromoCodes from '../../components/Widgets/PromoCodes'
 const PromocodeScreen = () => {
   return (
     <div className='mb-20'>
-        <Header title={"Promocodes & Gifts"} setbaricon={false} setcarticon={false} />
+        {/* <Header title={"Promocodes & Gifts"} setbaricon={false} setcarticon={false} /> */}
         <PromoCodes/>
     </div>
   )

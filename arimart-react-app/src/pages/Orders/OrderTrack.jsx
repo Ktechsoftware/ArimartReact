@@ -5,7 +5,7 @@ import OrderTracking from '../../components/Orders/OrderTracking'
 function OrderTrack() {
   return (
     <div className=''>
-        <Header title="Track Your Order" setbaricon={false} setcarticon={false} />
+        {/* <Header title="Track Your Order" setbaricon={false} setcarticon={false} /> */}
         <OrderTracking/>
     </div>
   )

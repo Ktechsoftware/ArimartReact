@@ -1,4 +1,4 @@
-import { ShoppingCart } from "lucide-react";
+import { ShoppingBag, ShoppingCart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
@@ -34,7 +34,7 @@ export default function CartIcon({ show = true, showGroupCart = true }) {
         onHoverEnd={() => setIsHovering(false)}
         className="relative"
       >
-        <ShoppingCart className="w-6 h-6 text-black dark:text-white" />
+        <ShoppingBag className="w-6 h-6 text-black dark:text-white" />
 
         {/* Debug: Always show a small indicator to test */}
         <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full"></div>

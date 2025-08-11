@@ -5,7 +5,7 @@ import Header from '../../components/Header/Header'
 const ArimartPayscreen = () => {
   return (
     <div className=''>
-        <Header title="Payment" setbaricon={false} setcarticon={false} />
+        {/* <Header title="Payment" setbaricon={false} setcarticon={false} /> */}
         <ArimartPay/>
     </div>
   )

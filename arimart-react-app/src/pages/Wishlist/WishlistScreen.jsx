@@ -5,7 +5,7 @@ import Wishlist from '../../components/Wishlist/Wishlist'
 function WishlistScreen() {
   return (
     <div className='mb-20'>
-         <Header title="Wishlist" setbaricon={false} setcarticon={false} />
+         {/* <Header title="Wishlist" setbaricon={false} setcarticon={false} /> */}
          <Wishlist/>
     </div>
   )

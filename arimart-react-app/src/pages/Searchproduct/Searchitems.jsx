@@ -22,7 +22,7 @@ const Searchitems = () => {
   }, [query]);
   return (
     <div>
-       <Header title={"Search"} setbaricon={false} />
+       {/* <Header title={"Search"} setbaricon={false} /> */}
         <TopNavBar/>
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 p-4">
         <div className="hidden lg:block">

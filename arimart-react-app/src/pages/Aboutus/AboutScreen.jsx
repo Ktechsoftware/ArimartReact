@@ -7,7 +7,7 @@ import DesktopFooter from '../../components/Footer/DesktopFooter'
 function AboutScreen() {
   return (
     <div className='mb-20'>
-       <Header title={"About us"} setbaricon={false}  setcarticon={false}/>
+       {/* <Header title={"About us"} setbaricon={false}  setcarticon={false}/> */}
        <HeaderAbout/>
         <AboutUs/>
         <DesktopFooter/>

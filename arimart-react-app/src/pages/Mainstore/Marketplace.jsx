@@ -8,7 +8,7 @@ const Marketplace = () => {
   const { market,categoryid, subcategory, id } = useParams();
   return (
     <div>
-       <Header title={market.charAt(0).toUpperCase() + market.slice(1) + " Market"} setbaricon={false}  setcarticon={false}/>
+       {/* <Header title={market.charAt(0).toUpperCase() + market.slice(1) + " Market"} setbaricon={false}  setcarticon={false}/> */}
         <SubCategoriesPage mainCategory="Grocery" categoryid={categoryid || 1} />
     </div>
   )

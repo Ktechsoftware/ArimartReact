@@ -12,7 +12,7 @@ import { motion } from 'framer-motion';
 
 const navItems = [
   { path: "/home", label: "Home", icon: Home },
-  { path: "/foryou", label: "For You", icon: HeartHandshake },
+  { path: "/wishlist", label: "Wishlist", icon: HeartHandshake },
   { path: "/explore", label: "Search", icon: Search },
   { path: "/categories", label: "Categories", icon: LayoutList },
   { path: "/account", label: "Account", icon: User },

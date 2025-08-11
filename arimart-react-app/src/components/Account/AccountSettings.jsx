@@ -123,22 +123,6 @@ const AccountSettings = () => {
                       <dt class="font-semibold text-gray-900 dark:text-white">Phone Number</dt>
                       <dd class="text-gray-500 dark:text-gray-400"> +91 {userData?.phone || "0000000000"}</dd>
                     </dl>
-                    <dl>
-                      <dt class="mb-1 font-semibold text-gray-900 dark:text-white">Payment Methods</dt>
-                      <dd class="flex items-center space-x-4 text-gray-500 dark:text-gray-400">
-                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700">
-                          <img class="h-4 w-auto dark:hidden" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/visa.svg" alt="" />
-                          <img class="hidden h-4 w-auto dark:flex" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/visa-dark.svg" alt="" />
-                        </div>
-                        <div>
-                          <div class="text-sm">
-                            <p class="mb-0.5 font-medium text-gray-900 dark:text-white">Not avialable</p>
-                            {/* <p class="mb-0.5 font-medium text-gray-900 dark:text-white">Visa ending in 7658</p>
-                            <p class="font-normal text-gray-500 dark:text-gray-400">Expiry 10/2024</p> */}
-                          </div>
-                        </div>
-                      </dd>
-                    </dl>
                   </div>
                 </div>
                  <Link to="/account/editprofile" type="button" data-modal-target="accountInformationModal2" data-modal-toggle="accountInformationModal2" class="inline-flex w-full items-center justify-center rounded-lg bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:w-auto">

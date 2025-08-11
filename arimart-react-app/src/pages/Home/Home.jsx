@@ -8,7 +8,7 @@ import GroceryHome from '../../components/Home/GroceryHome'
 function Home() {
   return (
     <div className='mb-20'>
-    <Header/>
+    {/* <Header/> */}
     <GroceryHome/>
     </div>
   )

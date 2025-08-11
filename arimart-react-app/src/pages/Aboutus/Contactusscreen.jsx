@@ -7,7 +7,7 @@ import DesktopFooter from '../../components/Footer/DesktopFooter'
 const Contactusscreen = () => {
   return (
     <div>
-       <Header title={"Contact us"} setbaricon={false}  setcarticon={false}/>
+       {/* <Header title={"Contact us"} setbaricon={false}  setcarticon={false}/> */}
        <HeaderAbout/>
         <ContactUs/>
         <DesktopFooter/>

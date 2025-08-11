@@ -5,7 +5,7 @@ import ReferAndEarn from '../../components/Widgets/ReferAndEarn'
 function Refferearn() {
   return (
     <div>
-       <Header title={"Refer & Earn"} setbaricon={false}  setcarticon={false}/>
+       {/* <Header title={"Refer & Earn"} setbaricon={false}  setcarticon={false}/> */}
         <ReferAndEarn/>
     </div>
   )

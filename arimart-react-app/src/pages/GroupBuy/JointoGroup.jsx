@@ -5,7 +5,7 @@ import JoinGroupOrder from '../../components/GroupBuying/JoinGroupOrder'
 const JointoGroup = () => {
   return (
     <div>
-       <Header title={"Group buy deals"} setbaricon={false}/>
+       {/* <Header title={"Group buy deals"} setbaricon={false}/> */}
         <JoinGroupOrder/>
     </div>
   )

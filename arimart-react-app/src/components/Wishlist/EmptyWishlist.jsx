@@ -5,7 +5,7 @@ export default function EmptyWishlist() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+    <div className="min-h-full p-10 flex items-center justify-center bg-white dark:bg-gray-900">
       <motion.div
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
@@ -14,9 +14,9 @@ export default function EmptyWishlist() {
       >
         {/* Image */}
         <motion.img
-          src="/wishlist-empty.png" // You can store this image locally or use the URL directly
+          src="https://cdni.iconscout.com/illustration/premium/thumb/shopping-wishlist-4268128-3550592.png" // You can store this image locally or use the URL directly
           alt="Wishlist Empty"
-          className="w-48 mb-6"
+          className="w-96 mb-6"
           animate={{ scale: [1, 1.05, 1] }}
           transition={{
             repeat: Infinity,
@@ -37,7 +37,7 @@ export default function EmptyWishlist() {
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={() => navigate("/explore")}
+          onClick={() => navigate("/foryou")}
           className="bg-black text-white px-6 py-2 rounded-full font-medium shadow hover:bg-gray-800 transition"
         >
           Explore

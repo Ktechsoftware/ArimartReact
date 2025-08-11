@@ -1,9 +1,9 @@
 import { BrowserRouter as Router } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
-import AppContent from './routes/AppContent';
-import { DealAlertModal } from './components/GroupBuying/DealAlertModal';
 import { CartProvider } from './context/CartContext';
-import { Toaster } from 'react-hot-toast'; // ✅ import Toaster
+import { Toaster } from 'react-hot-toast';
+import { DealAlertModal } from './components/GroupBuying/DealAlertModal';
+import AppRoutes from './routes/AppRoutes';
 
 export default function App() {
   return (
@@ -11,7 +11,7 @@ export default function App() {
       <ThemeProvider>
         <Router>
           <DealAlertModal />
-          <AppContent />
+          <AppRoutes />
           <Toaster
             position="bottom-center"
             toastOptions={{
@@ -25,8 +25,6 @@ export default function App() {
               },
             }}
           />
-
-
         </Router>
       </ThemeProvider>
     </CartProvider>

@@ -7,7 +7,7 @@ const TopProductStore = () => {
   const { price } = useParams(); 
   return (
     <div className='mb-10'>
-         <Header title={`Top ₹${price} Store`} setbaricon={false} setcarticon={false} />
+         {/* <Header title={`Top ₹${price} Store`} setbaricon={false} setcarticon={false} /> */}
          <div className='max-w-6xl mx-auto mt-5'>
         <TopProducts/>
         </div>

@@ -5,7 +5,7 @@ import ForYouPage from '../../components/Foryou/ForYouPage'
 const Foryoupagescreeen = () => {
   return (
     <div className='mb-20'>
-       <Header title={"For you"} setbaricon={false} />
+       {/* <Header title={"For you"} setbaricon={false} /> */}
         <ForYouPage/>
     </div>
   )

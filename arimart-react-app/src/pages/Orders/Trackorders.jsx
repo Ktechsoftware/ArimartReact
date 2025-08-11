@@ -5,7 +5,7 @@ import Trackorder from '../../components/Orders/Trackorder'
 function Trackorders() {
   return (
     <div className=''>
-        <Header title="Track Your Order" setbaricon={false} setcarticon={false} />
+        {/* <Header title="Track Your Order" setbaricon={false} setcarticon={false} /> */}
         <Trackorder/>
     </div>
   )

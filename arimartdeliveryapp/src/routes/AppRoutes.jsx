@@ -27,6 +27,7 @@ import SplashScreen from '../components/onboard/SplashScreen'
 import FAQ from '../components/Account/FAQ';
 import { useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
+import DeliveryScanner from '../components/delivery/DeliveryOrderScanner';
 
 export default function AppRoutes() {
   // Splash Screen State - Only for Capacitor (Native)
@@ -98,6 +99,7 @@ export default function AppRoutes() {
       <Route path="/order/pickup" element={<PickupPage />} />
       <Route path="/order/navigate" element={<DeliveryNavigation />} />
       <Route path="/order/scan" element={<DeliveryScanPage />} />
+      <Route path="/order/deliveryorderscan" element={<DeliveryScanner />} />
     </Routes>
   );
 }

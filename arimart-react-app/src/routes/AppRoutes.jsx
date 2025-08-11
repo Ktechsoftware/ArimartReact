@@ -77,7 +77,7 @@ export default function AppRoutes() {
       const splashTimer = setTimeout(() => {
         setShowSplash(false);
         setIsAppReady(true);
-      }, 3000); // 3 seconds splash duration
+      }, 3000);
 
       return () => clearTimeout(splashTimer);
     } else if (!isNativeApp) {
@@ -87,7 +87,7 @@ export default function AppRoutes() {
 
   // Main app logic - only runs after splash is done
   useEffect(() => {
-    if (!isAppReady) return; // Wait for app to be ready
+    if (!isAppReady) return;
 
     dispatch(checkAuth());
 
@@ -95,7 +95,6 @@ export default function AppRoutes() {
       const onboarded = await Preferences.get({ key: 'hasOnboarded' });
 
       if (location.pathname === '/onboard' && !Capacitor.isNativePlatform()) {
-        // Block /onboard on web
         navigate("/", { replace: true });
         return;
       }
@@ -119,12 +118,12 @@ export default function AppRoutes() {
     handleRouting();
   }, [location.pathname, isAuthenticated, isAppReady]);
 
-  // Page loading animation
+  // Page loading animation - only animate content, not layout
   useEffect(() => {
     if (!isAppReady) return;
     
     setIsLoading(true);
-    const timer = setTimeout(() => setIsLoading(false), 800);
+    const timer = setTimeout(() => setIsLoading(false), 300); // Reduced time
     return () => clearTimeout(timer);
   }, [location.key, isAppReady]);
 
@@ -139,71 +138,71 @@ export default function AppRoutes() {
   }
 
   return (
-    <div className="relative">
+    <ResponsiveLayout>
+      <ScrollToTop />
+      
+      {/* Progress bar - only for page content loading */}
       {isLoading && (
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: '100%' }}
           exit={{ width: 0 }}
-          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           className="fixed top-0 left-0 h-1 bg-green-500 z-50"
         />
       )}
 
+      {/* Only animate the page content, not the entire layout */}
       <AnimatePresence mode="wait">
         <motion.div
           key={location.key}
-          initial={{ opacity: 0, x: 10 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -10 }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          className="min-h-screen"
         >
-          <ResponsiveLayout>
-            <ScrollToTop />
-            <Routes>
-              <Route path="/" element={<Home />} />
-              {Capacitor.isNativePlatform() && <Route path="/onboard" element={<Onboarding />} />}
-              <Route path="/auth" element={<AuthFlow />} />
-              <Route path="/about" element={<AboutScreen />} />
-              <Route path="/contactus" element={<Contactusscreen />} />
-              <Route path="/faq" element={<Faqscreen />} />
-              <Route path="/privacypolicy" element={<PrivacyPolicyScreen />} />
-              <Route path="/topstore/:price" element={<TopPriceProducts />} />
-              <Route path="/notification" element={<NotificationScreen />} />
-              <Route path="/home" element={<Home />} />
-              <Route path="/foryou" element={<Foryoupagescreeen />} />
-              <Route path="/home/referandearn" element={<Refferearn />} />
-              <Route path="/home/wallet" element={<Walletpage />} />
-              <Route path="/account" element={<AccountIndex />} />
-              <Route path="/account/editprofile" element={<EditProfilescreen />} />
-              <Route path="/explore" element={<ExploreIndex />} />
-              <Route path="/arimartpay" element={<ArimartPayscreen />} />
-              <Route path="/subcategory/:subcategoryId" element={<SubcategoryExplore />} />
-              <Route path="/cart" element={<Cartpage />} />
-              <Route path="/wishlist" element={<WishlistScreen />} />
-              <Route path="/promocodes" element={<PromocodeScreen />} />
-              <Route path="/checkout" element={<CheckoutScreen />} />
-              <Route path="/orders" element={<OrderScreen />} />
-              <Route path="/orders/tracking/:trackId" element={<OrderTrack />} />
-              <Route path="/orders/track/:trackId" element={<Trackorders />} />
-              <Route path="/checkout/payment" element={<PaymentOrder />} />
-              <Route path="/category">
-                <Route index element={<Categoryindex />} />
-                <Route path=":market/:categoryid" element={<Marketplace />} />
-                <Route path=":market/subcategory/:subcategoryid" element={<CategoryProductscreen />} />
-                <Route path=":market/:subcategory/product/:id" element={<Productpage />} />
-              </Route>
-
-              <Route path="/search" element={<Searchitems />} />
-              <Route path="/term&condition" element={<Termcondition />} />
-              <Route path="/categories" element={<Categoryindex />} />
-              <Route path="/group-buying" element={<GroupDealScreen />} />
-              <Route path="group/join/:groupid/:grouprefercode" element={<JointoGroup />} />
-            </Routes>
-          </ResponsiveLayout>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            {Capacitor.isNativePlatform() && <Route path="/onboard" element={<Onboarding />} />}
+            <Route path="/auth" element={<AuthFlow />} />
+            <Route path="/about" element={<AboutScreen />} />
+            <Route path="/contactus" element={<Contactusscreen />} />
+            <Route path="/faq" element={<Faqscreen />} />
+            <Route path="/privacypolicy" element={<PrivacyPolicyScreen />} />
+            <Route path="/topstore/:price" element={<TopPriceProducts />} />
+            <Route path="/notification" element={<NotificationScreen />} />
+            <Route path="/home" element={<Home />} />
+            <Route path="/foryou" element={<Foryoupagescreeen />} />
+            <Route path="/home/referandearn" element={<Refferearn />} />
+            <Route path="/home/wallet" element={<Walletpage />} />
+            <Route path="/account" element={<AccountIndex />} />
+            <Route path="/account/editprofile" element={<EditProfilescreen />} />
+            <Route path="/explore" element={<ExploreIndex />} />
+            <Route path="/arimartpay" element={<ArimartPayscreen />} />
+            <Route path="/subcategory/:subcategoryId" element={<SubcategoryExplore />} />
+            <Route path="/cart" element={<Cartpage />} />
+            <Route path="/wishlist" element={<WishlistScreen />} />
+            <Route path="/promocodes" element={<PromocodeScreen />} />
+            <Route path="/checkout" element={<CheckoutScreen />} />
+            <Route path="/orders" element={<OrderScreen />} />
+            <Route path="/orders/tracking/:trackId" element={<OrderTrack />} />
+            <Route path="/orders/track/:trackId" element={<Trackorders />} />
+            <Route path="/checkout/payment" element={<PaymentOrder />} />
+            <Route path="/category">
+              <Route index element={<Categoryindex />} />
+              <Route path=":market/:categoryid" element={<Marketplace />} />
+              <Route path=":market/subcategory/:subcategoryid" element={<CategoryProductscreen />} />
+              <Route path=":market/:subcategory/product/:id" element={<Productpage />} />
+            </Route>
+            <Route path="/search" element={<Searchitems />} />
+            <Route path="/term&condition" element={<Termcondition />} />
+            <Route path="/categories" element={<Categoryindex />} />
+            <Route path="/group-buying" element={<GroupDealScreen />} />
+            <Route path="group/join/:groupid/:grouprefercode" element={<JointoGroup />} />
+          </Routes>
         </motion.div>
       </AnimatePresence>
-      
-      <Toaster position="bottom-center" />
-    </div>
+    </ResponsiveLayout>
   );
 }

@@ -32,7 +32,7 @@ console.log(addresses)
       <motion.div
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        className="md:hidden flex items-center justify-between p-3 rounded-lg cursor-pointer bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 shadow-sm"
+        className="md:hidden flex items-center justify-between p-1 rounded-lg cursor-pointer bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 shadow-sm"
       >
         <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
           <span className="text-blue-600 dark:text-blue-400 text-lg">
@@ -40,7 +40,7 @@ console.log(addresses)
           </span>
 
           {preferredAddress ? (
-            <span className="text-sm text-gray-700 dark:text-gray-200 line-clamp-2">
+            <span className="text-xs text-gray-700 dark:text-gray-200 line-clamp-2 single-line-ellipsis">
              Delivery to {preferredAddress.adName} at 
               {preferredAddress.adCity ? ` ${preferredAddress.adCity}` : ""}
               {preferredAddress.adState ? `, ${preferredAddress.adState}` : ""}
