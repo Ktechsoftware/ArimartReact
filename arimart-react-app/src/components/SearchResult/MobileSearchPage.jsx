@@ -6,13 +6,14 @@ import {
   clearAutocompleteSuggestions,
   searchProducts
 } from '../../Store/searchSlice';
-import { Search, X, Clock, Package, Sparkles, Folder, FolderOpen, FileText, FileQuestion } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Search, X, Clock, Package, Sparkles, Folder, FolderOpen, FileText, FileQuestion, ArrowRight, ArrowRightCircle } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 const MobileSearchPage = () => {
   const dispatch = useDispatch();
   const inputRef = useRef();
+  const navigate = useNavigate();
 
   const {
     autocompleteSuggestions,
@@ -57,6 +58,18 @@ const MobileSearchPage = () => {
     inputRef.current?.focus();
   };
 
+  const handleSearch = () => {
+    if (query.trim()) {
+      saveToHistory(query.trim());
+      navigate(`/search?query=${encodeURIComponent(query.trim())}`);
+    }
+  };
+
+  const handleEnter = (e) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
   const generateProductUrl = (product) => {
     const cat = product.categoryName || 'unknown';
     const sub = product.subcategoryName || 'unknown';
@@ -97,21 +110,36 @@ const MobileSearchPage = () => {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 p-4">
-      <div className="relative mb-4">
+      <div className="relative mb-4 flex items-center">
         <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+
         <input
           ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleEnter}
           placeholder="Search products..."
-          className="w-full pl-10 pr-10 py-2 rounded-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-sm focus:ring-2 focus:ring-blue-500"
+          className="w-full pl-10 pr-20 py-2 rounded-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-sm focus:ring-2 focus:ring-blue-500"
         />
+
+        {/* Clear Button */}
         {query && (
-          <button onClick={handleClear} className="absolute right-3 top-2.5">
-            <X className="h-5 w-5 text-gray-400" />
+          <button
+            onClick={handleClear}
+            className="absolute right-10 top-2.5 p-1 rounded-full bg-gray-200 dark:bg-gray-700"
+          >
+            <X className="h-4 w-4 text-gray-500" />
           </button>
         )}
+
+        {/* Go/Search Button */}
+        <button
+          onClick={handleSearch}
+          className="absolute right-2 top-2.5 p-1 rounded-full bg-blue-500 hover:bg-blue-600"
+        >
+          <ArrowRightCircle className="h-4 w-4 text-white" />
+        </button>
       </div>
 
       {!query && (

@@ -274,10 +274,11 @@ const groupSlice = createSlice({
           state.groupsById[gid] = data;
         }
       })
-      .addCase(fetchGroupById.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
-      });
+     .addCase(fetchGroupById.rejected, (state, action) => {
+    state.isLoading = false;
+    // Fix this line:
+    state.error = action.payload?.message || action.payload?.title || action.payload || action.error?.message || "Failed to fetch group";
+});
 
     // Create group
     builder
@@ -313,10 +314,10 @@ const groupSlice = createSlice({
         }
       })
       .addCase(createGroup.rejected, (state, action) => {
-        state.isCreating = false;
-        state.createSuccess = false;
-        state.error = action.payload;
-      });
+    state.isCreating = false;
+    state.createSuccess = false;
+    state.error = action.payload?.message || action.payload?.title || action.payload || action.error?.message || "Failed to create group";
+});
 
     // Join group
     builder
@@ -342,10 +343,10 @@ const groupSlice = createSlice({
         }
       })
       .addCase(joinGroup.rejected, (state, action) => {
-        state.isJoining = false;
-        state.joinSuccess = false;
-        state.error = action.payload;
-      });
+    state.isJoining = false;
+    state.joinSuccess = false;
+    state.error = action.payload?.message || action.payload?.title || action.payload || action.error?.message || "Failed to join group";
+});
 
     // Leave group
     builder
@@ -373,11 +374,11 @@ const groupSlice = createSlice({
           );
         }
       })
-      .addCase(leaveGroup.rejected, (state, action) => {
-        state.isLeaving = false;
-        state.leaveSuccess = false;
-        state.error = action.payload;
-      });
+     .addCase(leaveGroup.rejected, (state, action) => {
+    state.isLeaving = false;
+    state.leaveSuccess = false;
+    state.error = action.payload?.message || action.payload?.title || action.payload || action.error?.message || "Failed to leave group";
+})
 
     // ✅ ENHANCED: Fetch group members by GID
     builder

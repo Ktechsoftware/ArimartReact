@@ -84,6 +84,18 @@ const JoinGroupOrder = () => {
             isCurrentUser
         );
     });
+    // Replace this useEffect at the bottom of your component:
+    useEffect(() => {
+        if (error) {
+            // Extract string message from error object
+            const errorMessage = typeof error === 'string'
+                ? error
+                : error?.title || error?.message || "Something went wrong";
+
+            toast.error(errorMessage);
+            dispatch(resetGroupState());
+        }
+    }, [error, dispatch]);
 
     // First, set the group context when user joins the group
     useEffect(() => {

@@ -9,9 +9,9 @@ import { addToWishlist } from "../../Store/wishlistSlice";
 import { fetchGroupBuysByProductId } from "../../Store/productsSlice";
 import { useCart } from "../../context/CartContext";
 import { GroupBuySection } from "../../pages/GroupBuy/GroupBuySection";
+import { createGroup, fetchMyJoinedGroups } from "../../Store/groupBuySlice";
 import ProductReview from "../Reviews/ProductReview";
 import toast from 'react-hot-toast';
-import { createGroup } from "../../Store/groupBuySlice";
 import RecommendedProducts from "./RecommendedProducts";
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
@@ -57,14 +57,9 @@ export default function ProductDetails({ cartIconRef }) {
   const userId = userData?.userId || userData?.id;
   const wishlistItems = useSelector((state) => state.wishlist.items);
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
-  const cartItem = product ? getCartItemInfo(product.id) : null;
+  const cartItem = product ? getCartItemInfo(product.pdid) : null;
   const itemInCart = !!cartItem;
   const itemQuantity = cartItem ? cartItem.quantity : 1;
-
-
-  const gid = product?.gid;
-  const currentGroup = useSelector(state => state.group.groupsById?.[gid]);
-  const referCodeData = referCodesByGid[gid];
 
   const demoImages = [
     "https://apiari.kuldeepchaurasia.in/Uploads/" + product?.image || '/placeholder-image.jpg',
@@ -89,6 +84,17 @@ export default function ProductDetails({ cartIconRef }) {
     if (groupBuys?.length > 0) {
     }
   }, [groupBuys]);
+  // Update the isGroupOwner logic:
+  useEffect(() => {
+    if (groupBuys?.length > 0 && userId) {
+      const userOwnedGroup = groupBuys.find(groupBuy =>
+        groupBuy.cuserid === userId || groupBuy.userid === userId
+      );
+      setIsGroupOwner(!!userOwnedGroup);
+    } else {
+      setIsGroupOwner(false);
+    }
+  }, [groupBuys, userId]);
 
   const allGroupBuys = useSelector((state) => state.products.groupBuys);
   useEffect(() => {
@@ -99,13 +105,6 @@ export default function ProductDetails({ cartIconRef }) {
       dispatch(fetchProductById(id));
     }
   }, [dispatch, id]);
-
-  useEffect(() => {
-    if (currentGroup && userId) {
-      const isOwner = currentGroup.cuserid === userId || currentGroup.cuserid === userId;
-      setIsGroupOwner(isOwner);
-    }
-  }, [currentGroup, userId]);
   useEffect(() => {
     if (product) {
       // Update SEO meta tags
@@ -130,17 +129,8 @@ export default function ProductDetails({ cartIconRef }) {
       toast.error("Please login to join group buy");
       return;
     }
-
-    if (!gid) {
-      toast.error("Group ID not found");
-      return;
-    }
-
-    // Get referral code for this specific group
-    const referCode = referCodeData?.refercode;
-
-    // Navigate to group buy page
-    navigator(`/group/join/${gid}${referCode ? `/${referCode}` : ''}`);
+    // const referCode = referCodeData?.refercode;
+    // navigator(`/group/join/${4654}${referCode ? `/${referCode}` : ''}`);
   };
 
   const handleShare = async () => {
@@ -179,7 +169,31 @@ export default function ProductDetails({ cartIconRef }) {
       }
     }
   };
+  // Enhanced isGroupOwner logic that checks both groupBuys and myJoinedGroups:
+  useEffect(() => {
+    if (userId && product?.id) {
+      let hasCreatedGroup = false;
 
+      // Check in groupBuys (from product slice)
+      if (groupBuys?.length > 0) {
+        hasCreatedGroup = groupBuys.some(groupBuy =>
+          groupBuy.cuserid === userId || groupBuy.userid === userId
+        );
+      }
+
+      // Also check in myJoinedGroups (from group slice) for groups this user created
+      if (!hasCreatedGroup && myJoinedGroups?.length > 0) {
+        hasCreatedGroup = myJoinedGroups.some(group =>
+          (group.cuserid === userId || group.userid === userId) &&
+          (group.pid === product.id || group.productId === product.id)
+        );
+      }
+
+      setIsGroupOwner(hasCreatedGroup);
+    } else {
+      setIsGroupOwner(false);
+    }
+  }, [groupBuys, myJoinedGroups, userId, product?.id]);
 
   useEffect(() => {
     if (wishlistItems && product?.id) {
@@ -322,7 +336,12 @@ export default function ProductDetails({ cartIconRef }) {
       const resultAction = await dispatch(createGroup(payload)).unwrap();
       toast.success("Group created successfully!");
       console.log("Created group:", resultAction);
+
+      // Refresh both group buys and joined groups data
       dispatch(fetchGroupBuysByProductId(product.id));
+      if (userId) {
+        dispatch(fetchMyJoinedGroups(userId)); // Add this import
+      }
     } catch (error) {
       console.error("Group creation failed:", error);
       toast.error(error?.message || "Failed to create group");
@@ -745,7 +764,7 @@ export default function ProductDetails({ cartIconRef }) {
                     animate={{ scale: 1 }}
                     className="text-white font-bold text-lg min-w-[2rem] text-center"
                   >
-                    {itemQuantity}
+                    {itemQuantity} {product.wtype}
                   </motion.div>
 
                   <motion.button

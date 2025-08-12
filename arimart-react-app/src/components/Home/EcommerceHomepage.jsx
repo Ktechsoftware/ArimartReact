@@ -112,7 +112,7 @@ const EcommerceHomepage = () => {
       <HomepageFeaturedProducts />
 
       {/* Deal of the Day */}
-      <section className="py-12 container mx-auto px-6">
+      {/* <section className="py-12 container mx-auto px-6">
         <div className="bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl p-8 text-white">
           <div className="flex flex-col md:flex-row items-center">
             <div className="md:w-1/2 mb-6 md:mb-0">
@@ -164,7 +164,7 @@ const EcommerceHomepage = () => {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
     </div>
   )
 }

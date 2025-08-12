@@ -1,16 +1,18 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 import ProductCard from './ProductCard';
 import {
   searchProducts,
   loadMoreSearchResults,
+  clearSearchResults,
 } from '../../Store/searchSlice';
 
 const DesktopProducts = () => {
   const dispatch = useDispatch();
   const location = useLocation();
   const query = new URLSearchParams(location.search).get('query');
+  const loadMoreRef = useRef(null);
 
   const {
     results,
@@ -22,7 +24,7 @@ const DesktopProducts = () => {
 
   const { selectedFilters } = useSelector((state) => state.filters);
 
-  // 👇 Helper to build filter request
+  // Helper to build filter request
   const getSearchParamsFromFilters = (filters) => {
     const params = {};
 
@@ -39,32 +41,67 @@ const DesktopProducts = () => {
     return params;
   };
 
-  // ✅ Final useEffect to trigger search based on query + filters
-  useEffect(() => {
-    if (query) {
+  // Memoized load more function
+  const handleLoadMore = useCallback(() => {
+    if (hasMore && !loading && query) {
       const filterParams = getSearchParamsFromFilters(selectedFilters);
-
-      dispatch(searchProducts({
+      dispatch(loadMoreSearchResults({ 
         query,
-        page: 1,
-        pageSize: 12,
-        ...filterParams,
+        ...filterParams
       }));
     }
-  }, [query, selectedFilters]);
+  }, [hasMore, loading, query, selectedFilters, dispatch]);
 
-  const handleLoadMore = () => {
-    if (hasMore && !loading) {
-      dispatch(loadMoreSearchResults({ query }));
+  // Search effect - triggers on query or filter changes
+  useEffect(() => {
+    if (!query) return;
+
+    const filterParams = getSearchParamsFromFilters(selectedFilters);
+    dispatch(clearSearchResults());
+    dispatch(searchProducts({
+      query,
+      page: 1,
+      pageSize: 12,
+      ...filterParams,
+    }));
+  }, [query, selectedFilters, dispatch]);
+
+  // Intersection Observer effect for auto-loading
+  useEffect(() => {
+    const currentRef = loadMoreRef.current;
+    
+    if (!currentRef || !hasMore || loading) {
+      return;
     }
-  };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting) {
+          handleLoadMore();
+        }
+      },
+      { 
+        rootMargin: '100px',
+        threshold: 0.1
+      }
+    );
+
+    observer.observe(currentRef);
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [handleLoadMore, hasMore, loading]);
 
   const displayTitle = query
     ? `Search Results for "${query}"`
     : 'Popular Products';
 
   return (
-    <div className="py-8 px-4 bg-white dark:bg-gray-900">
+    <div className="md:py-8 md:px-4 bg-white dark:bg-gray-900">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-gray-800 dark:text-white">
           {displayTitle}
@@ -83,25 +120,37 @@ const DesktopProducts = () => {
         </div>
       )}
 
-      {results.length === 0 && !loading && (
-        <p className="text-center text-gray-500 dark:text-gray-400">No products found.</p>
+      {results.length === 0 && !loading && query && (
+        <p className="text-center text-gray-500 dark:text-gray-400">
+          No products found for "{query}".
+        </p>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 md:p-4">
-        {results.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </div>
+      {results.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 md:p-4">
+          {results.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      )}
 
-      {hasMore && (
-        <div className="flex justify-center mt-6">
-          <button
-            onClick={handleLoadMore}
-            disabled={loading}
-            className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
-          >
-            {loading ? 'Loading...' : 'Load More'}
-          </button>
+      {/* Auto-load trigger element - only show when there are more items to load */}
+      {hasMore && results.length > 0 && (
+        <div 
+          ref={loadMoreRef} 
+          className="h-10 flex justify-center items-center"
+        >
+          {loading && (
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
+          )}
+        </div>
+      )}
+
+      {/* Loading indicator for subsequent pages */}
+      {loading && pagination.page > 1 && (
+        <div className="flex justify-center items-center py-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500 mr-2"></div>
+          <span className="text-gray-600 dark:text-gray-400">Loading more products...</span>
         </div>
       )}
     </div>

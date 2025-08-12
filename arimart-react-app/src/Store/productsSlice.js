@@ -143,7 +143,7 @@ export const fetchGroupBuysByProductId = createAsyncThunk(
   async (productId, { rejectWithValue }) => {
     try {
       const response = await API.get(`products/groupbuy/${productId}`);
-      // console.log('Group buys for product:', response.data);
+      console.log('Group buys for product:', response.data);
       return {
         productId,
         groupBuys: response.data

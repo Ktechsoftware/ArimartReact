@@ -227,8 +227,6 @@ ${shareUrl}`;
     window.open(link, '_blank');
   };
 
-
-  // ✅ ENHANCED: Early return if no gid or essential product data
   // ✅ ENHANCED: Early return if no gid or essential product data
   if (!gid || !product?.gprice || !product?.gqty) return null;
 

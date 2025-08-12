@@ -17,7 +17,7 @@ const WishlistProductCard = ({ product }) => {
 
   const productId = product?.pdid;
   const linkproductid = product?.pid;
-  const cartItem = product ? getCartItemInfo(productId) : null;
+  const cartItem = product ? getCartItemInfo(linkproductid) : null;
   const itemInCart = !!cartItem;
 
    const generateProductLink = () => {
