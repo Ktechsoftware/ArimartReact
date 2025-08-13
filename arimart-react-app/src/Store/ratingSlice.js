@@ -1,6 +1,19 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import API from '../api';
 
+// ✅ Check if user is eligible to rate (new thunk)
+export const checkRatingEligibility = createAsyncThunk(
+  'ratings/checkRatingEligibility',
+  async (pdid, { rejectWithValue }) => {
+    try {
+      const response = await API.get(`/rating/eligibility/${pdid}`);
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to check eligibility');
+    }
+  }
+);
+
 // ✅ Submit new rating
 export const submitRating = createAsyncThunk(
   'ratings/submitRating',
@@ -109,6 +122,12 @@ const ratingSlice = createSlice({
     },
     average: null,
     withUser: [],
+    eligibility: {
+      isEligible: false,
+      hasAlreadyRated: false,
+      reason: null,
+      loading: false
+    },
     loading: false,
     analyticsLoading: false,
     ratingsLoading: false,
@@ -126,10 +145,34 @@ const ratingSlice = createSlice({
     resetRatingForm: (state) => {
       state.error = null;
       state.successMessage = null;
+    },
+    resetEligibility: (state) => {
+      state.eligibility = {
+        isEligible: false,
+        hasAlreadyRated: false,
+        reason: null,
+        loading: false
+      };
     }
   },
   extraReducers: (builder) => {
     builder
+
+      // Check rating eligibility
+      .addCase(checkRatingEligibility.pending, (state) => {
+        state.eligibility.loading = true;
+      })
+      .addCase(checkRatingEligibility.fulfilled, (state, action) => {
+        state.eligibility.loading = false;
+        state.eligibility.isEligible = action.payload.isEligible || false;
+        state.eligibility.hasAlreadyRated = action.payload.hasAlreadyRated || false;
+        state.eligibility.reason = action.payload.reason || null;
+      })
+      .addCase(checkRatingEligibility.rejected, (state, action) => {
+        state.eligibility.loading = false;
+        state.eligibility.isEligible = false;
+        state.eligibility.reason = action.payload;
+      })
 
       // Submit rating
       .addCase(submitRating.pending, (state) => {
@@ -140,6 +183,9 @@ const ratingSlice = createSlice({
       .addCase(submitRating.fulfilled, (state, action) => {
         state.loading = false;
         state.successMessage = action.payload.message || 'Review submitted successfully!';
+        // Update eligibility after successful submission
+        state.eligibility.hasAlreadyRated = true;
+        state.eligibility.isEligible = false;
       })
       .addCase(submitRating.rejected, (state, action) => {
         state.loading = false;
@@ -246,7 +292,8 @@ const ratingSlice = createSlice({
 export const {
   clearRatingMessages,
   setRatingFilter,
-  resetRatingForm
+  resetRatingForm,
+  resetEligibility
 } = ratingSlice.actions;
 
 export default ratingSlice.reducer;

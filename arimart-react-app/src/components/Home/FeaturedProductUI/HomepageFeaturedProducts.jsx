@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useParams } from 'react-router-dom';
-import { ChevronRight, Heart, Star, ShoppingCart, Plus, Minus, Trash } from 'lucide-react';
+import { ChevronRight, Heart, Star, ShoppingCart, Plus, Minus, Trash, Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { fetchHomepageSections } from '../../../Store/PopularSlice/popularProductsSlice';
 import { fetchProducts, loadMoreProducts } from '../../../Store/productsSlice';
@@ -314,7 +314,10 @@ const HomepageFeaturedProducts = () => {
                     <div className="flex-grow">
                         <Link to={generateProductLink(product)}>
                             <h3 className="font-medium text-gray-900 dark:text-white line-clamp-2 mb-1 hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
-                                {product.productName}
+                                {product.productName
+                                    ? product.productName.charAt(0).toUpperCase() + product.productName.slice(1)
+                                    : ''}
+
                             </h3>
                         </Link>
 
@@ -323,87 +326,22 @@ const HomepageFeaturedProducts = () => {
                         )}
 
                         {groupPrice > 0 && (
-                            <div className="text-xs bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-300 px-2 py-1 rounded mb-2">
-                                Group: ₹{groupPrice} (Min {product.gqty})
+                            <div className="text-xs bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-300 px-2 py-1 rounded ">
+                                {product.gqty} member needed!
                             </div>
                         )}
-
-                        {/* Price */}
-                        <div className="flex items-center gap-2 mb-2">
-                            <span className="font-bold text-gray-900 dark:text-white">₹{displayPrice}</span>
-                            {originalPrice > displayPrice && (
-                                <span className="text-sm line-through text-gray-400">₹{originalPrice}</span>
-                            )}
-                        </div>
-
-                        {/* Rating */}
-                        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                            <Star size={14} className="fill-yellow-400 text-yellow-400 mr-1" />
-                            <span>{product.rating || '4.5'}</span>
-                        </div>
                     </div>
 
-                    {/* Cart Actions - Always at bottom */}
-                    <div className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-700">
-                        {!inCart ? (
-                            <button
-                                onClick={() => handleAddToCart(product)}
-                                disabled={loading}
-                                className={`w-full py-2.5 rounded-md flex items-center justify-center transition-all duration-200 font-medium ${loading
-                                        ? 'bg-orange-400 cursor-not-allowed'
-                                        : 'bg-orange-500 hover:bg-orange-600 hover:shadow-md active:bg-orange-700'
-                                    } text-white`}
-                            >
-                                {loading ? (
-                                    <span className="animate-spin">↻</span>
-                                ) : (
-                                    <>
-                                        <ShoppingCart size={16} className="mr-2" />
-                                        Add to Cart
-                                    </>
-                                )}
-                            </button>
-                        ) : (
-                            <div className="flex items-center justify-between border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-700/50">
-                                {quantity <= 1 ? (
-                                    <button
-                                        onClick={() => handleRemoveFromCart(product.id)}
-                                        disabled={removeLoading}
-                                        className="px-3 py-2.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors rounded-l-md"
-                                    >
-                                        {removeLoading ? (
-                                            <span className="animate-spin">↻</span>
-                                        ) : (
-                                            <Trash size={16} />
-                                        )}
-                                    </button>
-                                ) : (
-                                    <button
-                                        onClick={() => handleUpdateQuantity(product.pdid, -1)}
-                                        disabled={qtyLoading}
-                                        className="px-3 py-2.5 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors rounded-l-md"
-                                    >
-                                        {qtyLoading ? (
-                                            <span className="animate-spin">↻</span>
-                                        ) : (
-                                            <Minus size={16} />
-                                        )}
-                                    </button>
-                                )}
-                                <span className="text-sm font-semibold px-3 min-w-[40px] text-center">{quantity} {product.wtype}</span>
-                                <button
-                                    onClick={() => handleUpdateQuantity(product.pdid, 1)}
-                                    disabled={qtyLoading}
-                                    className="px-3 py-2.5 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors rounded-r-md"
-                                >
-                                    {qtyLoading ? (
-                                        <span className="animate-spin">↻</span>
-                                    ) : (
-                                        <Plus size={16} />
-                                    )}
-                                </button>
-                            </div>
-                        )}
+                    <div className="mt-1 pt-2 border-t border-gray-100 dark:border-gray-700">
+                        <button
+                            className="w-full text-sm py-2.5 rounded-md flex items-center justify-center transition-all duration-200 font-medium bg-orange-500 hover:bg-orange-600 hover:shadow-md active:bg-orange-700 text-white"
+                        >
+                            <Tag size={16} className="mr-2" />
+                            {groupPrice > 0
+                                ? `Group Price: ₹${groupPrice}`
+                                : `Price: ₹${product.price}`}
+                        </button>
+
                     </div>
                 </div>
             </div>

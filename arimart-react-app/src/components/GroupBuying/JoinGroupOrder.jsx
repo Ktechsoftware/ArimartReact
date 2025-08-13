@@ -39,7 +39,7 @@ const JoinGroupOrder = () => {
     const navigate = useNavigate();
     const { groupid, grouprefercode } = useParams();
     const userData = useSelector((state) => state.auth.userData);
-    const { addToCart, setCurrentGroup, isItemInCart } = useCart();
+    const { addToCart, setCurrentGroup, isItemInCart, loadGroupCart } = useCart();
     const dispatch = useDispatch();
     const [timeLeft, setTimeLeft] = useState(null);
     const [copiedCode, setCopiedCode] = useState(false);
@@ -92,7 +92,7 @@ const JoinGroupOrder = () => {
                 ? error
                 : error?.title || error?.message || "Something went wrong";
 
-            toast.error(errorMessage);
+            console.log(errorMessage)
             dispatch(resetGroupState());
         }
     }, [error, dispatch]);
@@ -179,9 +179,9 @@ const JoinGroupOrder = () => {
         }
     };
     // console.log(group)
-    const isProductInCart = group?.pdid ? isItemInCart(group.pdid, groupid) : false;
+    const isProductInCart = group?.pid ? isItemInCart(group.pid, group.gid) : false;
     // Handle add to cart
-    const handleAddToCart = () => {
+    const handleAddToCart = async () => {
         if (quantity < 1) {
             toast.error("Please select a valid quantity");
             return;
@@ -199,8 +199,8 @@ const JoinGroupOrder = () => {
             subcategoryName: group.subcategoryName || '',
         };
 
-        addToCart(cartItem, quantity, groupid);
-        toast.success(`${quantity} item(s) added to cart!`);
+        await addToCart(cartItem, quantity, groupid);
+        await loadGroupCart();
     };
 
     // Handle go to cart
@@ -229,14 +229,6 @@ const JoinGroupOrder = () => {
             dispatch(resetGroupState());
         }
     }, [leaveSuccess, dispatch, groupid, currentUserId]);
-
-    // Handle errors
-    useEffect(() => {
-        if (error) {
-            toast.error(error);
-            dispatch(resetGroupState());
-        }
-    }, [error, dispatch]);
 
     if (!group) {
         return (

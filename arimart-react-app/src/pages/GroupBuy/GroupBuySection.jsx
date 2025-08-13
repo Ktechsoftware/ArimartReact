@@ -14,7 +14,7 @@ import {
   fetchMyJoinedGroups,
 } from "../../Store/groupBuySlice";
 
-export const GroupBuySection = ({ userId, product, type = "" }) => {
+export const GroupBuySection = ({ userId, product, type = "", onGroupReady }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
@@ -121,7 +121,15 @@ export const GroupBuySection = ({ userId, product, type = "" }) => {
     }
   }, [groupMembers, userId, previousMemberCount]);
 
-  // console.log(groupMembers)
+  useEffect(() => {
+    if (gid && referCodeData?.refercode && onGroupReady) {
+      onGroupReady({
+        gid,
+        refercode: referCodeData.refercode,
+        isGroupOwner
+      });
+    }
+  }, [gid, referCodeData?.refercode, isGroupOwner, onGroupReady]);
 
   // Countdown timer
   useEffect(() => {
@@ -156,16 +164,11 @@ export const GroupBuySection = ({ userId, product, type = "" }) => {
       toast.error("Please login to join group buy");
       return;
     }
-
     if (!gid) {
       toast.error("Group ID not found");
       return;
     }
-
-    // Get referral code for this specific group
     const referCode = referCodeData?.refercode;
-
-    // Navigate to group buy page
     navigate(`/group/join/${gid}${referCode ? `/${referCode}` : ''}`);
   };
 
@@ -239,178 +242,41 @@ ${shareUrl}`;
   const requiredMembers = product.gqty || 5;
   const remainingMembers = Math.max(0, requiredMembers - currentMembers);
   const isGroupBuyActive = !!timeLeft;
-  
+
   if (!isGroupBuyActive) return null;
 
   return (
     <div className="border border-purple-200 dark:border-purple-700 p-3 rounded-lg bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 shadow-sm max-w-4xl mx-auto">
-
-      {/* Debug Info - Remove in production */}
-      <div className="flex items-center justify-between mb-2 text-xs text-gray-500 dark:text-gray-400">
-        Group Code: {referCodeData?.refercode} | Members: {currentMembers}
-        {type == "joined" ?
-          <div className="flex items-center gap-1">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={(e) => {
-                e.stopPropagation();
-                const groupCode = `${referCodeData?.refercode}`;
-                copyToClipboard(groupCode, 'code');
-              }}
-              className="text-xs px-2 py-1 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors flex items-center gap-1"
-            >
-              <Copy className="w-3 h-3" />
-              Copy <span className="hidden sm:inline">Code</span>
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={(e) => {
-                e.stopPropagation();
-                const groupCode = `${referCodeData?.refercode}`;
-                shareGroup(groupCode, product.productname || 'Product', gid);
-              }}
-              className="text-xs px-2 py-1 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors flex items-center gap-1"
-            >
-              <Share2 className="w-3 h-3" />
-              Share
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={(e) => {
-                e.stopPropagation();
-                const groupCode = `${referCodeData?.refercode}`;
-                shareToWhatsApp(
-                  groupCode,
-                  product.productName || 'Product',
-                  gid,
-                  product.price,
-                  product.gprice
-                );
-              }}
-              className="text-xs px-2 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors flex items-center gap-1"
-            >
-              <MessageCircle className="w-3 h-3" />
-              <span className="hidden sm:inline">WhatsApp</span>
-            </motion.button>
-
-          </div>
-          : ""}
-      </div>
-
-      {/* Main Content - Always Visible */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-
-        {/* Left Section: Vendor Info & Progress */}
-        <div className="flex items-center gap-3 flex-1 w-full md:w-auto">
-          <div className="p-1 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full shadow-sm">
+      <div className="flex items-start gap-3">
+        {/* Vendor Image with Name Below */}
+        <div className="flex flex-col items-center">
+          <div className="p-1 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full shadow-sm mb-1">
             {currentGroup?.image1 ? (
               <img
                 src={"https://apiari.kuldeepchaurasia.in/uploads/" + currentGroup.image1}
                 alt="Group"
-                className="w-8 h-8 rounded-full object-cover"
+                className="w-10 h-10 rounded-full object-cover"
               />
             ) : (
-              <Users className="w-4 h-4 text-white" />
+              <Users className="w-5 h-5 text-white" />
             )}
           </div>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <h3 className="text-sm font-bold text-gray-800 dark:text-white truncate flex items-center gap-1">
-                {currentGroup?.vendorName ? (
-                  currentGroup.vendorName
-                ) : (
-                  <Loader className="w-4 h-4 animate-spin text-gray-500" />
-                )}
-              </h3>
-              {isGroupOwner && (
-                <span className="text-xs bg-yellow-400 text-yellow-800 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                  You
-                </span>
-              )}
-              <motion.div
-                animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                <Sparkles className="w-3 h-3 text-yellow-500" />
-              </motion.div>
-            </div>
-
-            {/* Progress Bar with Member Info */}
-            <div className="flex items-center gap-2">
-              <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden min-w-[100px]">
-                <motion.div
-                  className="bg-gradient-to-r from-purple-500 to-blue-500 h-1.5 rounded-full"
-                  style={{ width: `${Math.min((currentMembers / requiredMembers) * 100, 100)}%` }}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${Math.min((currentMembers / requiredMembers) * 100, 100)}%` }}
-                  transition={{ duration: 1, ease: "easeOut" }}
-                />
-              </div>
-              <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                <span>{currentMembers}/{requiredMembers}</span>
-                {remainingMembers > 0 && (
-                  <motion.span
-                    className="text-orange-500 font-medium"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 }}
-                  >
-                    ({remainingMembers} needed)
-                  </motion.span>
-                )}
-              </div>
-            </div>
-
-            {/* New Member Join Animation */}
-            {newMemberJoined && (
-              <motion.div
-                className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.5 }}
-              >
-                <UserPlus className="w-3 h-3" />
-                <span>New member joined!</span>
-              </motion.div>
-            )}
-          </div>
+          <p className="text-xs font-medium text-gray-800 dark:text-white text-center max-w-[60px] truncate">
+            {currentGroup?.vendorName || "Group"}
+          </p>
         </div>
 
-        {/* Center Section: Timer with Calendar Animation - Hidden on mobile when collapsed */}
-        {/* Center Section: Timer or End Message */}
-        {(!isMobile || expanded) && (
-          <motion.div
-            className="flex items-center gap-1 bg-white/50 dark:bg-gray-800/50 px-2 py-1 rounded-lg border border-purple-200 dark:border-purple-700"
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            <motion.div
-              animate={{
-                rotate: [0, -5, 5, -5, 0],
-                scale: [1, 1.1, 1]
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            >
-              <Calendar className="w-3 h-3 text-purple-600 dark:text-purple-400" />
-            </motion.div>
-
+        {/* Main Content - Progress and Timer */}
+        <div className="flex-1 min-w-0">
+          {/* Countdown Timer */}
+          <div className="flex items-center gap-2 mb-2">
+            <Clock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
             <div className="flex gap-1 text-xs font-medium text-purple-800 dark:text-purple-200">
               {isGroupBuyActive && timeLeft.days > 0 ? (
                 <>
                   <span>{timeLeft.days}d</span>
                   <span>{timeLeft.hours}h</span>
                   <span>{timeLeft.minutes}m</span>
-                  <span>{timeLeft.seconds}s</span>
                 </>
               ) : isGroupBuyActive ? (
                 <>
@@ -419,55 +285,47 @@ ${shareUrl}`;
                   <span>{timeLeft.seconds}s</span>
                 </>
               ) : (
-                <span>Group Buy End</span>
+                <span>Ended</span>
               )}
             </div>
-          </motion.div>
-        )}
-
-
-        {/* Right Section: Join Button */}
-        <div className="flex md:flex-col md:items-end items-center gap-2">
-          <div className="text-xs text-gray-600 dark:text-gray-300 text-right">
-            <div className="flex items-center gap-1">
-              <Tag className="w-3 h-3 text-green-600" />
-              <span className="line-through text-gray-400">₹{regularPrice}</span>
-              <span className="font-bold text-green-700 dark:text-green-400">₹{groupPrice}</span>
-              <span className="bg-green-100 text-green-800 text-xs px-1.5 py-0.5 rounded">
-                {discountPercentage}% OFF
-              </span>
+            <div className="text-xs bg-green-100 text-green-800 px-1 rounded">
+              {discountPercentage}% OFF
             </div>
           </div>
+
+          {/* Progress Bar */}
+          <div className="flex items-center gap-2 mb-1">
+            <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+              <div
+                className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full"
+                style={{ width: `${Math.min((currentMembers / requiredMembers) * 100, 100)}%` }}
+              />
+            </div>
+            <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+              {currentMembers}/{requiredMembers}
+            </span>
+          </div>
+          {remainingMembers > 0 && (
+            <p className="text-xs text-orange-500 dark:text-orange-400">
+              {remainingMembers} more needed
+            </p>
+          )}
+        </div>
+
+        {/* Price & Join Button */}
+        <div className="flex flex-col items-end justify-between h-full">
+         <div className="text-right">
+  <span className="text-xs text-gray-600 dark:text-gray-300">Get at </span>
+  <span className="text-lg font-bold text-green-700 dark:text-green-400">₹{groupPrice}</span>
+</div>
           <button
             onClick={handleJoinToOrder}
-            className="flex items-center gap-2 px-4 py-1.5 rounded-full text-sm bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:opacity-90 transition-all shadow-md"
+            className="px-3 py-1.5 rounded-full text-sm bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:opacity-90 shadow-md whitespace-nowrap mt-2"
           >
-            <ShoppingCart className="w-4 h-4" /> {type == "joined" ? "view Detail" : "Join to order"}
+            {type == "joined" ? "View" : "Join to order"}
           </button>
         </div>
       </div>
-
-      {/* Toggle Expand/Collapse (for mobile) */}
-      {isMobile && (
-        <div className="flex justify-center mt-2">
-          <button
-            onClick={() => setExpanded(prev => !prev)}
-            className="text-xs text-purple-700 dark:text-purple-300 hover:underline flex items-center gap-1"
-          >
-            {expanded ? (
-              <>
-                <ChevronUp className="w-3 h-3" />
-                Show Less
-              </>
-            ) : (
-              <>
-                <ChevronDown className="w-3 h-3" />
-                Show More
-              </>
-            )}
-          </button>
-        </div>
-      )}
     </div>
   );
 };

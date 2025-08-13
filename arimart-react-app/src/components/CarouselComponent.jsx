@@ -43,7 +43,7 @@ export default function DynamicSlideCarousel() {
   };
 
   return (
-    <div class="relative w-full h-32 sm:h-72 md:h-96 rounded-xl overflow-hidden">
+    <div class="relative w-full h-48 sm:h-72 md:h-96 rounded-xl overflow-hidden">
       <AnimatePresence custom={direction} initial={false}>
         <motion.div
           key={currentSlide}
@@ -57,7 +57,7 @@ export default function DynamicSlideCarousel() {
           <img
             src={slides[currentSlide]}
             alt={`Slide ${currentSlide + 1}`}
-            className="w-full h-32 md:h-full object-cover object-center"
+            className="w-full h-48 md:h-full object-cover object-center"
           />
         </motion.div>
       </AnimatePresence>

@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Heart, Star, Plus, Minus, ShoppingCart, LoaderCircle, Trash2, Users, ChevronsUp, Trash2Icon, Share2, UserCheckIcon } from "lucide-react";
+import { ArrowLeft, Heart, Star, Plus, Minus, ShoppingCart, LoaderCircle, Trash2, Users, ChevronsUp, Trash2Icon, Share2, UserCheckIcon, Truck, Lock, RefreshCcw, CheckCircle, CheckCircle2 } from "lucide-react";
 import ProductCard from "./ProductCard";
 import { fetchProductById } from "../../Store/productDetailSlice";
 import { addToWishlist } from "../../Store/wishlistSlice";
@@ -10,12 +10,13 @@ import { fetchGroupBuysByProductId } from "../../Store/productsSlice";
 import { useCart } from "../../context/CartContext";
 import { GroupBuySection } from "../../pages/GroupBuy/GroupBuySection";
 import { createGroup, fetchMyJoinedGroups } from "../../Store/groupBuySlice";
-import ProductReview from "../Reviews/ProductReview";
 import toast from 'react-hot-toast';
 import RecommendedProducts from "./RecommendedProducts";
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import seoHelper from "../../utils/seoHelper"
+import { fetchWalletBalance } from "../../Store/walletSlice";
+import { ReviewsComponent} from "../Reviews/ProductReview";
 
 export default function ProductDetails({ cartIconRef }) {
   const { id } = useParams();
@@ -41,7 +42,8 @@ export default function ProductDetails({ cartIconRef }) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
   const [optimisticInCart, setOptimisticInCart] = useState(false);
-
+  const [useWalletAmount, setUseWalletAmount] = useState(0);
+  const walletBalance = useSelector((state) => state.wallet.balance);
   const [activeTab, setActiveTab] = useState("description");
   const [userRating, setUserRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
@@ -49,6 +51,7 @@ export default function ProductDetails({ cartIconRef }) {
   const [saveloading, setsaveLoading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [isGroupOwner, setIsGroupOwner] = useState(false);
+  const [currentGroupData, setCurrentGroupData] = useState(null);
 
 
   const productDetailState = useSelector((state) => state.productDetail) || {};
@@ -73,6 +76,16 @@ export default function ProductDetails({ cartIconRef }) {
     const result = state.products.groupBuys?.[productId] || emptyGroupBuys;
     return result;
   });
+  const handleGroupReady = useCallback((groupData) => {
+    setCurrentGroupData(groupData);
+    console.log('Received from GroupBuySection:', groupData); // gid, refercode, isGroupOwner
+  }, []);
+  useEffect(() => {
+    if (userData?.id) {
+      dispatch(fetchWalletBalance(userData.id));
+    }
+  }, [userData, dispatch]);
+
   useEffect(() => {
     if (productId) {
       dispatch(fetchGroupBuysByProductId(productId));
@@ -84,6 +97,7 @@ export default function ProductDetails({ cartIconRef }) {
     if (groupBuys?.length > 0) {
     }
   }, [groupBuys]);
+
   // Update the isGroupOwner logic:
   useEffect(() => {
     if (groupBuys?.length > 0 && userId) {
@@ -95,6 +109,7 @@ export default function ProductDetails({ cartIconRef }) {
       setIsGroupOwner(false);
     }
   }, [groupBuys, userId]);
+
 
   const allGroupBuys = useSelector((state) => state.products.groupBuys);
   useEffect(() => {
@@ -129,8 +144,14 @@ export default function ProductDetails({ cartIconRef }) {
       toast.error("Please login to join group buy");
       return;
     }
-    // const referCode = referCodeData?.refercode;
-    // navigator(`/group/join/${4654}${referCode ? `/${referCode}` : ''}`);
+
+    if (!currentGroupData?.gid) {
+      toast.error("Group ID not found");
+      return;
+    }
+
+    const { gid, refercode } = currentGroupData;
+    navigator(`/group/join/${gid}${refercode ? `/${refercode}` : ''}`);
   };
 
   const handleShare = async () => {
@@ -224,6 +245,7 @@ export default function ProductDetails({ cartIconRef }) {
 
   useEffect(() => {
   }, [shouldShowGroupBuySection, validGroupBuys]);
+  const wallet = isNaN(useWalletAmount) ? 0 : useWalletAmount;
 
   if (loading) {
     return (
@@ -335,13 +357,18 @@ export default function ProductDetails({ cartIconRef }) {
       setsaveLoading(true);
       const resultAction = await dispatch(createGroup(payload)).unwrap();
       toast.success("Group created successfully!");
-      console.log("Created group:", resultAction);
 
       // Refresh both group buys and joined groups data
-      dispatch(fetchGroupBuysByProductId(product.id));
+      await dispatch(fetchGroupBuysByProductId(product.id));
       if (userId) {
-        dispatch(fetchMyJoinedGroups(userId)); // Add this import
+        await dispatch(fetchMyJoinedGroups(userId));
       }
+
+      // IMPORTANT: Fetch refer code for the newly created group
+      if (resultAction?.gid) {
+        await dispatch(fetchGroupReferCodeById(resultAction.gid));
+      }
+
     } catch (error) {
       console.error("Group creation failed:", error);
       toast.error(error?.message || "Failed to create group");
@@ -349,7 +376,6 @@ export default function ProductDetails({ cartIconRef }) {
       setsaveLoading(false);
     }
   };
-
 
 
   const handleWishlist = async () => {
@@ -389,16 +415,6 @@ export default function ProductDetails({ cartIconRef }) {
     } finally {
       setIsAddingToWishlist(false);
     }
-  };
-
-  const handleSubmitReview = () => {
-    if (!userRating || !reviewText.trim()) {
-      toast.error('Please provide both rating and review');
-      return;
-    }
-    toast.success('Review submitted successfully!');
-    setUserRating(0);
-    setReviewText('');
   };
 
   const SprinkleHurray = () => (
@@ -595,7 +611,7 @@ export default function ProductDetails({ cartIconRef }) {
                 </div>
 
                 {/* Category breadcrumb */}
-                {product.categoryName && (
+                {/* {product.categoryName && (
                   <div class="flex items-center gap-1 text-sm text-gray-500 mb-3 overflow-x-auto whitespace-nowrap scrollbar-hide">
                     <span>{product.categoryName}</span>
                     {product.subcategoryName && (
@@ -611,20 +627,44 @@ export default function ProductDetails({ cartIconRef }) {
                       </>
                     )}
                   </div>
-                )}
+                )} */}
 
                 {/* Cashback section */}
-                <div className="text-sm text-orange-600 bg-orange-50 dark:bg-orange-900/10 border border-orange-300 dark:border-orange-500 px-3 py-2 rounded-md mb-3">
-                  Cashback: Get 5% back with Arimart Pay.
-                </div>
+                {wallet > 100 ? (
+                  // ✅ Good balance
+                  <div className="text-sm text-green-600 bg-green-50 dark:bg-green-900/10 border border-green-300 dark:border-green-500 px-3 py-2 rounded-md mb-3">
+                    💰 Wallet Balance: <span className="font-semibold">₹{wallet}</span>
+                    <span className="ml-1">– Ready to use on your next purchase!</span>
+                  </div>
+                ) : (
+                  // ⚠ Low balance
+                  <div className="text-sm text-yellow-600 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-300 dark:border-yellow-500 px-3 py-2 rounded-md mb-3">
+                    ⚠ Your wallet balance is low: <span className="font-semibold">₹{wallet}</span>
+                    <span className="ml-1">– Top up to enjoy smoother shopping!</span>
+                  </div>
+                )}
+
 
                 {/* Features */}
-                <div className="grid grid-cols-2 gap-2 text-sm text-gray-700 dark:text-gray-300 mb-4">
-                  <span>✔ Free Delivery</span>
-                  <span>✔ Secure Transaction</span>
-                  <span>✔ Returnable</span>
-                  <span>✔ In Stock</span>
+                <div className="flex items-center justify-between text-sm bg-gray-50/50 dark:bg-gray-800/50 rounded-lg p-3">
+                  <div className="flex-1 flex flex-col items-center gap-1 text-gray-600 dark:text-gray-300">
+                    <Truck className="h-5 w-5 text-green-500" />
+                    <span>Free Delivery</span>
+                  </div>
+                  <div className="flex-1 flex flex-col items-center gap-1 text-gray-600 dark:text-gray-300">
+                    <Lock className="h-5 w-5 text-blue-500" />
+                    <span>Secure</span>
+                  </div>
+                  <div className="flex-1 flex flex-col items-center gap-1 text-gray-600 dark:text-gray-300">
+                    <RefreshCcw className="h-5 w-5 text-orange-500" />
+                    <span>Returnable</span>
+                  </div>
+                  <div className="flex-1 flex flex-col items-center gap-1 text-gray-600 dark:text-gray-300">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                    <span>In Stock</span>
+                  </div>
                 </div>
+
               </motion.div>
 
               {/* Group Buy Section */}
@@ -645,6 +685,7 @@ export default function ProductDetails({ cartIconRef }) {
                         <GroupBuySection
                           userId={userData?.userId || userData?.id}
                           product={{ ...product, gid: groupBuy.gid }}
+                          onGroupReady={handleGroupReady}
                         />
                       </div>
                     ))}
@@ -711,7 +752,7 @@ export default function ProductDetails({ cartIconRef }) {
 
                   {activeTab === "reviews" && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="space-y-4">
-                      <ProductReview productId={product.pdid} />
+                      <ReviewsComponent productId={product.pdid} />
                     </motion.div>
                   )}
 

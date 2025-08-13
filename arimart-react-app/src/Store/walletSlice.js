@@ -8,7 +8,6 @@ export const fetchWalletBalance = createAsyncThunk(
   async (userid, thunkAPI) => {
     try {
       const response = await API.get(`/wallet/balance/${userid}`);
-      console.log("Wallet Balance Response:", response.data);
       return response.data;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response?.data?.message || "Failed to fetch wallet balance");

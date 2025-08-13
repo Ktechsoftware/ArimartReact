@@ -1,17 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchDetailedRatings, fetchRatingAnalytics, submitRating, clearRatingMessages } from '../../Store/ratingSlice';
+import { fetchDetailedRatings, fetchRatingAnalytics, submitRating, clearRatingMessages, checkRatingEligibility } from '../../Store/ratingSlice';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const ReviewsComponent = ({ productId }) => {
+export const ReviewsComponent = ({ productId }) => {
     const dispatch = useDispatch();
-    const {
-        analytics,
-        detailed: detailedRatings,
-        loading,
-        error,
-        successMessage
-    } = useSelector(state => state.rating);
+    const { analytics, detailed: detailedRatings, eligibility, loading, error, successMessage } = useSelector(state => state.rating);
 
     const [hoverRating, setHoverRating] = useState(0);
     const [form, setForm] = useState({ ratingid: 0, descr: '' });
@@ -23,6 +17,7 @@ const ReviewsComponent = ({ productId }) => {
     useEffect(() => {
         if (productId) {
             dispatch(fetchRatingAnalytics(productId));
+            dispatch(checkRatingEligibility(productId));
             dispatch(fetchDetailedRatings({
                 pdid: productId,
                 page: currentPage,
@@ -128,7 +123,7 @@ const ReviewsComponent = ({ productId }) => {
     if (loading) {
         return (
             <div className="flex items-center justify-center py-8">
-                <motion.div 
+                <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                     className="rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"
@@ -143,7 +138,7 @@ const ReviewsComponent = ({ productId }) => {
                 <div className="flex flex-col lg:flex-row gap-8">
                     {/* Left Side - Analytics and Review Form */}
                     <div className="lg:w-1/3">
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.5 }}
@@ -166,15 +161,24 @@ const ReviewsComponent = ({ productId }) => {
                                     <p className="text-sm text-gray-600 dark:text-gray-300">
                                         Based on <span className="font-semibold">{analytics?.totalReviews || 0}</span> reviews
                                     </p>
-                                    <button
-                                        onClick={() => setModal(true)}
-                                        className="mt-3 inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white px-4 py-2 text-sm font-medium rounded-full shadow-md transition-all duration-300"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                        </svg>
-                                        Write a review
-                                    </button>
+                                    {eligibility.isEligible && !eligibility.hasAlreadyRated ? (
+                                        <button
+                                            onClick={() => setModal(true)}
+                                            className="mt-3 inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white px-4 py-2 text-sm font-medium rounded-full shadow-md transition-all duration-300"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                            </svg>
+                                            Write a review
+                                        </button>
+                                    ) : (
+                                        <div className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+                                            {eligibility.hasAlreadyRated
+                                                ? "✓ You've already reviewed this product"
+                                                : eligibility.reason || "Purchase this product to leave a review"
+                                            }
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -187,7 +191,7 @@ const ReviewsComponent = ({ productId }) => {
                                                     : 'from-red-500 to-red-400';
 
                                     return (
-                                        <motion.div 
+                                        <motion.div
                                             key={stars}
                                             whileHover={{ scale: 1.02 }}
                                             onClick={() => handleStarFilter(stars)}
@@ -246,7 +250,7 @@ const ReviewsComponent = ({ productId }) => {
 
                         <div className="space-y-6">
                             {detailedRatings?.ratings?.length === 0 ? (
-                                <motion.div 
+                                <motion.div
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-xl"
@@ -256,12 +260,24 @@ const ReviewsComponent = ({ productId }) => {
                                     </svg>
                                     <h4 className="mt-4 text-lg font-medium text-gray-700 dark:text-gray-300">No reviews yet</h4>
                                     <p className="mt-2 text-gray-500 dark:text-gray-400">Be the first to share your thoughts!</p>
-                                    <button
-                                        onClick={() => setModal(true)}
-                                        className="mt-4 inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-medium rounded-md shadow-sm transition-all duration-300"
-                                    >
-                                        Write a review
-                                    </button>
+                                    {eligibility.isEligible && !eligibility.hasAlreadyRated ? (
+                                        <button
+                                            onClick={() => setModal(true)}
+                                            className="mt-3 inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white px-4 py-2 text-sm font-medium rounded-full shadow-md transition-all duration-300"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                            </svg>
+                                            Write a review
+                                        </button>
+                                    ) : (
+                                        <div className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+                                            {eligibility.hasAlreadyRated
+                                                ? "✓ You've already reviewed this product"
+                                                : eligibility.reason || "Purchase this product to leave a review"
+                                            }
+                                        </div>
+                                    )}
                                 </motion.div>
                             ) : (
                                 <AnimatePresence>
@@ -316,7 +332,7 @@ const ReviewsComponent = ({ productId }) => {
                                                             Was this helpful?
                                                         </p>
                                                         <div className="flex items-center gap-2">
-                                                            <motion.button 
+                                                            <motion.button
                                                                 whileHover={{ scale: 1.05 }}
                                                                 whileTap={{ scale: 0.95 }}
                                                                 className="flex items-center gap-1 text-sm px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -326,7 +342,7 @@ const ReviewsComponent = ({ productId }) => {
                                                                 </svg>
                                                                 Yes ({review.helpfulCount || 0})
                                                             </motion.button>
-                                                            <motion.button 
+                                                            <motion.button
                                                                 whileHover={{ scale: 1.05 }}
                                                                 whileTap={{ scale: 0.95 }}
                                                                 className="flex items-center gap-1 text-sm px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -394,7 +410,7 @@ const ReviewsComponent = ({ productId }) => {
             {/* Review Modal */}
             <AnimatePresence>
                 {showModal && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -434,7 +450,7 @@ const ReviewsComponent = ({ productId }) => {
                                             {renderStars(form.ratingid, 'h-8 w-8', true, setStars)}
                                         </div>
                                         {form.ratingid === 0 && (
-                                            <motion.p 
+                                            <motion.p
                                                 initial={{ opacity: 0, y: -10 }}
                                                 animate={{ opacity: 1, y: 0 }}
                                                 className="text-center text-red-500 text-xs mt-2"
@@ -522,5 +538,3 @@ const ReviewsComponent = ({ productId }) => {
         </section>
     );
 };
-
-export default ReviewsComponent;

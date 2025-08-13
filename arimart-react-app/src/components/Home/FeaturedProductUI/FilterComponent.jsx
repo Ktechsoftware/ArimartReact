@@ -24,7 +24,7 @@ const FilterComponent = forwardRef(({
             <div className="sticky top-12 z-10 bg-white dark:bg-gray-800 shadow-sm">
                 <div className="px-4 py-3">
                     <div className="flex justify-between items-center mb-2">
-                        <h1 className="text-xl font-bold">ShopMart</h1>
+                        <h1 className="text-xl font-bold">Recommended for you</h1>
                         <button
                             onClick={() => setShowFilters(true)}
                             className="flex items-center gap-1 text-sm bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-full"

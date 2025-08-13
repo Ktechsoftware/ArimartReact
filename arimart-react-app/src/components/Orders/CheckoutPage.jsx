@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
 import OrderConfirmedModal from './OrderConfirmedModal';
 import { useCart } from '../../context/CartContext';
 import { checkoutCart } from '../../Store/orderSlice';
-import { clearCart } from '../../Store/cartSlice';
+import { clearAllGroupCarts, clearCart } from '../../Store/cartSlice';
 import { deductFromWallet, fetchWalletBalance } from '../../Store/walletSlice';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { refreshUserInfo } from '../../Store/authSlice';
@@ -109,82 +109,85 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handlecheckoutCart = async () => {
-  if (!sipid) {
-    toast.error("Please select delivery address to place order.");
-    return;
-  }
+    if (!sipid) {
+      toast.error("Please select delivery address to place order.");
+      return;
+    }
 
-  if (selectedPayment.id !== 'cod') {
-    navigate('/checkout/payment');
-    return;
-  }
+    if (selectedPayment.id !== 'cod') {
+      navigate('/checkout/payment');
+      return;
+    }
 
-  setIsProcessing(true);
-  const processingTimer = setTimeout(() => {
-    setIsProcessing(false);
-  }, 6000);
+    setIsProcessing(true);
+    const processingTimer = setTimeout(() => {
+      setIsProcessing(false);
+    }, 6000);
 
-  try {
-    const cartIds = items.map(item => item.id).join(',');
-    const isGroupOrder = items.some(item => item.groupId || item.groupid);
-    const groupId = isGroupOrder ? (items[0].groupId || items[0].groupid) : null;
+    try {
+      const cartIds = items.map(item => item.id).join(',');
+      const isGroupOrder = items.some(item => item.groupId || item.groupid);
+      const groupId = isGroupOrder ? (items[0].groupId || items[0].groupid) : null;
 
-    if (useWalletAmount > 0) {
-      try {
-        await dispatch(deductFromWallet({
-          userid: userId,
-          amount: useWalletAmount
-        })).unwrap();
-      } catch (deductError) {
-        throw new Error("Wallet deduction failed: " + (deductError?.message || ""));
+      if (useWalletAmount > 0) {
+        try {
+          await dispatch(deductFromWallet({
+            userid: userId,
+            amount: useWalletAmount
+          })).unwrap();
+        } catch (deductError) {
+          throw new Error("Wallet deduction failed: " + (deductError?.message || ""));
+        }
       }
+
+      const payload = {
+        Addid: cartIds,
+        Userid: userId,
+        Sipid: sipid
+      };
+
+      if (groupId) {
+        payload.groupId = groupId;
+      }
+
+      if (appliedPromo) {
+        payload.promoCode = appliedPromo.code;
+        payload.discountAmount = promoDiscountAmount;
+      }
+
+      const res = await dispatch(checkoutCart(payload)).unwrap();
+      clearTimeout(processingTimer);
+      const trackId = res.orderid;
+      console.log(res.message);
+
+      if (!trackId) {
+        throw new Error("Invalid response: Track ID missing");
+      }
+
+      setLatestTrackId(trackId);
+      setShowModal(true);
+
+      const id = typeof userId === "object" ? userId?.id || userId?.userId : userId;
+
+      if (cartType === "both") {
+        await dispatch(clearCartRedux(id)).unwrap();
+        await dispatch(clearAllGroupCarts(id)).unwrap();
+      } else if (cartType === "group") {
+        await dispatch(clearAllGroupCarts(id)).unwrap();
+      } else {
+        await dispatch(clearCartRedux(id)).unwrap();
+      }
+
+      dispatch(clearPromoState());
+      toast.success("Order placed successfully!");
+    } catch (err) {
+      clearTimeout(processingTimer);
+      console.error("Checkout failed:", err);
+      toast.error(err.message || "Checkout failed");
+    } finally {
+      setIsProcessing(false);
     }
-
-    const payload = {
-      Addid: cartIds,
-      Userid: userId,
-      Sipid: sipid
-    };
-
-    if (groupId) {
-      payload.groupId = groupId;
-    }
-
-    if (appliedPromo) {
-      payload.promoCode = appliedPromo.code;
-      payload.discountAmount = promoDiscountAmount;
-    }
-
-    const res = await dispatch(checkoutCart(payload)).unwrap();
-    clearTimeout(processingTimer);
-    const trackId = res.orderid;
-    console.log(res.message);
-
-    if (!trackId) {
-      throw new Error("Invalid response: Track ID missing");
-    }
-
-    setLatestTrackId(trackId);
-    setShowModal(true);
-
-    if (cartType === "both") {
-      clearCart({ clearBoth: true });
-    } else if (cartType === "group") {
-      clearCart({ clearAllGroups: true });
-    } else {
-      clearCart();
-    }
-    
-    dispatch(clearPromoState());
-    toast.success("Order placed successfully!");
-  } catch (err) {
-    clearTimeout(processingTimer);
-    console.error("Checkout failed:", err);
-    toast.error(err.message || "Checkout failed");
-  } finally {
-    setIsProcessing(false);
-  }
-};
+  };
 
   // ⏹️ Determine subtotal dynamically based on cartType
   let displaySubtotal = 0;

@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { Gift, Share2, Wallet } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function MainPage() {
@@ -11,13 +12,40 @@ export default function MainPage() {
   ];
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
       className="md:mb-0 mb-8"
     >
-      <motion.div 
+      {/* Action Cards */}
+      <motion.div
+        initial={{ y: 50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.8 }}
+        className="mt-8 flex justify-center gap-4"
+      >
+        <ActionCard
+          icon={<Share2 className="w-6 h-6" />}
+          label="Share & Earn"
+          color="bg-gradient-to-r from-blue-500 to-indigo-500"
+          tolink="/home/referandearn"
+        />
+        <ActionCard
+          icon={<Gift className="w-6 h-6" />}
+          label="Rewards"
+          color="bg-gradient-to-r from-yellow-400 to-orange-400"
+          tolink="/promocodes"
+        />
+        <ActionCard
+          icon={<Wallet className="w-6 h-6" />}
+          label="Wallet"
+          color="bg-gradient-to-r from-green-500 to-emerald-500"
+          tolink="/home/wallet"
+        />
+      </motion.div>
+
+      <motion.div
         initial={{ y: 50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.4 }}
@@ -25,10 +53,10 @@ export default function MainPage() {
       >
         <div className="flex justify-center gap-4">
           {prices.map((price, idx) => (
-            <PriceCard 
-              key={idx} 
-              price={price} 
-              image={storeImages[idx]} 
+            <PriceCard
+              key={idx}
+              price={price}
+              image={storeImages[idx]}
               delay={0.5 + idx * 0.1}
             />
           ))}
@@ -53,7 +81,7 @@ function PriceCard({ price, image, delay }) {
         <img
           src={image}
           alt="3D Store"
-          className="absolute -top-6 w-16 h-16 object-contain pointer-events-none"
+          className="absolute -top-6 w-12 h-16 object-contain pointer-events-none"
         />
 
         {/* Price & Label */}
@@ -68,17 +96,17 @@ function PriceCard({ price, image, delay }) {
 
 
 
-function ActionCard({ icon, label, color ,tolink}) {
+function ActionCard({ icon, label, color, tolink }) {
   return (
-    <motion.div 
-        whileHover={{ y: -5 }}
+    <Link to={tolink} className="md:hidden">
+      <motion.div
+        whileHover={{ y: -4, scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className={`flex md:hidden flex-col items-center justify-center w-24 h-24 ${color} text-white p-4 rounded-xl shadow-lg hover:shadow-xl transition-all`}
-    >
-        <Link to={tolink}>
-      <div className="mb-2">{icon}</div>
-      <p className="text-xs text-center font-medium">{label}</p>
-      </Link>
-    </motion.div>
+        className={`flex flex-col items-center justify-center w-28 h-16 ${color} text-white rounded-xl shadow-md hover:shadow-lg transition-all`}
+      >
+        <div className="mb-1">{icon}</div>
+        <p className="text-xs font-medium text-center">{label}</p>
+      </motion.div>
+    </Link>
   );
 }

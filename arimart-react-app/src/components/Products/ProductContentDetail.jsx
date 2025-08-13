@@ -10,7 +10,7 @@ import { motion } from "framer-motion";
 import toast, { LoaderIcon } from "react-hot-toast";
 import { GroupBuySection } from "../../pages/GroupBuy/GroupBuySection";
 import { createGroup, fetchAllGroups } from "../../Store/groupBuySlice";
-import ProductReview from "../Reviews/ProductReview";
+import { ReviewsComponent} from "../Reviews/ProductReview";
 import { fetchGroupBuysByProductId } from "../../Store/productsSlice";
 import { AnimatePresence } from "framer-motion";
 import RecommendedProducts from "./RecommendedProducts";
@@ -673,7 +673,7 @@ const handleRemove = async () => {
         dangerouslySetInnerHTML={{ __html: product.longdesc || "No additional information available." }}
       />
 
-      <ProductReview productId={product.pdid}/>
+      <ReviewsComponent productId={product.pdid}/>
       {/* Related Products */}
       <RecommendedProducts productId={product.id} className="max-w-6xl mx-auto px-4"/>
     </div>
