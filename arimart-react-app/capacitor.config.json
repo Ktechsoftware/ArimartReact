@@ -3,8 +3,9 @@
   "appName": "Arimart App",
   "webDir": "dist",
   "bundledWebRuntime": false,
+  "allowNavigation": ["arimartreact.kuldeepchaurasia.in"],
   "server": {
-    "cleartext": true,
-    "androidScheme": "https"
+    "url": "http://arimartreact.kuldeepchaurasia.in",
+    "cleartext": true
   }
 }

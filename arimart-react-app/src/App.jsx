@@ -1,15 +1,18 @@
-import { BrowserRouter as Router } from 'react-router-dom';
+import { BrowserRouter as Router, HashRouter } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { CartProvider } from './context/CartContext';
 import { Toaster } from 'react-hot-toast';
 import { DealAlertModal } from './components/GroupBuying/DealAlertModal';
 import AppRoutes from './routes/AppRoutes';
+import { Capacitor } from '@capacitor/core';
+
+const RouterComponent = Capacitor.isNativePlatform() ? HashRouter : Router;
 
 export default function App() {
   return (
     <CartProvider>
       <ThemeProvider>
-        <Router>
+        <RouterComponent>
           <DealAlertModal />
           <AppRoutes />
           <Toaster
@@ -25,7 +28,7 @@ export default function App() {
               },
             }}
           />
-        </Router>
+        </RouterComponent>
       </ThemeProvider>
     </CartProvider>
   );

@@ -541,7 +541,7 @@ export default function ProductDetails({ cartIconRef }) {
                   key={product.image}
                   src={"https://apiari.kuldeepchaurasia.in/Uploads/" + product.image}
                   alt={product.name}
-                  className="absolute inset-0 w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-64 object-cover"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}

@@ -1,8 +1,8 @@
-import { Pencil, User, Lock, CreditCard, MapPin, Camera, X } from "lucide-react";
+import { Pencil, User, Lock, CreditCard, MapPin, Camera, Image, Trash2, X, Upload } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
+import { Menu } from '@headlessui/react';
 import { useDispatch, useSelector } from "react-redux";
 import { updateUserInfoAsync } from "../../Store/authSlice";
 import toast from 'react-hot-toast'
@@ -10,23 +10,39 @@ import toast from 'react-hot-toast'
 export default function UserProfileSettings() {
   const [activeEditPanel, setActiveEditPanel] = useState(null);
   const dispatch = useDispatch();
-  const userId = useSelector((state) => state.auth?.userData?.id);
-  
-  // Gender-based avatar URLs
+  const userData = useSelector((state) => state.auth?.userData);
+  const userId = userData?.id;
+
+  // Only male and female avatars
   const avatarsByGender = {
-    male: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face&auto=format&q=80",
-    female: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face&auto=format&q=80",
-    trans: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face&auto=format&q=80"
+    male: "https://thumbs.dreamstime.com/b/cool-stylish-male-avatar-sunglasses-vector-illustration-profiles-branding-image-features-wearing-characterized-346328055.jpg",
+    female: "https://img.freepik.com/premium-vector/cute-woman-avatar-profile-vector-illustration_1058532-14592.jpg"
   };
 
   const [formData, setFormData] = useState({
-    fullName: "John Doe",
-    email: "john.doe@example.com",
+    fullName: "",
+    email: "",
     bio: "",
-    gender: "male" // Default gender
+    gender: "male",
+    customImage: null,
+    imagePreview: null
   });
 
   const [errors, setErrors] = useState({});
+
+  // Load user data when component mounts
+  useEffect(() => {
+    if (userData) {
+      setFormData({
+        fullName: userData.name || "",
+        email: userData.email || "",
+        bio: userData.bio || "",
+        gender: userData.gender || "male",
+        customImage: null,
+        imagePreview: null
+      });
+    }
+  }, [userData]);
 
   const handleEditClick = (panel) => {
     setActiveEditPanel(panel);
@@ -35,6 +51,37 @@ export default function UserProfileSettings() {
   const handleClosePanel = () => {
     setActiveEditPanel(null);
     setErrors({});
+    // Reset image preview when closing
+    setFormData(prev => ({ ...prev, customImage: null, imagePreview: null }));
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Please select a valid image file (JPEG, PNG, GIF)');
+        return;
+      }
+
+      // Validate file size (5MB limit)
+      const maxSize = 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        toast.error('Image size should be less than 5MB');
+        return;
+      }
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({
+          ...prev,
+          customImage: file,
+          imagePreview: reader.result
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleChange = (e) => {
@@ -43,11 +90,24 @@ export default function UserProfileSettings() {
   };
 
   const handleGenderChange = (gender) => {
-    setFormData(prev => ({ ...prev, gender }));
+    setFormData(prev => ({
+      ...prev,
+      gender,
+      // Clear custom image when changing gender
+      customImage: null,
+      imagePreview: null
+    }));
+  };
+
+  const removeCustomImage = () => {
+    setFormData(prev => ({
+      ...prev,
+      customImage: null,
+      imagePreview: null
+    }));
   };
 
   const handleSubmit = () => {
-
     const newErrors = {};
 
     if (activeEditPanel === 'profile' && !formData.fullName.trim()) {
@@ -69,14 +129,45 @@ export default function UserProfileSettings() {
         bio: formData.bio,
         gender: formData.gender
       };
-      
+
+      // Add custom image if uploaded
+      if (formData.customImage) {
+        updatedData.image = formData.customImage;
+      } else {
+        // Use gender-based default avatar
+        updatedData.useGenderAvatar = true;
+      }
+
       dispatch(updateUserInfoAsync({ userId, updatedData }))
         .unwrap()
-        .then(() => toast.success("Profile updated successfully"))
-        .catch(() => toast.error("Update failed"));
+        .then(() => {
+          toast.success("Profile updated successfully");
+          handleClosePanel();
+        })
+        .catch((error) => {
+          console.error('Update failed:', error);
+          toast.error("Update failed");
+        });
     }
+  };
 
-    handleClosePanel();
+  // Function to get current avatar source
+  const getCurrentAvatarSrc = () => {
+    if (formData.imagePreview) {
+      return formData.imagePreview;
+    }
+    if (userData?.imageUrl && !userData?.useDefaultAvatar) {
+      return `http://apiari.kuldeepchaurasia.in/Uploads/${userData.imageUrl}`;
+    }
+    return avatarsByGender[formData.gender];
+  };
+
+  // Function to get avatar for preview section
+  const getPreviewAvatarSrc = () => {
+    if (formData.imagePreview) {
+      return formData.imagePreview;
+    }
+    return avatarsByGender[formData.gender];
   };
 
   return (
@@ -87,7 +178,7 @@ export default function UserProfileSettings() {
           whileHover={{ scale: 1.05 }}
         >
           <img
-            src={avatarsByGender[formData.gender]}
+            src={getCurrentAvatarSrc()}
             alt="profile"
             className="w-24 h-24 rounded-full object-cover border-4 border-white dark:border-gray-800 shadow-md"
           />
@@ -107,7 +198,7 @@ export default function UserProfileSettings() {
         </h2>
         <p className="text-sm text-gray-500 dark:text-gray-400">{formData.email}</p>
         <div className="mt-2">
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100 capitalize">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-800 dark:text-orange-100 capitalize">
             {formData.gender}
           </span>
         </div>
@@ -122,17 +213,12 @@ export default function UserProfileSettings() {
           label="Edit Profile"
           onClick={() => handleEditClick('profile')}
         />
-        <SettingItem
-          icon={<CreditCard size={18} />}
-          label="Payment Method"
-          onClick={() => handleEditClick('payment')}
-        />
       </div>
 
       <AnimatePresence>
         {activeEditPanel && (
           <motion.div
-            className="fixed inset-0 bg-black bg-opacity-50 z-20 flex items-end"
+            className="fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-end"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -147,123 +233,163 @@ export default function UserProfileSettings() {
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold text-gray-800 dark:text-white">
                   {activeEditPanel === 'profile' && 'Edit Profile'}
-                  {activeEditPanel === 'payment' && 'Payment Method'}
+
                 </h3>
                 <button onClick={handleClosePanel}>
                   <X className="text-gray-500" />
                 </button>
               </div>
 
-              <div>
+              <div className="relative pb-16">
                 {activeEditPanel === 'profile' && (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full Name</label>
-                      <input
-                        type="text"
-                        name="fullName"
-                        value={formData.fullName}
-                        onChange={handleChange}
-                        className="w-full p-3 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-white"
-                      />
-                      {errors.fullName && <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>}
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        className="w-full p-3 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-white"
-                      />
-                      {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Gender & Avatar</label>
-                      <div className="grid grid-cols-3 gap-3">
-                        {Object.entries(avatarsByGender).map(([gender, avatarUrl]) => (
-                          <motion.div
-                            key={gender}
-                            className={`flex flex-col items-center p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                              formData.gender === gender
-                                ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                                : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'
-                            }`}
-                            onClick={() => handleGenderChange(gender)}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            <img
-                              src={avatarUrl}
-                              alt={`${gender} avatar`}
-                              className="w-12 h-12 rounded-full object-cover mb-2"
-                            />
-                            <span className="text-xs font-medium text-gray-700 dark:text-gray-300 capitalize">
-                              {gender}
-                            </span>
-                            {formData.gender === gender && (
-                              <motion.div
-                                className="w-2 h-2 bg-green-500 rounded-full mt-1"
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                              />
-                            )}
-                          </motion.div>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bio</label>
-                      <textarea
-                        name="bio"
-                        value={formData.bio}
-                        onChange={handleChange}
-                        placeholder="Tell us about yourself..."
-                        className="w-full p-3 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-white"
-                        rows={3}
-                      />
-                    </div>
-
-                    {/* Avatar Preview */}
-                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Preview</label>
-                      <div className="flex items-center space-x-3">
+                  <div className="space-y-6">
+                    {/* Circular Image Upload - Top Center */}
+                    <div className="flex flex-col items-center">
+                      <div className="relative group">
                         <img
-                          src={avatarsByGender[formData.gender]}
-                          alt="Avatar preview"
-                          className="w-16 h-16 rounded-full object-cover border-2 border-white dark:border-gray-600 shadow-md"
+                          src={getPreviewAvatarSrc()}
+                          alt="Profile"
+                          className="w-32 h-32 rounded-full object-cover border-4 border-white dark:border-gray-800 shadow-lg"
                         />
-                        <div>
-                          <p className="font-medium text-gray-800 dark:text-white">
-                            {formData.fullName || "Your Name"}
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">
-                            {formData.gender}
-                          </p>
+                        <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                          <Menu as="div" className="relative">
+                            <Menu.Button className="p-2 bg-white bg-opacity-80 rounded-full">
+                              <Camera className="w-6 h-6 text-gray-800" />
+                            </Menu.Button>
+                            <Menu.Items className="absolute left-1/2 transform -translate-x-1/2 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-10">
+                              <Menu.Item>
+                                {({ active }) => (
+                                  <button
+                                    onClick={() => document.getElementById('cameraInput')?.click()}
+                                    className={`flex items-center px-4 py-2 w-full text-left ${active ? 'bg-gray-100 dark:bg-gray-700' : ''
+                                      }`}
+                                  >
+                                    <Camera className="mr-2 h-4 w-4" />
+                                    Take Photo
+                                  </button>
+                                )}
+                              </Menu.Item>
+                              <Menu.Item>
+                                {({ active }) => (
+                                  <button
+                                    onClick={() => document.getElementById('galleryInput')?.click()}
+                                    className={`flex items-center px-4 py-2 w-full text-left ${active ? 'bg-gray-100 dark:bg-gray-700' : ''
+                                      }`}
+                                  >
+                                    <Image className="mr-2 h-4 w-4" />
+                                    Choose from Gallery
+                                  </button>
+                                )}
+                              </Menu.Item>
+                              {formData.customImage && (
+                                <Menu.Item>
+                                  {({ active }) => (
+                                    <button
+                                      onClick={removeCustomImage}
+                                      className={`flex items-center px-4 py-2 w-full text-left text-red-500 ${active ? 'bg-gray-100 dark:bg-gray-700' : ''
+                                        }`}
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Remove Photo
+                                    </button>
+                                  )}
+                                </Menu.Item>
+                              )}
+                            </Menu.Items>
+                          </Menu>
                         </div>
                       </div>
+
+                      {/* Hidden file inputs */}
+                      <input
+                        id="cameraInput"
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                      <input
+                        id="galleryInput"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                    </div>
+
+                    {/* Name and Email Fields */}
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full Name</label>
+                        <input
+                          type="text"
+                          name="fullName"
+                          value={formData.fullName}
+                          onChange={handleChange}
+                          className="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          placeholder="Enter your name"
+                        />
+                        {errors.fullName && <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                        <input
+                          type="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleChange}
+                          className="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          placeholder="your@email.com"
+                        />
+                        {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+                      </div>
+
+                      {/* Gender Selection (only shown when no custom image) */}
+                      {!formData.customImage && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Avatar Style</label>
+                          <div className="flex justify-center space-x-4">
+                            {Object.entries(avatarsByGender).map(([gender, avatarUrl]) => (
+                              <motion.div
+                                key={gender}
+                                className={`flex flex-col items-center p-2 rounded-xl cursor-pointer transition-all ${formData.gender === gender
+                                    ? 'ring-2 ring-orange-500 bg-orange-50 dark:bg-orange-900/20'
+                                    : 'bg-gray-100 dark:bg-gray-700'
+                                  }`}
+                                onClick={() => handleGenderChange(gender)}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                <img
+                                  src={avatarUrl}
+                                  alt={`${gender} avatar`}
+                                  className="w-10 h-10 rounded-full object-cover"
+                                />
+                                <span className="text-xs mt-1 font-medium text-gray-700 dark:text-gray-300 capitalize">
+                                  {gender}
+                                </span>
+                              </motion.div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
 
-                {activeEditPanel === 'payment' && (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500 dark:text-gray-400">Payment method options will appear here</p>
-                  </div>
-                )}
-
-                <motion.button
-                  onClick={handleSubmit}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full mt-6 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-semibold shadow transition"
-                >
-                  Save Changes
-                </motion.button>
+                {/* Sticky Update Button */}
+                <div className="fixed bottom-0 left-0 right-0 p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-lg">
+                  <motion.button
+                    onClick={handleSubmit}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white py-3 rounded-xl font-semibold shadow-lg transition"
+                  >
+                    Update Profile
+                  </motion.button>
+                </div>
               </div>
             </motion.div>
           </motion.div>

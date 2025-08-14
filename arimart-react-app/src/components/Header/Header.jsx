@@ -1,4 +1,4 @@
-import { Menu, ArrowLeft, Bell, Search } from "lucide-react";
+import { Menu,Heart, ArrowLeft, Bell, Search } from "lucide-react";
 import { useState } from "react";
 import logo from "../../assets/images/logo.png";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -82,6 +82,16 @@ export default function Header({
                 <Search className="w-5 h-5 text-blue-600 dark:text-blue-300" />
               </Link>
             ) : ""}
+            <motion.div
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="relative p-2 bg-red-100 dark:bg-red-900 rounded-full"
+            >
+             <Link to="/wishlist">
+                <Heart className="w-5 h-5 text-red-600 dark:text-red-300" />
+              </Link>
+            </motion.div>
+            
             <motion.div
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}

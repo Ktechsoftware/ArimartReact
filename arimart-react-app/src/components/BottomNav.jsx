@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Home,
-  HeartHandshake,
-  Compass,
+  Box,
   LayoutList,
   User,
   Search
@@ -12,7 +11,7 @@ import { motion } from 'framer-motion';
 
 const navItems = [
   { path: "/home", label: "Home", icon: Home },
-  { path: "/wishlist", label: "Wishlist", icon: HeartHandshake },
+  { path: "/orders", label: "My Orders", icon: Box },
   { path: "/explore", label: "Search", icon: Search },
   { path: "/categories", label: "Categories", icon: LayoutList },
   { path: "/account", label: "Account", icon: User },

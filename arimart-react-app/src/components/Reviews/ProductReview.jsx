@@ -6,7 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 export const ReviewsComponent = ({ productId }) => {
     const dispatch = useDispatch();
     const { analytics, detailed: detailedRatings, eligibility, loading, error, successMessage } = useSelector(state => state.rating);
-
+    const userData = useSelector((state) => state.auth.userData);
+  const userId = userData?.userId || userData?.id;
     const [hoverRating, setHoverRating] = useState(0);
     const [form, setForm] = useState({ ratingid: 0, descr: '' });
     const [showModal, setModal] = useState(false);
@@ -17,7 +18,7 @@ export const ReviewsComponent = ({ productId }) => {
     useEffect(() => {
         if (productId) {
             dispatch(fetchRatingAnalytics(productId));
-            dispatch(checkRatingEligibility(productId));
+            dispatch(checkRatingEligibility({ pdid: productId, userId: userId }));
             dispatch(fetchDetailedRatings({
                 pdid: productId,
                 page: currentPage,

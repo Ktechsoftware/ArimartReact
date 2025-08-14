@@ -4,15 +4,18 @@ import API from '../api';
 // ✅ Check if user is eligible to rate (new thunk)
 export const checkRatingEligibility = createAsyncThunk(
   'ratings/checkRatingEligibility',
-  async (pdid, { rejectWithValue }) => {
+  async ({ pdid, userId }, { rejectWithValue }) => {
     try {
-      const response = await API.get(`/rating/eligibility/${pdid}`);
+      const response = await API.get(`/rating/eligibility/${pdid}`, {
+        params: { userId }
+      });
       return response.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || 'Failed to check eligibility');
     }
   }
 );
+
 
 // ✅ Submit new rating
 export const submitRating = createAsyncThunk(

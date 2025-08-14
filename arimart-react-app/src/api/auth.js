@@ -23,5 +23,17 @@ export const logout = () =>
 export const getUserInfo = (userId) =>
   API.get(`/auth/user-info/${userId}`);
 
-export const updateUserInfo = (userId, updateData) =>
-  API.put(`/auth/update-user/${userId}`, updateData);
+export const updateUserInfo = (userId, updateData) => {
+  const formData = new FormData();
+
+  if (updateData.name) formData.append("Name", updateData.name);
+  if (updateData.email) formData.append("Email", updateData.email);
+  if (updateData.address) formData.append("Address", updateData.address);
+  if (updateData.vendorName) formData.append("VendorName", updateData.vendorName);
+  if (updateData.image) formData.append("Image", updateData.image); // file
+
+  return API.put(`/auth/update-user/${userId}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" }
+  });
+};
+
