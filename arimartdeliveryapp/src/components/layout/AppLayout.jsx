@@ -6,32 +6,29 @@ import { BottomNavigation } from "../common/BottomNavigation";
 const AppLayout = ({ children }) => {
   const location = useLocation();
 
-  // Routes where we hide both header and bottom nav
-  const hiddenRoutes = [
-    "/", "/delivery", "/otp",
-    "/info", "/info/docs",
-    "/info/docs/upload", "/info/docs/register","/info/docs/upload/aadhar"
-  ];
+  // Exact routes to hide
+  const exactHiddenRoutes = ["/", "/delivery", "/otp", "/info"];
+
+  // Hide all paths that start with these
+  const hiddenPrefixes = ["/info/docs"];
 
   // Routes shown in BottomNavigation
-  const bottomNavRoutes = [
-    "/home",
-    "/orders",
-    "/order/navigate",
-    "/account"
-  ];
+  const bottomNavRoutes = ["/home", "/orders", "/order/navigate", "/account"];
 
-  const hideUI = hiddenRoutes.includes(location.pathname);
+  // Check if current path should hide UI
+  const hideUI =
+    exactHiddenRoutes.includes(location.pathname) ||
+    hiddenPrefixes.some((prefix) => location.pathname.startsWith(prefix));
 
   // If the current path doesn't start with any bottom nav path → show back
-  const showBack = !bottomNavRoutes.some(route =>
+  const showBack = !bottomNavRoutes.some((route) =>
     location.pathname.startsWith(route)
   );
 
   return (
     <div
-      className={`min-h-screen font-sans bg-white text-gray-900 ${
-        !hideUI ? "mb-20 md:mb-0" : ""
+      className={`font-sans bg-white text-gray-900 ${
+        !hideUI ? "mb-20 md:mb-0" : "min-h-screen "
       }`}
     >
       {!hideUI && <Header title="Arimart" showBack={showBack} />}

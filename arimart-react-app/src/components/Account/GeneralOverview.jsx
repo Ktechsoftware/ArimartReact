@@ -54,7 +54,7 @@ const GeneralOverview = () => {
     ];
 
     return (
-        <div className="grid grid-cols-2 gap-6 border-y border-gray-200 py-6 dark:border-gray-700 md:py-8 lg:grid-cols-4 xl:gap-16">
+        <div className="grid grid-cols-2 gap-6 border-y border-gray-200 py-6 px-4 dark:border-gray-700 md:py-8 lg:grid-cols-4 xl:gap-16">
             {stats.map((stat) => {
                 const metric = data?.[stat.key] || {};
                 const value = metric?.value ?? 0;

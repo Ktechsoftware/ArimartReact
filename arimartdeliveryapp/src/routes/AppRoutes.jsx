@@ -20,14 +20,21 @@ import { DeliveryScanPage } from '../components/delivery/DeliveryScanPage';
 import { ArimartHome } from '../components/Home/Home';
 import { OrdersPage } from '../components/Home/OrdersPage';
 import EditProfile from '../components/Account/EditProfile';
-import Support from '../components/Account/Support';
+import {Support} from '../components/Account/Support';
 import TermsAndConditions from '../components/Account/TermsAndConditions';
-import AllottedArea from '../components/Account/AllottedArea';
+import {AllottedArea} from '../components/Account/AllottedArea';
 import SplashScreen from '../components/onboard/SplashScreen'
 import FAQ from '../components/Account/FAQ';
 import { useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import DeliveryScanner from '../components/delivery/DeliveryOrderScanner';
+import { VehicleDetails } from '../components/informationforms/VehicleDetails';
+import { BankAccountDetails } from '../components/informationforms/BankAccountDetails';
+import { EmergencyDetails } from '../components/informationforms/EmergencyDetails';
+import { Privacy } from '../components/Account/Privacy';
+import { SettingsPage } from '../components/Account/SettingsPage';
+import { OTPDeliveryScreen } from '../components/delivery/OTPDeliveryScreen';
+import { DeliverySearchPage } from '../components/delivery/DeliverySearchPage';
 
 export default function AppRoutes() {
   // Splash Screen State - Only for Capacitor (Native)
@@ -78,6 +85,9 @@ export default function AppRoutes() {
       <Route path="/info" element={<PersonalInfomation />} />
       <Route path="/info/docs" element={<Infodoc />} />
       <Route path="/info/docs/upload" element={<DocumentSelector />} />
+      <Route path="/info/docs/vehicle" element={<VehicleDetails />} />
+      <Route path="/info/docs/bank" element={<BankAccountDetails />} />
+      <Route path="/info/docs/emergency" element={<EmergencyDetails />} />
       <Route path="/info/docs/upload/:type" element={<UploadDocument />} />
       <Route path="/info/docs/register" element={<RegistrationStatus />} />
 
@@ -92,14 +102,18 @@ export default function AppRoutes() {
       <Route path="/editprofile" element={<EditProfile />} />
       <Route path="/support" element={<Support />} />
       <Route path="/termandcondition" element={<TermsAndConditions />} />
+      <Route path="/privacypolicy" element={<Privacy />} />
       <Route path="/allotedarea" element={<AllottedArea />} />
+      <Route path="/settings" element={<SettingsPage />} />
       <Route path="/faq" element={<FAQ />} />
+      <Route path="/search" element={<DeliverySearchPage />} />
 
       {/* 🚚 Delivery Workflow */}
       <Route path="/order/pickup" element={<PickupPage />} />
       <Route path="/order/navigate" element={<DeliveryNavigation />} />
       <Route path="/order/scan" element={<DeliveryScanPage />} />
       <Route path="/order/deliveryorderscan" element={<DeliveryScanner />} />
+      <Route path="/order/deliveryotp" element={<OTPDeliveryScreen/>} />
     </Routes>
   );
 }

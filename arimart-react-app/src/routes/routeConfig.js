@@ -34,7 +34,8 @@ export const routeConfig = {
   "/term&condition": { title: "Terms & Conditions" },
   "/categories": { title: "Categories" },
   "/group-buying": { title: "Group Buying" },
-  "/group/join/:groupid/:grouprefercode": { title: "Join Group" }
+  "/group/join/:groupid/:grouprefercode": { title: "Join Group" },
+  "/affiliate": { title: "Affiliate" }
 };
 
 // Helper function to match dynamic routes

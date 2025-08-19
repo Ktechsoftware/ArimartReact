@@ -18,7 +18,8 @@ import {
   SunMoon,
   User2Icon,
   UserCircle,
-  UserCog2Icon
+  UserCog2Icon,
+  UserCheck2
 } from "lucide-react";
 import LogoutModal from "../Auth/LogoutModal";
 import { Link, useNavigate } from "react-router-dom";
@@ -27,6 +28,7 @@ import FeedbackModal from "./FeedbackModal";
 import DeliveryAddressModal from "./DeliveryAddressModal";
 import RecentOrders from "./RecentOrders";
 import GeneralOverview from "./GeneralOverview";
+import { AffiliateBanner } from "../AffiliateProgram/AffiliateBanner";
 
 const settings = [
   { label: "Theme", icon: <SunMoon size={20} />, to: "#", isTheme: true },
@@ -37,6 +39,7 @@ const settings = [
   { label: "My Joined Groups", icon: <UserCog2Icon size={20} />, to: "/group-buying?tab=my-joined" },
   { label: "Delivery Address", icon: <MapPin size={20} />, to: "#" },
   { label: "Share & Earn", icon: <Share2 size={20} />, to: "/home/referandearn" },
+  { label: "Affiliate Program", icon: <UserCheck2 size={20} />, to: "/affiliate", isAffiliate: true },
   { label: "My Rewards", icon: <Gift size={20} />, to: "/promocodes" },
   { label: "Rate Us", icon: <Star size={20} />, to: "#" },
   { label: "Logout", icon: <LogOut size={20} />, to: "#", isDestructive: true },
@@ -78,13 +81,14 @@ const AccountSettings = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="max-w-6xl mx-auto min-h-screen p-4 text-gray-800 dark:text-white"
+      className="max-w-6xl mx-auto min-h-screen text-gray-800 dark:text-white"
     >
 
-      <section class="bg-white py-6 antialiased dark:bg-gray-900 md:py-6">
+      <section class="bg-white antialiased dark:bg-gray-900 md:py-6">
         <div class="mx-auto max-w-screen-xl px-4 2xl:px-0">
           <h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white sm:text-2xl md:mb-6">General overview</h2>
           <GeneralOverview />
+          <AffiliateBanner userData={userData} />
           <div class="py-4 md:py-8">
             <div class="mb-4 grid gap-4 sm:grid-cols-2 sm:gap-8 lg:gap-16">
               <div class="space-y-4">
@@ -132,7 +136,6 @@ const AccountSettings = () => {
               Edit your data
             </Link>
           </div>
-
           <RecentOrders userId={userData?.id} />
         </div>
         <div id="accountInformationModal2" tabindex="-1" aria-hidden="true" class="max-h-auto fixed left-0 right-0 top-0 z-50 hidden h-[calc(100%-1rem)] max-h-full w-full items-center justify-center overflow-y-auto overflow-x-hidden antialiased md:inset-0">
@@ -493,6 +496,7 @@ const AccountSettings = () => {
                 else if (item.label === "Rate Us") setIsRateus(true);
                 else if (item.label === "Delivery Address") setShowAddressModal(true);
                 else if (item.isTheme) setThemeSelectorOpen(true);
+                else if (item.isAffiliate) navigate('/affiliate');
                 else navigate(item.to);
               }}
               className={`flex items-center justify-between p-4 cursor-pointer bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-all ${item.isDestructive

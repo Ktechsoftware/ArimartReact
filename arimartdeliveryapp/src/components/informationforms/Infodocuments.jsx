@@ -6,9 +6,9 @@ export const Infodocuments = () => {
     const navigate = useNavigate();
     const [pendingDocs, setPendingDocs] = useState([
         { name: "Personal Documents", completed: false, route: "/info/docs/upload" },
-        { name: "Vehicle Details", completed: false, route: "/info/docs/upload/vehicle" },
-        { name: "Bank Account Details", completed: false, route: "/info/docs/upload/bank" },
-        { name: "Emergency Details", completed: false, route: "/info/docs/upload/emergency" },
+        { name: "Vehicle Details", completed: false, route: "/info/docs/vehicle" },
+        { name: "Bank Account Details", completed: false, route: "/info/docs/bank" },
+        { name: "Emergency Details", completed: false, route: "/info/docs/emergency" },
     ]);
 
     const [completedDocs] = useState([

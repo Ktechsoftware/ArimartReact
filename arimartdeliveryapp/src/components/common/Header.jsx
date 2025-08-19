@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { ChevronRight, Menu, Search, Bell, User, ArrowLeft, ArrowLeftCircle, BikeIcon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
-export const Header = ({ title, showBack}) => {
+export const Header = ({ title, showBack }) => {
   const navigate = useNavigate();
 
   return (
@@ -58,23 +58,24 @@ export const Header = ({ title, showBack}) => {
             className="pl-10 pr-4 py-2 text-sm rounded-full bg-gray-50 border border-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-64 transition-all"
           />
         </motion.div>
-
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="p-2 rounded-full text-gray-600 hover:bg-gray-100 relative"
-        >
-          <Search className="w-5 h-5" />
-        </motion.button>
+        <Link to='/search'>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="p-2 rounded-full text-gray-600 hover:bg-gray-100 relative"
+          >
+            <Search className="w-5 h-5" />
+          </motion.button>
+        </Link>
         <Link to='/notification'>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="p-2 rounded-full text-gray-600 hover:bg-gray-100 relative"
-        >
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-        </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="p-2 rounded-full text-gray-600 hover:bg-gray-100 relative"
+          >
+            <Bell className="w-5 h-5" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+          </motion.button>
         </Link>
       </div>
     </motion.header>

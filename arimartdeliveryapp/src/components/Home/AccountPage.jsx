@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 
 export const AccountPage = () => {
   const [activeTab, setActiveTab] = useState("profile");
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const menuItems = [
     { icon: <User size={20} />, label: "Edit Profile", route: "/editprofile" },
@@ -17,7 +18,7 @@ export const AccountPage = () => {
     { icon: <FileText size={20} />, label: "Terms and Conditions", route: "/termandcondition" },
     { icon: <Shield size={20} />, label: "Privacy Policy", route: "/privacypolicy" }, // Add this route if not added yet
     { icon: <Settings size={20} />, label: "Setting", route: "/settings" }, // Add this route if not added yet
-    { icon: <LogOut size={20} />, label: "Log Out", route: "/logout", color: "text-red-500" } // Handle logout logic on click
+    { icon: <LogOut size={20} />, label: "Log Out", onClick: () => setShowLogoutModal(true), color: "text-red-500" }
   ];
 
   return (
@@ -81,6 +82,7 @@ export const AccountPage = () => {
               <motion.button
                 className={`w-full flex items-center justify-between p-4 rounded-xl bg-white shadow-xs hover:shadow-sm transition-all ${item.color || "text-gray-700"}`}
                 whileTap={{ scale: 0.98 }}
+                onClick={item.label === "Log Out" ? () => setShowLogoutModal(true) : undefined}
               >
                 <div className="flex items-center space-x-3">
                   <div className={`p-2 rounded-lg ${item.color ? "bg-red-100" : "bg-blue-100"}`}>
@@ -120,6 +122,68 @@ export const AccountPage = () => {
           </motion.div>
         </div>
       </motion.div>
+      {/* Logout Modal */}
+      <AnimatePresence>
+        {showLogoutModal && (
+          <>
+            {/* Overlay */}
+            <motion.div
+              className="fixed inset-0 bg-black/60 bg-opacity-50 z-40"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowLogoutModal(false)}
+            />
+
+            {/* Modal */}
+            <motion.div
+              className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-50 max-w-md mx-auto"
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            >
+              <div className="flex justify-center pt-3 pb-2">
+                <div className="w-12 h-1 bg-gray-300 rounded-full" />
+              </div>
+
+              <div className="p-6">
+                <div className="flex justify-center mb-4">
+                  <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                    <LogOut size={24} className="text-red-500" />
+                  </div>
+                </div>
+
+                <div className="text-center mb-6">
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">Logout Confirmation</h3>
+                  <p className="text-gray-600">Are you sure you want to logout from your account?</p>
+                </div>
+
+                <div className="space-y-3">
+                  <button
+                    onClick={() => {
+                      // Add your logout logic here
+                      setShowLogoutModal(false);
+                    }}
+                    className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-4 px-6 rounded-xl transition-colors"
+                  >
+                    Yes, Logout
+                  </button>
+
+                  <button
+                    onClick={() => setShowLogoutModal(false)}
+                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-4 px-6 rounded-xl transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+
+              <div className="h-8" />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

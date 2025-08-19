@@ -47,6 +47,7 @@ import SubcategoryExplore from '../pages/Explore/SubcategoryExplore';
 import TopPriceProducts from '../pages/TopStores/TopPriceProducts';
 import ArimartPayscreen from '../pages/PaymentScreen/ArimartPayscreen';
 import SplashScreen from '../components/Onboarding/SplashScreen';
+import AffiliateProgram from '../components/AffiliateProgram/AffiliateProgram';
 
 const publicRoutes = [
   "/", "/home", "/onboard", "/auth", "/about", "/contactus", "/faq", "/privacypolicy",
@@ -189,6 +190,7 @@ export default function AppRoutes() {
             <Route path="/orders/tracking/:trackId" element={<OrderTrack />} />
             <Route path="/orders/track/:trackId" element={<Trackorders />} />
             <Route path="/checkout/payment" element={<PaymentOrder />} />
+            <Route path="/affiliate" element={<AffiliateProgram />} />
             <Route path="/category">
               <Route index element={<Categoryindex />} />
               <Route path=":market/:categoryid" element={<Marketplace />} />
