@@ -21,8 +21,8 @@ export const sendOtpAsync = createAsyncThunk(
   'deliveryAuth/sendOtp',
   async (phoneNumber, { rejectWithValue }) => {
     try {
-      const response = await API.post('/auth/send-otp', { 
-        mobileNumber: phoneNumber 
+      const response = await API.post('/auth/send-otp', {
+        mobileNumber: phoneNumber
       });
       return { phoneNumber, message: response.data.message };
     } catch (err) {
@@ -40,7 +40,7 @@ export const verifyOtpAsync = createAsyncThunk(
         mobileNumber: phoneNumber,
         otp: otp
       });
-      
+
       // If user exists, return user data with completion status
       return {
         user: response.data.user,
@@ -80,21 +80,6 @@ export const sendFcmTokenToBackend = createAsyncThunk(
   }
 );
 
-// Complete Personal Information
-export const completePersonalInfoAsync = createAsyncThunk(
-  'deliveryAuth/completePersonalInfo',
-  async (personalData, { rejectWithValue }) => {
-    try {
-      const response = await API.post('/auth/delivery-user/register', personalData);
-      return {
-        user: response.data.user,
-        token: response.data.token
-      };
-    } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Registration failed');
-    }
-  }
-);
 
 // Update User Info (for additional steps)
 export const updateDeliveryUserAsync = createAsyncThunk(
@@ -118,13 +103,59 @@ export const uploadDocumentAsync = createAsyncThunk(
       formData.append('userId', userId);
       formData.append('documentType', documentType);
       formData.append('file', fileData);
-      
+
       const response = await API.post('/auth/delivery-user/upload-document', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       return response.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || 'Document upload failed');
+    }
+  }
+);
+
+// In your authSlice.js, update the completePersonalInfoAsync action
+export const completePersonalInfoAsync = createAsyncThunk(
+  'deliveryAuth/completePersonalInfo',
+  async (personalData, { rejectWithValue, getState }) => {
+    console.log(personalData)
+    try {
+      // Get phone number from current state for new users
+      const { currentPhoneNumber } = getState().deliveryAuth;
+
+      const requestData = {
+        name: personalData.fullname,
+        email: personalData.email,
+        phone: currentPhoneNumber || personalData.primaryMobile, // Use the phone from OTP verification
+        fatherName: personalData.fatherName,
+        dateOfBirth: personalData.dateOfBirth,
+        whatsappNumber: personalData.whatsappNumber,
+        secondaryMobile: personalData.secondaryMobile,
+        bloodGroup: personalData.bloodGroup,
+        city: personalData.city,
+        address: personalData.address,
+        language: personalData.language,
+        // Add other fields as needed
+        vendorName: personalData.vendorName || '',
+        state: personalData.state || '',
+        postalCode: personalData.postalCode || '',
+        companyName: personalData.companyName || '',
+        businessCategory: personalData.businessCategory || null,
+        businessLocation: personalData.businessLocation || '',
+        bankName: personalData.bankName || '',
+        accountNo: personalData.accountNo || '',
+        ifsccode: personalData.ifsccode || '',
+        refid: personalData.refid || null
+      };
+
+      const response = await API.post('/auth/delivery-user/register', requestData);
+
+      return {
+        user: response.data.deliveryuser, // Note: backend returns 'deliveryuser' not 'user'
+        token: response.data.token
+      };
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Registration failed');
     }
   }
 );
@@ -150,18 +181,18 @@ const initialState = {
   isAuthenticated: !!initialUser && !!initialToken,
   user: initialUser,
   token: initialToken,
-  
+
   // Registration Flow State
   currentPhoneNumber: null,
   isExistingUser: null,
-  
+
   // Completion Status
   registrationStep: initialUser?.currentStep || 1, // 1=Personal, 2=Documents, 3=Upload, 4=Complete
   personalInfoComplete: initialUser?.personalInfoComplete || false,
   documentsUploaded: initialUser?.documentsUploaded || false,
   profileComplete: initialUser?.profileComplete || false,
   registrationStatus: initialUser?.registrationStatus || 'PENDING', // PENDING, APPROVED, REJECTED
-  
+
   // UI State
   loading: false,
   error: null,
@@ -176,18 +207,18 @@ const deliveryAuthSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
-    
+
     // Reset OTP state
     resetOtpState: (state) => {
       state.otpSent = false;
       state.currentPhoneNumber = null;
     },
-    
+
     // Set registration step
     setRegistrationStep: (state, action) => {
       state.registrationStep = action.payload;
     },
-    
+
     // Check auth from cookie
     checkAuth: (state) => {
       const user = getDeliveryUserFromCookie();
@@ -203,7 +234,7 @@ const deliveryAuthSlice = createSlice({
         state.registrationStatus = user.registrationStatus || 'PENDING';
       }
     },
-    
+
     // Logout
     logout: (state) => {
       Cookies.remove(DELIVERY_COOKIE_NAME);
@@ -211,7 +242,7 @@ const deliveryAuthSlice = createSlice({
       return { ...initialState, isAuthenticated: false };
     },
   },
-  
+
   extraReducers: (builder) => {
     builder
       // Send OTP
@@ -228,7 +259,7 @@ const deliveryAuthSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      
+
       // Verify OTP
       .addCase(verifyOtpAsync.pending, (state) => {
         state.loading = true;
@@ -236,7 +267,7 @@ const deliveryAuthSlice = createSlice({
       })
       .addCase(verifyOtpAsync.fulfilled, (state, action) => {
         state.loading = false;
-        
+
         if (action.payload.isExistingUser) {
           // Existing user - set auth data
           const user = action.payload.user;
@@ -244,14 +275,14 @@ const deliveryAuthSlice = createSlice({
           state.user = user;
           state.token = action.payload.token;
           state.isExistingUser = true;
-          
+
           // Set completion status
           state.registrationStep = user.currentStep || 1;
           state.personalInfoComplete = user.personalInfoComplete || false;
           state.documentsUploaded = user.documentsUploaded || false;
           state.profileComplete = user.profileComplete || false;
           state.registrationStatus = user.registrationStatus || 'PENDING';
-          
+
           // Save to cookies
           Cookies.set(DELIVERY_COOKIE_NAME, JSON.stringify(user), { expires: 7 });
           Cookies.set(TOKEN_COOKIE_NAME, action.payload.token, { expires: 7 });
@@ -265,29 +296,47 @@ const deliveryAuthSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      
+
       // Complete Personal Info
       .addCase(completePersonalInfoAsync.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
+      // In authSlice.js - update the fulfilled case for completePersonalInfoAsync
       .addCase(completePersonalInfoAsync.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        state.user = action.payload.user;
+
+        // Backend returns 'deliveryuser' object
+        const user = action.payload.user;
+
+        state.user = {
+          name: user.name,
+          phone: user.phone,
+          email: user.email,
+          type: user.type,
+          address: user.address,
+          refferalCode: user.refferalCode,
+          currentStep: 2, // Move to documents step
+          personalInfoComplete: true,
+          documentsUploaded: false,
+          profileComplete: false,
+          registrationStatus: 'PENDING'
+        };
+
         state.token = action.payload.token;
         state.personalInfoComplete = true;
-        state.registrationStep = 2; // Move to documents step
-        
+        state.registrationStep = 2;
+
         // Save to cookies
-        Cookies.set(DELIVERY_COOKIE_NAME, JSON.stringify(action.payload.user), { expires: 7 });
+        Cookies.set(DELIVERY_COOKIE_NAME, JSON.stringify(state.user), { expires: 7 });
         Cookies.set(TOKEN_COOKIE_NAME, action.payload.token, { expires: 7 });
       })
       .addCase(completePersonalInfoAsync.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
-      
+
       // Update User
       .addCase(updateDeliveryUserAsync.pending, (state) => {
         state.loading = true;
@@ -296,7 +345,7 @@ const deliveryAuthSlice = createSlice({
       .addCase(updateDeliveryUserAsync.fulfilled, (state, action) => {
         state.loading = false;
         state.user = { ...state.user, ...action.payload };
-        
+
         // Update completion status based on what was updated
         if (action.payload.documentsUploaded) {
           state.documentsUploaded = true;
@@ -306,7 +355,7 @@ const deliveryAuthSlice = createSlice({
           state.profileComplete = true;
           state.registrationStep = 4;
         }
-        
+
         // Update cookie
         Cookies.set(DELIVERY_COOKIE_NAME, JSON.stringify(state.user), { expires: 7 });
       })
@@ -314,7 +363,7 @@ const deliveryAuthSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      
+
       // Upload Document
       .addCase(uploadDocumentAsync.pending, (state) => {
         state.loading = true;
@@ -328,7 +377,7 @@ const deliveryAuthSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      
+
       // Get User Info
       .addCase(getDeliveryUserInfoAsync.fulfilled, (state, action) => {
         state.user = { ...state.user, ...action.payload };
@@ -337,12 +386,12 @@ const deliveryAuthSlice = createSlice({
   }
 });
 
-export const { 
-  clearError, 
-  resetOtpState, 
-  setRegistrationStep, 
-  checkAuth, 
-  logout 
+export const {
+  clearError,
+  resetOtpState,
+  setRegistrationStep,
+  checkAuth,
+  logout
 } = deliveryAuthSlice.actions;
 
 export default deliveryAuthSlice.reducer;

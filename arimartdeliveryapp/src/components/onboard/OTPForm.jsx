@@ -12,9 +12,9 @@ export default function OtpForm() {
     const [resendDisabled, setResendDisabled] = useState(false);
     const [resendTimer, setResendTimer] = useState(30);
     const { state } = useLocation();
-    const { mobile } = location.state || {};
+    const { mobile } = state || {};
     const dispatch = useDispatch();
-console.log(mobile)
+    console.log(mobile);
 
     const handleChange = (index, value) => {
         if (/^\d*$/.test(value) && value.length <= 1) {
@@ -36,7 +36,7 @@ console.log(mobile)
 
         try {
             if (!mobile) {
-                navigate('/'); // Optional fallback
+                navigate('/delivery'); // Optional fallback
             }
             const resultAction = await dispatch(verifyOtpAsync({ phoneNumber: mobile, otp }));
 
@@ -104,7 +104,7 @@ console.log(mobile)
                 className="w-full max-w-md p-6 bg-white rounded-xl"
             >
                 <motion.button
-                    onClick={() => navigate('/')}
+                    onClick={() => navigate('/delivery')}
                     className="text-xl mb-4"
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
@@ -126,10 +126,10 @@ console.log(mobile)
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.1 }}
                 >
-                    A 6 digit OTP has been sent to your phone number <strong>+91 9999988888</strong>
+                    A 6 digit OTP has been sent to your phone number <strong>+91 {mobile}</strong>
                     <span
                         className="text-blue-600 underline ml-2 cursor-pointer"
-                        onClick={() => navigate('/')}
+                        onClick={() => navigate('/delivery')}
                     >
                         Change
                     </span>

@@ -258,7 +258,7 @@ const DProductCard = ({ product }) => {
         ) : itemInCart ? (
           <div className="flex items-center gap-2">
             <Check className="text-white w-4 h-4" />
-            <span>Added to Cart</span>
+            <span className='text-green-600'>Added to Cart</span>
             {itemQuantity > 1 && (
               <span className="bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[1.25rem]">
                 {itemQuantity > 99 ? '99+' : itemQuantity}
@@ -268,7 +268,7 @@ const DProductCard = ({ product }) => {
         ) : (
           <>
             <Plus className="text-white w-4 h-4" />
-            <span>Add to Cart</span>
+            <span className='text-white'>Add to Cart</span>
           </>
         )}
       </motion.button>

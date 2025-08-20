@@ -1,33 +1,63 @@
 import React, { useState } from 'react';
 import { Upload, Calendar, ChevronDown, User, Phone, Mail, MapPin, Users, Globe, Camera } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
+import { useDispatch, useSelector } from 'react-redux';
+import {completePersonalInfoAsync} from '../../Store/authSlice';
 export default function PersonalInformationForm() {
     const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { loading, error, currentPhoneNumber } = useSelector(state => state.deliveryAuth);
+  
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    fullname: '',
+    email: '',
     fatherName: '',
     dateOfBirth: '',
-    primaryMobile: '',
+    primaryMobile: currentPhoneNumber || '8810381575', // Pre-fill with phone from OTP
     whatsappNumber: '',
     secondaryMobile: '',
     bloodGroup: '',
     city: '',
     address: '',
     language: '',
-    profilePicture: null
+    profilePicture: null,
+    referralCode: '' // Added missing referral code field
   });
-
   const [focusedField, setFocusedField] = useState('');
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = () => {
-    console.log('Form submitted:', formData);
-    navigate('/info/docs')
+  const handleSubmit = async () => {
+    // Basic validation
+    if (!formData.fullname || !formData.primaryMobile) {
+      alert('Please fill in all required fields (Name and Mobile Number)');
+      return;
+    }
+
+    // Email validation if provided
+    if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
+      alert('Please enter a valid email address');
+      return;
+    }
+
+    try {
+      console.log('Submitting form data:', formData);
+      const resultAction = await dispatch(completePersonalInfoAsync(formData));
+      
+      if (completePersonalInfoAsync.fulfilled.match(resultAction)) {
+        console.log('Registration successful:', resultAction.payload);
+        alert('Personal information saved successfully!');
+        navigate('/info/docs');
+      } else {
+        console.error('Registration failed:', resultAction.payload);
+        alert(resultAction.payload || 'Registration failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      alert('An unexpected error occurred. Please try again.');
+    }
   };
 
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -41,6 +71,11 @@ export default function PersonalInformationForm() {
           <div className="p-4 text-black">
             <h1 className="text-2xl font-bold mb-2">Personal Information</h1>
             <p className="text-gray-600">Enter the details below so we can get to know and serve you better</p>
+            {error && (
+              <div className="mt-2 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                {error}
+              </div>
+            )}
           </div>
 
           <div className="p-8 space-y-6">
@@ -63,44 +98,47 @@ export default function PersonalInformationForm() {
               </div>
             </div>
 
-            {/* Name Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  First Name
-                </label>
-                <input
-                  type="text"
-                  value={formData.firstName}
-                  onChange={(e) => handleInputChange('firstName', e.target.value)}
-                  onFocus={() => setFocusedField('firstName')}
-                  onBlur={() => setFocusedField('')}
-                  placeholder="Please enter first name"
-                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm ${
-                    focusedField === 'firstName' 
-                      ? 'border-blue-500 shadow-lg shadow-blue-500/20' 
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                />
-              </div>
+            {/* Full Name */}
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <User className="w-4 h-4" />
+                Full Name *
+              </label>
+              <input
+                type="text"
+                value={formData.fullname}
+                onChange={(e) => handleInputChange('fullname', e.target.value)}
+                onFocus={() => setFocusedField('fullname')}
+                onBlur={() => setFocusedField('')}
+                placeholder="Please enter your full name"
+                required
+                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm ${
+                  focusedField === 'fullname' 
+                    ? 'border-blue-500 shadow-lg shadow-blue-500/20' 
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              />
+            </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-700">Last Name</label>
-                <input
-                  type="text"
-                  value={formData.lastName}
-                  onChange={(e) => handleInputChange('lastName', e.target.value)}
-                  onFocus={() => setFocusedField('lastName')}
-                  onBlur={() => setFocusedField('')}
-                  placeholder="Please enter last name"
-                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm ${
-                    focusedField === 'lastName' 
-                      ? 'border-blue-500 shadow-lg shadow-blue-500/20' 
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                />
-              </div>
+            {/* Email */}
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                Email Address
+              </label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                onFocus={() => setFocusedField('email')}
+                onBlur={() => setFocusedField('')}
+                placeholder="Please enter your email"
+                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm ${
+                  focusedField === 'email' 
+                    ? 'border-blue-500 shadow-lg shadow-blue-500/20' 
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              />
             </div>
 
             {/* Father's Name */}
@@ -146,7 +184,7 @@ export default function PersonalInformationForm() {
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                   <Phone className="w-4 h-4" />
-                  Primary Mobile Number
+                  Primary Mobile Number *
                 </label>
                 <input
                   type="tel"
@@ -155,10 +193,11 @@ export default function PersonalInformationForm() {
                   onFocus={() => setFocusedField('primaryMobile')}
                   onBlur={() => setFocusedField('')}
                   placeholder="+91 9999999999"
-                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm ${
+                  required
+                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-gray-100 backdrop-blur-sm ${
                     focusedField === 'primaryMobile' 
                       ? 'border-blue-500 shadow-lg shadow-blue-500/20' 
-                      : 'border-gray-200 hover:border-gray-300'
+                      : 'border-gray-200'
                   }`}
                 />
               </div>
@@ -255,7 +294,7 @@ export default function PersonalInformationForm() {
                 onChange={(e) => handleInputChange('address', e.target.value)}
                 onFocus={() => setFocusedField('address')}
                 onBlur={() => setFocusedField('')}
-                placeholder="Search address..."
+                placeholder="Enter your complete address..."
                 rows="3"
                 className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm resize-none ${
                   focusedField === 'address' 
@@ -297,8 +336,16 @@ export default function PersonalInformationForm() {
               <label className="text-sm font-semibold text-gray-700">Referral Code (Optional)</label>
               <input
                 type="text"
+                value={formData.referralCode}
+                onChange={(e) => handleInputChange('referralCode', e.target.value)}
+                onFocus={() => setFocusedField('referralCode')}
+                onBlur={() => setFocusedField('')}
                 placeholder="Enter referral code"
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 hover:border-gray-300 transition-all duration-300 bg-white/50 backdrop-blur-sm"
+                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm ${
+                  focusedField === 'referralCode' 
+                    ? 'border-blue-500 shadow-lg shadow-blue-500/20' 
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
               />
             </div>
 
@@ -306,9 +353,14 @@ export default function PersonalInformationForm() {
             <button
               type="button"
               onClick={handleSubmit}
-              className="w-full bg-gradient-to-r from-[#FF6B74] to-[#FF9A6B] text-white py-3 rounded-full font-medium mt-6 shadow-md py-4 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+              disabled={loading}
+              className={`w-full text-white py-4 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 font-medium ${
+                loading 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-gradient-to-r from-[#FF6B74] to-[#FF9A6B] hover:from-[#FF5963] hover:to-[#FF8F5A]'
+              }`}
             >
-              Submit
+              {loading ? 'Submitting...' : 'Submit'}
             </button>
           </div>
         </div>

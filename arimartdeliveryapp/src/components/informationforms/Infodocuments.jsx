@@ -1,9 +1,13 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 export const Infodocuments = () => {
     const navigate = useNavigate();
+    const user = useSelector(state => state.deliveryAuth.user);
+    
+    console.log('User data:', user);
     const [pendingDocs, setPendingDocs] = useState([
         { name: "Personal Documents", completed: false, route: "/info/docs/upload" },
         { name: "Vehicle Details", completed: false, route: "/info/docs/vehicle" },

@@ -5,7 +5,7 @@ import ProductContentDetail from '../../components/Products/ProductContentDetail
 
 function Productpage() {
   return (
-    <div className='mb-20'>
+    <div className='md:mb-20'>
       {/* <Header title="Product Details" setbaricon={false} /> */}
       
       {/* Show only on mobile (below md) */}

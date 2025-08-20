@@ -16,7 +16,7 @@ import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import seoHelper from "../../utils/seoHelper"
 import { fetchWalletBalance } from "../../Store/walletSlice";
-import { ReviewsComponent} from "../Reviews/ProductReview";
+import { ReviewsComponent } from "../Reviews/ProductReview";
 
 export default function ProductDetails({ cartIconRef }) {
   const { id } = useParams();
@@ -234,7 +234,7 @@ export default function ProductDetails({ cartIconRef }) {
       return groupBuy?.gid;
     });
 
-    console.log("🔍 shouldShowGroupBuySection result:", hasValidGid);
+    // console.log("🔍 shouldShowGroupBuySection result:", hasValidGid);
     return hasValidGid;
   }, [groupBuys]);
 
@@ -288,9 +288,9 @@ export default function ProductDetails({ cartIconRef }) {
   // Fixed quantity handler functions for ProductDetails component
 
   const handleIncrease = async () => {
-    console.log("clicked", product.id)
+    // console.log("clicked", product.id)
     const cartItemInfo = getCartItemInfo(product.id);
-    console.log(cartItemInfo)
+    // console.log(cartItemInfo)
     if (!cartItemInfo) return toast.error("Cart item not found");
     try {
       // Pass the cart item ID (not the whole object) and new quantity
@@ -474,18 +474,42 @@ export default function ProductDetails({ cartIconRef }) {
     }
     return 0;
   };
-  console.log("product details : ", product)
+  // console.log("product details : ", product)
   const regularPrice = product.netprice || 0;
   const groupPrice = product.gprice || 0;
   const discountPercentage =
     regularPrice > 0 ? Math.round((1 - groupPrice / regularPrice) * 100) : 0;
+
+  function formatLongDesc(html) {
+    // create a DOM parser
+    const div = document.createElement("div");
+    div.innerHTML = html;
+
+    // loop through text nodes only
+    const walker = document.createTreeWalker(div, NodeFilter.SHOW_TEXT);
+    let node = walker.nextNode();
+    while (node) {
+      let text = node.nodeValue.trim();
+      if (text) {
+        // remove leading symbols
+        text = text.replace(/^[^a-zA-Z0-9]+/, "");
+        // capitalize
+        node.nodeValue =
+          text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+        break; // only change first text occurrence
+      }
+      node = walker.nextNode();
+    }
+    return div.innerHTML;
+  }
+
   return (
     <>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="md:hidden block bg-white dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen pb-24"
+        className="md:hidden block bg-white dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen md:pb-24"
       >
         <div className="max-w-6xl mx-auto md:mt-10 lg:flex lg:items-start lg:gap-8 px-2 lg:px-6">
           {/* Sticky Wrapper for Image on Large Screens */}
@@ -679,21 +703,29 @@ export default function ProductDetails({ cartIconRef }) {
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
                     If you don't have your own group, you can join any running group
                   </p>
-                  <div className="max-h-[400px] overflow-y-auto">
-                    {validGroupBuys.map((groupBuy, index) => (
-                      <div key={groupBuy.gid || index} className="mb-4">
-                        <GroupBuySection
-                          userId={userData?.userId || userData?.id}
-                          product={{ ...product, gid: groupBuy.gid }}
-                          onGroupReady={handleGroupReady}
-                        />
-                      </div>
-                    ))}
-                  </div>
 
-
+                  {validGroupBuys.length > 0 ? (
+                    <div className="max-h-[400px] overflow-y-auto">
+                      {validGroupBuys.map((groupBuy, index) => (
+                        <div key={groupBuy.gid || index} className="mb-4">
+                          <GroupBuySection
+                            userId={userData?.userId || userData?.id}
+                            product={{ ...product, gid: groupBuy.gid }}
+                            onGroupReady={handleGroupReady}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center text-sm text-gray-500 dark:text-gray-400 border border-dashed border-gray-300 dark:border-gray-600 p-4 rounded-lg">
+                      No groups available right now.
+                      <br />
+                      👉 Create your own by clicking the <b>Save</b> button below.
+                    </div>
+                  )}
                 </motion.div>
               )}
+
 
               <div className="flex border-b border-gray-200 dark:border-gray-700 mt-6">
                 {["description", "reviews", "more you like"].map((tab) => (
@@ -717,7 +749,6 @@ export default function ProductDetails({ cartIconRef }) {
                       {/* Health Benefits */}
                       {product.pPros && (
                         <div className="mb-4">
-                          <h3 className="font-medium mb-2">Health Benefits</h3>
                           <div
                             className="text-sm text-gray-700 dark:text-gray-300"
                             dangerouslySetInnerHTML={{ __html: product.pPros }}
@@ -733,20 +764,21 @@ export default function ProductDetails({ cartIconRef }) {
                         </div>
                       )}
 
-                      <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+
+                      {/* Long description */}
+                      {product.longdesc && (
+                        <div
+                          className="mt-4 text-sm text-gray-700 dark:text-gray-400"
+                          dangerouslySetInnerHTML={{ __html: formatLongDesc(product.longdesc) }}
+                        />
+                      )}
+
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-3 mt-4 rounded-lg">
                         <p className="text-xs text-gray-700 dark:text-gray-300">
                           100% satisfaction guarantee. If you experience any issues: missing item, poor quality,
                           late delivery, or unprofessional service, contact us for immediate resolution or full refund.
                         </p>
                       </div>
-
-                      {/* Long description */}
-                      {product.longdesc && (
-                        <div
-                          className="mt-4 text-xs text-gray-500 dark:text-gray-400"
-                          dangerouslySetInnerHTML={{ __html: product.longdesc }}
-                        />
-                      )}
                     </motion.div>
                   )}
 
