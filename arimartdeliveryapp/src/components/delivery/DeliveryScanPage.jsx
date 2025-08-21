@@ -1,96 +1,310 @@
 import { useEffect, useState } from "react";
-import { CheckCircle, QrCode, PackageCheck } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { CheckCircle, QrCode, PackageCheck, AlertCircle, Loader2, Plus } from "lucide-react";
 import { Html5QrcodeScanner } from "html5-qrcode";
+import {
+  scanOrderForDelivery,
+  addManualOrder,
+  clearMessages,
+  resetScanState,
+  setScanningState,
+  selectIsLoading,
+  selectError,
+  selectSuccessMessage,
+  selectScanResult,
+  selectDeliveryPartner
+} from '../../Store/deliveryOrderSlice'
 
 export const DeliveryScanPage = () => {
+  const dispatch = useDispatch();
+  
+  // Redux state
+  const isLoading = useSelector(selectIsLoading);
+  const error = useSelector(selectError);
+  const successMessage = useSelector(selectSuccessMessage);
+  const scanResult = useSelector(selectScanResult);
+  const deliveryPartner = useSelector(selectDeliveryPartner);
+  
+  // Local state
   const [scannedData, setScannedData] = useState("");
   const [manualEntry, setManualEntry] = useState("");
-  const [confirmed, setConfirmed] = useState(false);
-  const [error, setError] = useState("");
+  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [scannerActive, setScannerActive] = useState(false);
 
-  // Start scanner
+  // Mock delivery partner ID (in real app, get from auth/login)
+  const deliveryPartnerId = deliveryPartner?.id || 1;
+
+  // Initialize QR Scanner
   useEffect(() => {
-  if (confirmed || scannedData) return;
+    if (!scannerActive || scannedData || scanResult) return;
 
-  const scanner = new Html5QrcodeScanner("reader", {
-    fps: 10,
-    qrbox: 250,
-    // supportedScanTypes: [Html5QrcodeScanner.SCAN_TYPE_CAMERA] ❌ Remove this
-  });
+    dispatch(setScanningState(true));
 
-  scanner.render(
-    (decodedText) => {
-      console.log("Scanned:", decodedText);
-      setScannedData(decodedText);
-      scanner.clear();
-    },
-    (scanErr) => {
-      console.warn("Scan Error:", scanErr);
+    const scanner = new Html5QrcodeScanner("reader", {
+      fps: 10,
+      qrbox: { width: 250, height: 250 },
+      aspectRatio: 1.0,
+    });
+
+    scanner.render(
+      (decodedText) => {
+        console.log("QR/Barcode scanned:", decodedText);
+        setScannedData(decodedText);
+        setScannerActive(false);
+        dispatch(setScanningState(false));
+        
+        // Auto-confirm scan
+        handleConfirmScan(decodedText);
+        scanner.clear();
+      },
+      (scanErr) => {
+        // Silent error handling for continuous scanning
+      }
+    );
+
+    return () => {
+      scanner.clear().catch((e) => console.error("Scanner cleanup error:", e));
+      dispatch(setScanningState(false));
+    };
+  }, [scannerActive, scannedData, scanResult, dispatch]);
+
+  const handleConfirmScan = (trackId) => {
+    if (!trackId.trim()) {
+      dispatch({ type: 'delivery/setError', payload: 'Please enter or scan a valid Track ID' });
+      return;
     }
-  );
 
-  return () => {
-    scanner.clear().catch((e) => console.error("Cleanup error", e));
+    // Dispatch scan action
+    dispatch(scanOrderForDelivery({ 
+      trackId: trackId.trim(), 
+      deliveryPartnerId 
+    }));
   };
-}, [confirmed, scannedData]);
 
+  const handleManualConfirm = () => {
+    if (!manualEntry.trim()) {
+      dispatch({ type: 'delivery/setError', payload: 'Please enter a valid Track ID' });
+      return;
+    }
 
-  const handleConfirm = () => {
-    const orderId = scannedData || manualEntry;
-    if (!orderId) return setError("Enter or scan a valid Order ID.");
-    setConfirmed(true);
-    // TODO: Send API request to confirm delivery
-    console.log("Delivery confirmed for order:", orderId);
+    handleConfirmScan(manualEntry);
   };
+
+  const handleManualAdd = () => {
+    if (!manualEntry.trim()) {
+      dispatch({ type: 'delivery/setError', payload: 'Please enter a valid Track ID' });
+      return;
+    }
+
+    // Add order manually (mock order details - in real app, fetch from API)
+    const mockOrderDetails = {
+      id: Date.now(),
+      trackId: manualEntry.trim(),
+      customerName: "Customer Name",
+      deliveryAddress: "Customer Address",
+      customerPhone: "+91 XXXXXXXXXX",
+      totalAmount: 299,
+      items: [{ name: "Sample Product", qty: 1, price: 299 }]
+    };
+
+    dispatch(addManualOrder({ 
+      trackId: manualEntry.trim(), 
+      orderDetails: mockOrderDetails 
+    }));
+    
+    setManualEntry("");
+    setShowManualEntry(false);
+  };
+
+  const startNewScan = () => {
+    dispatch(resetScanState());
+    dispatch(clearMessages());
+    setScannedData("");
+    setManualEntry("");
+    setShowManualEntry(false);
+    setScannerActive(true);
+  };
+
+  const toggleManualEntry = () => {
+    setShowManualEntry(!showManualEntry);
+    setScannerActive(false);
+    dispatch(clearMessages());
+  };
+
+  // Success state
+  if (scanResult || successMessage) {
+    return (
+      <div className="p-6 max-w-md mx-auto">
+        <div className="text-center">
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="w-12 h-12 text-green-600" />
+          </div>
+          
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Order Assigned Successfully!
+          </h2>
+          
+          <p className="text-sm text-gray-600 mb-4">
+            {successMessage || "Order has been added to your delivery list"}
+          </p>
+
+          {scanResult?.orderDetails && (
+            <div className="bg-gray-50 rounded-2xl p-4 text-left mb-6 border">
+              <p className="text-xs font-medium text-gray-500 mb-2">ORDER DETAILS</p>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Track ID:</span>
+                  <span className="text-sm font-medium">{scanResult.orderDetails.trackId}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Customer:</span>
+                  <span className="text-sm font-medium">{scanResult.orderDetails.customerName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Amount:</span>
+                  <span className="text-sm font-medium">₹{scanResult.orderDetails.totalAmount}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={startNewScan}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-2xl transition-colors"
+          >
+            Scan Another Order
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6">
-      {!confirmed ? (
-        <>
-          <h2 className="text-lg font-semibold text-center mb-4">Scan QR / Barcode</h2>
-          <div id="reader" className="mx-auto max-w-sm rounded overflow-hidden shadow" />
-          <p className="text-sm text-gray-400 text-center mt-2">Supports QR + Barcodes</p>
+    <div className="p-6 max-w-md mx-auto">
+      {/* Header */}
+      <div className="text-center mb-6">
+        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+          <QrCode className="w-8 h-8 text-blue-600" />
+        </div>
+        <h1 className="text-xl font-semibold text-gray-900">Scan Order</h1>
+        <p className="text-sm text-gray-600">Scan QR code or enter Track ID manually</p>
+      </div>
 
-          <div className="my-6 text-center">
-            <p className="text-sm text-gray-500 mb-1">Or enter Order ID manually</p>
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-3 mb-4 flex items-start">
+          <AlertCircle className="w-5 h-5 text-red-600 mr-2 mt-0.5 flex-shrink-0" />
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
+
+      {/* Toggle Buttons */}
+      <div className="flex bg-gray-100 p-1 rounded-2xl mb-6">
+        <button
+          onClick={() => {
+            setScannerActive(true);
+            setShowManualEntry(false);
+          }}
+          className={`flex-1 py-2 px-4 rounded-xl text-sm font-medium transition-colors ${
+            !showManualEntry 
+              ? 'bg-white text-gray-900 shadow-sm' 
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <QrCode className="w-4 h-4 inline mr-2" />
+          QR Scan
+        </button>
+        <button
+          onClick={toggleManualEntry}
+          className={`flex-1 py-2 px-4 rounded-xl text-sm font-medium transition-colors ${
+            showManualEntry 
+              ? 'bg-white text-gray-900 shadow-sm' 
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <Plus className="w-4 h-4 inline mr-2" />
+          Manual Entry
+        </button>
+      </div>
+
+      {/* QR Scanner */}
+      {!showManualEntry && (
+        <div className="mb-6">
+          <div 
+            id="reader" 
+            className="rounded-2xl overflow-hidden shadow-sm border bg-gray-50"
+            style={{ minHeight: scannerActive ? '300px' : '200px' }}
+          >
+            {!scannerActive && (
+              <div className="flex flex-col items-center justify-center h-48">
+                <QrCode className="w-12 h-12 text-gray-400 mb-3" />
+                <button
+                  onClick={() => setScannerActive(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-2xl transition-colors"
+                >
+                  Start Scanning
+                </button>
+              </div>
+            )}
+          </div>
+          <p className="text-xs text-gray-500 text-center mt-2">
+            {scannerActive ? 'Point camera at QR code or barcode' : 'Click to start camera'}
+          </p>
+        </div>
+      )}
+
+      {/* Manual Entry */}
+      {showManualEntry && (
+        <div className="space-y-4 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Track ID / Order ID
+            </label>
             <input
               type="text"
-              placeholder="Enter Order ID"
+              placeholder="Enter Track ID (e.g., ORD-123456)"
               value={manualEntry}
               onChange={(e) => setManualEntry(e.target.value)}
-              className="border rounded-lg px-4 py-2 w-full max-w-sm mx-auto text-center"
+              className="w-full border border-gray-300 rounded-2xl px-4 py-3 text-center font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              autoFocus
             />
-            {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
           </div>
 
-          <button
-            onClick={handleConfirm}
-            className="bg-green-600 hover:bg-green-700 text-white font-medium px-6 py-2 rounded-full block mx-auto"
-          >
-            Confirm Delivery
-          </button>
-        </>
-      ) : (
-        <div className="text-center mt-10">
-          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <p className="text-lg font-semibold text-green-700">Delivery Confirmed</p>
-
-          <div className="bg-gray-100 mt-4 p-4 rounded-lg text-left max-w-sm mx-auto">
-            <p className="text-gray-600 text-sm mb-1">Order ID:</p>
-            <p className="text-black font-semibold">{scannedData || manualEntry}</p>
+          <div className="flex space-x-3">
+            <button
+              onClick={handleManualConfirm}
+              disabled={isLoading || !manualEntry.trim()}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-medium py-3 px-4 rounded-2xl transition-colors flex items-center justify-center"
+            >
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <PackageCheck className="w-4 h-4 mr-2" />
+              )}
+              Assign Order
+            </button>
+            
+            <button
+              onClick={handleManualAdd}
+              disabled={!manualEntry.trim()}
+              className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white font-medium py-3 px-4 rounded-2xl transition-colors flex items-center justify-center"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Manually
+            </button>
           </div>
+          
+          <p className="text-xs text-gray-500 text-center">
+            "Assign Order" fetches from server • "Add Manually" adds to your list
+          </p>
+        </div>
+      )}
 
-          <button
-            className="mt-6 text-blue-500 underline"
-            onClick={() => {
-              setScannedData("");
-              setManualEntry("");
-              setConfirmed(false);
-              setError("");
-            }}
-          >
-            Scan Another
-          </button>
+      {/* Loading State */}
+      {isLoading && (
+        <div className="text-center">
+          <Loader2 className="w-6 h-6 animate-spin text-blue-600 mx-auto mb-2" />
+          <p className="text-sm text-gray-600">Processing order...</p>
         </div>
       )}
     </div>

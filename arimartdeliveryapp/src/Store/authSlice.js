@@ -4,6 +4,7 @@ import API from '../api';
 
 const DELIVERY_COOKIE_NAME = 'DeliveryPartnerDataArimart';
 const TOKEN_COOKIE_NAME = 'DeliveryPartnerTokenArimart';
+const USERID_COOKIE_NAME = 'DeliveryPartnerUserIdArimart';
 
 // Get delivery user from cookie
 export const getDeliveryUserFromCookie = () => {
@@ -13,6 +14,18 @@ export const getDeliveryUserFromCookie = () => {
   } catch (error) {
     console.error('Invalid delivery user cookie:', error);
     return null;
+  }
+};
+
+// Helper function to save user data to cookies
+const saveUserToCookies = (user, token) => {
+  const cookieOptions = { expires: 7 };
+  Cookies.set(DELIVERY_COOKIE_NAME, JSON.stringify(user), cookieOptions);
+  Cookies.set(TOKEN_COOKIE_NAME, token, cookieOptions);
+  // Handle both 'id' and 'Id' fields from backend
+  const userId = user.id || user.Id;
+  if (userId) {
+    Cookies.set(USERID_COOKIE_NAME, userId.toString(), cookieOptions);
   }
 };
 
@@ -31,23 +44,24 @@ export const sendOtpAsync = createAsyncThunk(
   }
 );
 
-// Verify OTP and Login/Check Registration Status
+// Verify OTP and Login - CORRECTED to use delivery-user login endpoint
 export const verifyOtpAsync = createAsyncThunk(
   'deliveryAuth/verifyOtp',
   async ({ phoneNumber, otp }, { rejectWithValue }) => {
     try {
-      const response = await API.post('/auth/login', {
+      const response = await API.post('/auth/delivery-user/login', {
         mobileNumber: phoneNumber,
         otp: otp
       });
 
-      // If user exists, return user data with completion status
+      // If successful, user exists - return user data
       return {
         user: response.data.user,
         token: response.data.token,
         isExistingUser: true
       };
     } catch (err) {
+      // Check if error indicates user needs registration
       if (err.response?.data?.requiresRegistration) {
         return {
           isExistingUser: false,
@@ -80,8 +94,7 @@ export const sendFcmTokenToBackend = createAsyncThunk(
   }
 );
 
-
-// Update User Info (for additional steps)
+// Update User Info
 export const updateDeliveryUserAsync = createAsyncThunk(
   'deliveryAuth/updateUser',
   async ({ userId, updateData }, { rejectWithValue }) => {
@@ -114,13 +127,11 @@ export const uploadDocumentAsync = createAsyncThunk(
   }
 );
 
-// In your authSlice.js, update the completePersonalInfoAsync action
+// Complete Personal Info - Register new user
 export const completePersonalInfoAsync = createAsyncThunk(
   'deliveryAuth/completePersonalInfo',
   async (personalData, { rejectWithValue, getState }) => {
-    console.log(personalData)
     try {
-      // Get phone number from current state for new users
       const { currentPhoneNumber } = getState().deliveryAuth;
 
       const requestData = {
@@ -151,7 +162,7 @@ export const completePersonalInfoAsync = createAsyncThunk(
       const response = await API.post('/auth/delivery-user/register', requestData);
 
       return {
-        user: response.data.deliveryuser, // Note: backend returns 'deliveryuser' not 'user'
+        user: response.data.deliveryuser, // Backend returns 'deliveryuser'
         token: response.data.token
       };
     } catch (err) {
@@ -173,25 +184,40 @@ export const getDeliveryUserInfoAsync = createAsyncThunk(
   }
 );
 
+// Get Registration Status
+export const getRegistrationStatusAsync = createAsyncThunk(
+  'deliveryAuth/getRegistrationStatus',
+  async (userId, { rejectWithValue }) => {
+    try {
+      const response = await API.get(`/auth/delivery-user/registration-status/${userId}`);
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to fetch registration status');
+    }
+  }
+);
+
 const initialUser = getDeliveryUserFromCookie();
 const initialToken = Cookies.get(TOKEN_COOKIE_NAME);
+const initialUserId = Cookies.get(USERID_COOKIE_NAME);
 
 const initialState = {
   // Auth State
   isAuthenticated: !!initialUser && !!initialToken,
   user: initialUser,
   token: initialToken,
+  userId: initialUserId,
 
   // Registration Flow State
   currentPhoneNumber: null,
   isExistingUser: null,
 
   // Completion Status
-  registrationStep: initialUser?.currentStep || 1, // 1=Personal, 2=Documents, 3=Upload, 4=Complete
+  registrationStep: initialUser?.currentStep || 1,
   personalInfoComplete: initialUser?.personalInfoComplete || false,
   documentsUploaded: initialUser?.documentsUploaded || false,
   profileComplete: initialUser?.profileComplete || false,
-  registrationStatus: initialUser?.registrationStatus || 'PENDING', // PENDING, APPROVED, REJECTED
+  registrationStatus: initialUser?.registrationStatus || 'PENDING',
 
   // UI State
   loading: false,
@@ -203,43 +229,46 @@ const deliveryAuthSlice = createSlice({
   name: 'deliveryAuth',
   initialState,
   reducers: {
-    // Clear error
     clearError: (state) => {
       state.error = null;
     },
 
-    // Reset OTP state
     resetOtpState: (state) => {
       state.otpSent = false;
       state.currentPhoneNumber = null;
     },
 
-    // Set registration step
     setRegistrationStep: (state, action) => {
       state.registrationStep = action.payload;
     },
 
-    // Check auth from cookie
     checkAuth: (state) => {
       const user = getDeliveryUserFromCookie();
       const token = Cookies.get(TOKEN_COOKIE_NAME);
+      const userId = Cookies.get(USERID_COOKIE_NAME);
+      
       state.isAuthenticated = !!user && !!token;
       state.user = user;
       state.token = token;
+      state.userId = userId;
+      
       if (user) {
         state.registrationStep = user.currentStep || 1;
         state.personalInfoComplete = user.personalInfoComplete || false;
         state.documentsUploaded = user.documentsUploaded || false;
+        state.vehicledetail = user.vehicledetail || false;
+        state.emergencycomplete = user.emergencycomplete || false;
+        state.bankcomplete = user.bankcomplete || false;
         state.profileComplete = user.profileComplete || false;
         state.registrationStatus = user.registrationStatus || 'PENDING';
       }
     },
 
-    // Logout
     logout: (state) => {
       Cookies.remove(DELIVERY_COOKIE_NAME);
       Cookies.remove(TOKEN_COOKIE_NAME);
-      return { ...initialState, isAuthenticated: false };
+      Cookies.remove(USERID_COOKIE_NAME);
+      return { ...initialState, isAuthenticated: false, user: null, token: null, userId: null };
     },
   },
 
@@ -269,14 +298,14 @@ const deliveryAuthSlice = createSlice({
         state.loading = false;
 
         if (action.payload.isExistingUser) {
-          // Existing user - set auth data
           const user = action.payload.user;
           state.isAuthenticated = true;
           state.user = user;
           state.token = action.payload.token;
           state.isExistingUser = true;
+          state.userId = (user.id || user.Id)?.toString();
 
-          // Set completion status
+          // Set completion status from user data
           state.registrationStep = user.currentStep || 1;
           state.personalInfoComplete = user.personalInfoComplete || false;
           state.documentsUploaded = user.documentsUploaded || false;
@@ -284,8 +313,7 @@ const deliveryAuthSlice = createSlice({
           state.registrationStatus = user.registrationStatus || 'PENDING';
 
           // Save to cookies
-          Cookies.set(DELIVERY_COOKIE_NAME, JSON.stringify(user), { expires: 7 });
-          Cookies.set(TOKEN_COOKIE_NAME, action.payload.token, { expires: 7 });
+          saveUserToCookies(user, action.payload.token);
         } else {
           // New user - needs registration
           state.isExistingUser = false;
@@ -297,40 +325,32 @@ const deliveryAuthSlice = createSlice({
         state.error = action.payload;
       })
 
-      // Complete Personal Info
+      // Complete Personal Info (Registration)
       .addCase(completePersonalInfoAsync.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      // In authSlice.js - update the fulfilled case for completePersonalInfoAsync
       .addCase(completePersonalInfoAsync.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
 
-        // Backend returns 'deliveryuser' object
         const user = action.payload.user;
-
-        state.user = {
-          name: user.name,
-          phone: user.phone,
-          email: user.email,
-          type: user.type,
-          address: user.address,
-          refferalCode: user.refferalCode,
-          currentStep: 2, // Move to documents step
-          personalInfoComplete: true,
-          documentsUploaded: false,
-          profileComplete: false,
-          registrationStatus: 'PENDING'
-        };
-
+        
+        state.user = user;
         state.token = action.payload.token;
-        state.personalInfoComplete = true;
-        state.registrationStep = 2;
+        state.userId = (user.id || user.Id)?.toString();
+        
+        // Update registration status
+        state.personalInfoComplete = user.personalInfoComplete || true;
+        state.documentsUploaded = user.documentsUploaded || false;
+        state.emergencycomplete = user.emergencycomplete || false;
+        state.bankcomplete = user.bankcomplete || false;
+        state.vehicledetail = user.vehicledetail || false;
+        state.registrationStep = user.currentStep || 2;
+        state.registrationStatus = user.registrationStatus || 'PENDING';
 
         // Save to cookies
-        Cookies.set(DELIVERY_COOKIE_NAME, JSON.stringify(state.user), { expires: 7 });
-        Cookies.set(TOKEN_COOKIE_NAME, action.payload.token, { expires: 7 });
+        saveUserToCookies(user, action.payload.token);
       })
       .addCase(completePersonalInfoAsync.rejected, (state, action) => {
         state.loading = false;
@@ -344,9 +364,10 @@ const deliveryAuthSlice = createSlice({
       })
       .addCase(updateDeliveryUserAsync.fulfilled, (state, action) => {
         state.loading = false;
-        state.user = { ...state.user, ...action.payload };
+        const updatedUser = { ...state.user, ...action.payload };
+        state.user = updatedUser;
 
-        // Update completion status based on what was updated
+        // Update completion status
         if (action.payload.documentsUploaded) {
           state.documentsUploaded = true;
           state.registrationStep = Math.max(state.registrationStep, 3);
@@ -356,32 +377,61 @@ const deliveryAuthSlice = createSlice({
           state.registrationStep = 4;
         }
 
-        // Update cookie
-        Cookies.set(DELIVERY_COOKIE_NAME, JSON.stringify(state.user), { expires: 7 });
+        // Update cookies
+        saveUserToCookies(updatedUser, state.token);
       })
       .addCase(updateDeliveryUserAsync.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
 
-      // Upload Document
-      .addCase(uploadDocumentAsync.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(uploadDocumentAsync.fulfilled, (state, action) => {
-        state.loading = false;
-        // Update user data if needed
-      })
-      .addCase(uploadDocumentAsync.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-
       // Get User Info
       .addCase(getDeliveryUserInfoAsync.fulfilled, (state, action) => {
-        state.user = { ...state.user, ...action.payload };
-        Cookies.set(DELIVERY_COOKIE_NAME, JSON.stringify(state.user), { expires: 7 });
+        const updatedUser = { ...state.user, ...action.payload };
+        state.user = updatedUser;
+        
+        // Update status fields
+        state.registrationStep = action.payload.currentStep || state.registrationStep;
+        state.personalInfoComplete = action.payload.personalInfoComplete || state.personalInfoComplete;
+        state.vehicledetail = action.payload.vehicledetail || state.vehicledetail;
+        state.emergencycomplete = action.payload.emergencycomplete || state.emergencycomplete;
+        state.bankcomplete = action.payload.bankcomplete || state.bankcomplete;
+        state.documentsUploaded = action.payload.documentsUploaded || state.documentsUploaded;
+        state.profileComplete = action.payload.profileComplete || state.profileComplete;
+        state.registrationStatus = action.payload.registrationStatus || state.registrationStatus;
+
+        // Update cookies
+        saveUserToCookies(updatedUser, state.token);
+      })
+
+      // Get Registration Status
+      .addCase(getRegistrationStatusAsync.fulfilled, (state, action) => {
+        state.registrationStatus = action.payload.registrationStatus;
+        state.registrationStep = action.payload.currentStep;
+        state.personalInfoComplete = action.payload.personalInfoComplete;
+        state.emergencycomplete = action.payload.emergencycomplete;
+        state.bankcomplete = action.payload.bankcomplete;
+        state.vehicledetail = action.payload.vehicledetail;
+        state.documentsUploaded = action.payload.documentsUploaded;
+        state.profileComplete = action.payload.profileComplete;
+
+        // Update user object with status
+        if (state.user) {
+          const updatedUser = {
+            ...state.user,
+            registrationStatus: action.payload.registrationStatus,
+            currentStep: action.payload.currentStep,
+            personalInfoComplete: action.payload.personalInfoComplete,
+            bankcomplete: action.payload.bankcomplete,
+            emergencycomplete: action.payload.emergencycomplete,
+            vehicledetail: action.payload.vehicledetail,
+            documentsUploaded: action.payload.documentsUploaded,
+            profileComplete: action.payload.profileComplete,
+            rejectRemark: action.payload.rejectRemark
+          };
+          state.user = updatedUser;
+          saveUserToCookies(updatedUser, state.token);
+        }
       });
   }
 });
@@ -399,6 +449,7 @@ export default deliveryAuthSlice.reducer;
 // Selectors
 export const selectIsAuthenticated = (state) => state.deliveryAuth.isAuthenticated;
 export const selectUser = (state) => state.deliveryAuth.user;
+export const selectUserId = (state) => state.deliveryAuth.userId;
 export const selectRegistrationStep = (state) => state.deliveryAuth.registrationStep;
 export const selectIsRegistrationComplete = (state) => state.deliveryAuth.profileComplete;
 export const selectRegistrationStatus = (state) => state.deliveryAuth.registrationStatus;

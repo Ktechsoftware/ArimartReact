@@ -1,34 +1,56 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { useAuth } from "../../hooks/useAuth";
+import { useDispatch } from "react-redux";
+import { getRegistrationStatusAsync } from "../../Store/authSlice";
 
 export const Infodocuments = () => {
     const navigate = useNavigate();
-    const user = useSelector(state => state.deliveryAuth.user);
-    
-    console.log('User data:', user);
+    const dispatch = useDispatch();
+    const [loading, setLoading] = useState(true);
+    const { user, userId } = useAuth();
+    console.log(user)
     const [pendingDocs, setPendingDocs] = useState([
-        { name: "Personal Documents", completed: false, route: "/info/docs/upload" },
-        { name: "Vehicle Details", completed: false, route: "/info/docs/vehicle" },
-        { name: "Bank Account Details", completed: false, route: "/info/docs/bank" },
-        { name: "Emergency Details", completed: false, route: "/info/docs/emergency" },
+        { name: "Personal Documents", completed: user?.documentsUploaded || false, route: "/info/docs/upload" },
+        { name: "Vehicle Details", completed: user?.vehicledetail || false, route: "/info/docs/vehicle" },
+        { name: "Bank Account Details", completed: user?.bankcomplete || false, route: "/info/docs/bank" },
+        { name: "Emergency Details", completed: user?.emergencycomplete || false, route: "/info/docs/emergency" },
     ]);
 
+    useEffect(() => {
+        if (userId) {
+            dispatch(getRegistrationStatusAsync(userId));
+        }
+    }, [userId, dispatch]);
+
+    useEffect(() => {
+        if (user) {
+            setLoading(true);
+            try {
+                setPendingDocs([
+                    { name: "Personal Documents", completed: user.documentsUploaded || false, route: "/info/docs/upload" },
+                    { name: "Vehicle Details", completed: user.vehicledetail || false, route: "/info/docs/vehicle" },
+                    { name: "Bank Account Details", completed: user.bankcomplete || false, route: "/info/docs/bank" },
+                    { name: "Emergency Details", completed: user.emergencycomplete || false, route: "/info/docs/emergency" },
+                ]);
+            } catch (error) {
+                console.error('Error loading user status:', error);
+            } finally {
+                setLoading(false);
+            }
+        }
+    }, [user]);
     const [completedDocs] = useState([
-        { name: "Personal Information", completed: true, route: "/info/docs/upload/personal-info" }
+        { name: "Personal Information", completed: user?.personalInfoComplete || false, route: "/info/docs/upload/personal-info" }
     ]);
-
-
-    const toggleDocCompletion = (index) => {
-        const updatedDocs = [...pendingDocs];
-        updatedDocs[index].completed = !updatedDocs[index].completed;
-        setPendingDocs(updatedDocs);
-    };
     const handlesubmitdocuments = () => {
         navigate('/info/docs/register')
     };
 
+    const completedCount = pendingDocs.filter(doc => doc.completed).length + completedDocs.length;
+    const totalCount = pendingDocs.length + completedDocs.length;
     return (
         <div className="relative w-full min-h-screen bg-gray-50 px-4 pb-24">
             <div className="max-w-md w-full mx-auto pt-6">
@@ -54,13 +76,13 @@ export const Infodocuments = () => {
                 >
                     <div className="flex justify-between text-xs text-gray-500 mb-1">
                         <span>Progress</span>
-                        <span>{completedDocs.length} of {completedDocs.length + pendingDocs.length} completed</span>
+                        <span>{completedCount} of {totalCount} completed</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                         <motion.div
                             initial={{ width: 0 }}
                             animate={{
-                                width: `${(completedDocs.length / (completedDocs.length + pendingDocs.length)) * 100}%`,
+                                width: `${(completedCount / totalCount) * 100}%`,
                                 transition: { delay: 0.4, duration: 1 }
                             }}
                             className="bg-gradient-to-r from-[#FF5963] to-[#FFAF70] h-2 rounded-full"
@@ -88,10 +110,9 @@ export const Infodocuments = () => {
                                         exit={{ opacity: 0, x: -50 }}
                                         transition={{ delay: idx * 0.1 }}
                                         className="bg-white border border-gray-100 rounded-xl p-4 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                                        onClick={() => toggleDocCompletion(idx)}
                                     >
-                                        <Link
-                                            to={doc.route} className="flex items-center space-x-3">
+                                        {/* link only if not completed */}
+                                        <Link to={doc.route} className="flex items-center space-x-3">
                                             <div className="w-5 h-5 border-2 border-gray-300 rounded-full flex-shrink-0" />
                                             <span className="text-sm font-medium text-gray-800">{doc.name}</span>
                                         </Link>
@@ -129,9 +150,10 @@ export const Infodocuments = () => {
                                     </div>
                                     <span className="text-sm font-medium text-gray-800">{doc.name}</span>
                                 </div>
-                                <span className="text-gray-400 text-lg">→</span>
+                                {/* no link here, just static checkmark */}
                             </motion.div>
                         ))}
+
                         {pendingDocs.map((doc, idx) => (
                             doc.completed && (
                                 <motion.div
@@ -148,12 +170,13 @@ export const Infodocuments = () => {
                                         </div>
                                         <span className="text-sm font-medium text-gray-800">{doc.name}</span>
                                     </div>
-                                    <span className="text-gray-400 text-lg">→</span>
+                                    {/* ✅ no link, no arrow */}
                                 </motion.div>
                             )
                         ))}
                     </div>
                 </motion.div>
+
             </div>
 
             {/* Sticky Submit Button */}

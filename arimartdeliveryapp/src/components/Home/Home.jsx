@@ -21,13 +21,14 @@ import {
   Settings,
   IndianRupee
 } from 'lucide-react';
+import { useAuth } from "../../hooks/useAuth";
 
 export const ArimartHome = () => {
   const [isOnline, setIsOnline] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [earnings, setEarnings] = useState(157.34);
   const [activeOrders, setActiveOrders] = useState(4);
-
+   const { user, userId } = useAuth();
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -98,7 +99,7 @@ export const ArimartHome = () => {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
               >
-                Muhammad Omar Malik
+                {user?.name}
               </motion.p>
             </div>
           </div>

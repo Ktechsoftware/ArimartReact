@@ -88,7 +88,7 @@ export default function AppRoutes() {
       <Route path="/info/docs/vehicle" element={<VehicleDetails />} />
       <Route path="/info/docs/bank" element={<BankAccountDetails />} />
       <Route path="/info/docs/emergency" element={<EmergencyDetails />} />
-      <Route path="/info/docs/upload/:type" element={<UploadDocument />} />
+      <Route path="/info/docs/upload/:documentType" element={<UploadDocument />} />
       <Route path="/info/docs/register" element={<RegistrationStatus />} />
 
       {/* Orders & Account */}

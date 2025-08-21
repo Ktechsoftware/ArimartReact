@@ -1,27 +1,32 @@
 import API from ".";
 
+// Send OTP
 export const sendOtp = (mobileNumber) =>
   API.post('/auth/send-otp', { mobileNumber });
 
+// Verify OTP - Updated to use delivery-user login endpoint
 export const verifyOtp = (mobileNumber, OTP) =>
-  API.post('/auth/login', {
+  API.post('/auth/delivery-user/login', {
     mobileNumber,
     otp: OTP
   });
 
-export const registerUser = (name, email, phone,referral) =>
-  API.post('/auth/register', {
-    name,
-    email,
-    phone,
-    refferalCode: referral
-  });
+// Register delivery user - Updated to use delivery-user register endpoint
+export const registerDeliveryUser = (userData) =>
+  API.post('/auth/delivery-user/register', userData);
 
+// Logout
 export const logout = () =>
   API.post('/auth/logout');
 
-export const getUserInfo = (userId) =>
-  API.get(`/auth/user-info/${userId}`);
+// Get delivery user info - Updated to use delivery-user endpoint
+export const getDeliveryUserInfo = (userId) =>
+  API.get(`/auth/delivery-user/user-info/${userId}`);
 
-export const updateUserInfo = (userId, updateData) =>
-  API.put(`/auth/update-user/${userId}`, updateData);
+// Update delivery user info - Updated to use delivery-user endpoint
+export const updateDeliveryUserInfo = (userId, updateData) =>
+  API.put(`/auth/delivery-user/update/${userId}`, updateData);
+
+// Get registration status
+export const getRegistrationStatus = (userId) =>
+  API.get(`/auth/delivery-user/registration-status/${userId}`);

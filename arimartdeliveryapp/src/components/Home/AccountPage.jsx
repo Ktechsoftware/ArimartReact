@@ -2,10 +2,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { User, MapPin, Gift, HelpCircle, FileText, Shield, LogOut, Bell, ChevronRight, Star, Wallet, LetterTextIcon, Settings } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
 
 export const AccountPage = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+   const { user, userId } = useAuth();
 
   const menuItems = [
     { icon: <User size={20} />, label: "Edit Profile", route: "/editprofile" },
@@ -46,17 +48,17 @@ export const AccountPage = () => {
                 className="text-xl font-bold"
                 initial={{ x: -10 }}
                 animate={{ x: 0 }}
-              >Amazon Sharma</motion.h1>
+              >{user?.name}</motion.h1>
               <motion.p
                 className="text-sm opacity-90"
                 initial={{ x: -10 }}
                 animate={{ x: 0, transition: { delay: 0.1 } }}
-              >+91 9999988888</motion.p>
+              >+91 {user?.phone}</motion.p>
               <motion.p
                 className="text-sm opacity-90"
                 initial={{ x: -10 }}
                 animate={{ x: 0, transition: { delay: 0.2 } }}
-              >loremipsum@gmail.com</motion.p>
+              >{user?.email}</motion.p>
             </div>
           </div>
           <motion.div

@@ -3,11 +3,15 @@ import { Upload, Calendar, ChevronDown, User, Phone, Mail, MapPin, Users, Globe,
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {completePersonalInfoAsync} from '../../Store/authSlice';
+import { useAuth } from '../../hooks/useAuth';
 export default function PersonalInformationForm() {
     const navigate = useNavigate();
   const dispatch = useDispatch();
   const { loading, error, currentPhoneNumber } = useSelector(state => state.deliveryAuth);
-  
+   const { user, userId, isAuthenticated } = useAuth();
+  if(userId){
+    return navigate('/info/docs/register')
+  }
   const [formData, setFormData] = useState({
     fullname: '',
     email: '',
