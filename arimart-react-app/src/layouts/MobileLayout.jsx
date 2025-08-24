@@ -67,7 +67,7 @@ const MobileLayout = memo(({ children }) => {
       )}
 
       <main
-        className={`flex-1 ${shouldHideHeader ? "" : "pt-16"} pb-20 ${location.pathname !== "/home" && location.pathname !== "/" ? "overflow-x-hidden" : ""
+        className={`flex-1 ${shouldHideHeader ? "" : "pt-16"} ${location.pathname !== "/auth" ? "pb-20" : "" } ${location.pathname !== "/home" && location.pathname !== "/" ? "overflow-x-hidden" : ""
           }`}
       >
         {children}

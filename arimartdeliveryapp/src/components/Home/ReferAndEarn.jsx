@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { 
   Copy, 
   Gift, 
@@ -9,20 +10,33 @@ import {
   ChevronDown,
   Star,
   Trophy,
-  Target
+  Target,
+  Loader2
 } from "lucide-react";
+import {
+  fetchReferralCode,
+  fetchReferralStats,
+  markDeliveryCompleted,
+  setCopied,
+  setFaqOpen,
+  clearErrors,
+  clearDeliveryMessage
+} from "../../Store/referEarnSlice";
+import { useAuth } from "../../hooks/useAuth";
 
 export const ReferAndEarn = () => {
-  const referralCode = "ARIMART2331";
-  const [copied, setCopied] = useState(false);
-  const [faqOpen, setFaqOpen] = useState(null);
-  
-  const stats = {
-    totalReferred: 12,
-    totalEarned: 900,
-    pendingRewards: 150
-  };
-
+  const dispatch = useDispatch();
+  const {
+    referralCode,
+    userInfo,
+    stats,
+    loading,
+    error,
+    copied,
+    faqOpen,
+    deliveryMessage
+  } = useSelector((state) => state.referEarn);
+const { user, userId } = useAuth();
   const steps = [
     {
       icon: Share2,
@@ -73,21 +87,73 @@ export const ReferAndEarn = () => {
     }
   ];
 
+  useEffect(() => {
+    // Fetch referral code and stats on component mount
+    dispatch(fetchReferralCode(userId));
+    dispatch(fetchReferralStats(userId));
+  }, [dispatch, userId]);
+
+  useEffect(() => {
+    // Auto-hide copy confirmation after 2 seconds
+    if (copied) {
+      const timer = setTimeout(() => {
+        dispatch(setCopied(false));
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [copied, dispatch]);
+
+  useEffect(() => {
+    // Auto-hide delivery message after 5 seconds
+    if (deliveryMessage) {
+      const timer = setTimeout(() => {
+        dispatch(clearDeliveryMessage());
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [deliveryMessage, dispatch]);
+
   const handleCopy = () => {
-    navigator.clipboard.writeText(referralCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (referralCode || stats.referralCode) {
+      const codeToShare = referralCode || stats.referralCode;
+      navigator.clipboard.writeText(codeToShare);
+      dispatch(setCopied(true));
+    }
   };
 
   const handleShare = () => {
-    if (navigator.share) {
+    const codeToShare = referralCode || stats.referralCode;
+    if (navigator.share && codeToShare) {
       navigator.share({
         title: 'Join Arimart as a Delivery Partner',
-        text: `Use my referral code ${referralCode} and earn ₹50 bonus! Join Arimart and start earning today.`,
-        url: `https://arimart.app/refer/${referralCode}`
+        text: `Use my referral code ${codeToShare} and earn ₹50 bonus! Join Arimart and start earning today.`,
+        url: `https://arimart.app/refer/${codeToShare}`
       });
     }
   };
+
+  const handleFaqToggle = (index) => {
+    dispatch(setFaqOpen(faqOpen === index ? null : index));
+  };
+
+  const handleRefresh = () => {
+    dispatch(clearErrors());
+    dispatch(fetchReferralCode(userId));
+    dispatch(fetchReferralStats(userId));
+  };
+
+  const displayReferralCode = referralCode || stats.referralCode || "ARIMART2331";
+
+  if (loading.fetchingCode && loading.fetchingStats) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="flex items-center gap-2 text-slate-600">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          Loading referral data...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -100,6 +166,33 @@ export const ReferAndEarn = () => {
       </div>
 
       <div className="p-4 space-y-6">
+        {/* Error Messages */}
+        {(error.code || error.stats) && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-red-800">Error loading data</p>
+                <p className="text-xs text-red-600 mt-1">
+                  {error.code || error.stats}
+                </p>
+              </div>
+              <button
+                onClick={handleRefresh}
+                className="text-red-600 hover:text-red-800 text-xs font-medium"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Success Message */}
+        {deliveryMessage && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <p className="text-sm font-medium text-green-800">{deliveryMessage}</p>
+          </div>
+        )}
+
         {/* Hero Card */}
         <div className="bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-2xl overflow-hidden relative">
           {/* Background Pattern */}
@@ -133,7 +226,8 @@ export const ReferAndEarn = () => {
             <div className="flex gap-3">
               <button 
                 onClick={handleShare}
-                className="flex-1 bg-white text-blue-700 py-3 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors"
+                disabled={!displayReferralCode}
+                className="flex-1 bg-white text-blue-700 py-3 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors disabled:opacity-50"
               >
                 <Share2 className="w-4 h-4" />
                 Share Now
@@ -151,22 +245,49 @@ export const ReferAndEarn = () => {
             <div className="w-8 h-8 bg-blue-100 rounded-lg mx-auto mb-2 flex items-center justify-center">
               <Users className="w-4 h-4 text-blue-600" />
             </div>
-            <p className="text-lg font-bold text-slate-900">{stats.totalReferred}</p>
-            <p className="text-xs text-slate-600">Referred</p>
+            {loading.fetchingStats ? (
+              <div className="animate-pulse">
+                <div className="h-6 bg-slate-200 rounded mb-1"></div>
+                <div className="h-4 bg-slate-100 rounded"></div>
+              </div>
+            ) : (
+              <>
+                <p className="text-lg font-bold text-slate-900">{stats.totalReferred}</p>
+                <p className="text-xs text-slate-600">Referred</p>
+              </>
+            )}
           </div>
           <div className="bg-white rounded-2xl p-4 border border-slate-200 text-center">
             <div className="w-8 h-8 bg-green-100 rounded-lg mx-auto mb-2 flex items-center justify-center">
               <Wallet className="w-4 h-4 text-green-600" />
             </div>
-            <p className="text-lg font-bold text-slate-900">₹{stats.totalEarned}</p>
-            <p className="text-xs text-slate-600">Earned</p>
+            {loading.fetchingStats ? (
+              <div className="animate-pulse">
+                <div className="h-6 bg-slate-200 rounded mb-1"></div>
+                <div className="h-4 bg-slate-100 rounded"></div>
+              </div>
+            ) : (
+              <>
+                <p className="text-lg font-bold text-slate-900">₹{stats.totalEarned}</p>
+                <p className="text-xs text-slate-600">Earned</p>
+              </>
+            )}
           </div>
           <div className="bg-white rounded-2xl p-4 border border-slate-200 text-center">
             <div className="w-8 h-8 bg-orange-100 rounded-lg mx-auto mb-2 flex items-center justify-center">
               <Star className="w-4 h-4 text-orange-600" />
             </div>
-            <p className="text-lg font-bold text-slate-900">₹{stats.pendingRewards}</p>
-            <p className="text-xs text-slate-600">Pending</p>
+            {loading.fetchingStats ? (
+              <div className="animate-pulse">
+                <div className="h-6 bg-slate-200 rounded mb-1"></div>
+                <div className="h-4 bg-slate-100 rounded"></div>
+              </div>
+            ) : (
+              <>
+                <p className="text-lg font-bold text-slate-900">₹{stats.pendingRewards}</p>
+                <p className="text-xs text-slate-600">Pending</p>
+              </>
+            )}
           </div>
         </div>
 
@@ -199,17 +320,24 @@ export const ReferAndEarn = () => {
           <h3 className="font-semibold text-slate-900 mb-4">Your Referral Code</h3>
           <div className="bg-slate-50 rounded-xl p-4 border-2 border-dashed border-slate-300">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="flex-1">
                 <p className="text-xs font-medium text-slate-600 uppercase tracking-wide mb-1">
                   Referral Code
                 </p>
-                <p className="text-2xl font-bold text-slate-900 font-mono tracking-wider">
-                  {referralCode}
-                </p>
+                {loading.fetchingCode ? (
+                  <div className="animate-pulse">
+                    <div className="h-8 bg-slate-200 rounded w-48"></div>
+                  </div>
+                ) : (
+                  <p className="text-2xl font-bold text-slate-900 font-mono tracking-wider">
+                    {displayReferralCode}
+                  </p>
+                )}
               </div>
               <button
                 onClick={handleCopy}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                disabled={loading.fetchingCode || !displayReferralCode}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50 ${
                   copied 
                     ? "bg-green-100 text-green-700 border-2 border-green-200" 
                     : "bg-blue-600 text-white hover:bg-blue-700"
@@ -241,7 +369,7 @@ export const ReferAndEarn = () => {
             {faqs.map((faq, index) => (
               <div key={index} className="border border-slate-200 rounded-xl overflow-hidden">
                 <button
-                  onClick={() => setFaqOpen(faqOpen === index ? null : index)}
+                  onClick={() => handleFaqToggle(index)}
                   className="w-full p-4 text-left flex items-center justify-between hover:bg-slate-50 transition-colors"
                 >
                   <span className="font-medium text-slate-900 text-sm pr-4">
@@ -278,4 +406,4 @@ export const ReferAndEarn = () => {
       </div>
     </div>
   );
-}
+};

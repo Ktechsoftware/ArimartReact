@@ -10,6 +10,207 @@ import { Phone, ArrowLeft, Shield, CheckCircle } from 'lucide-react';
 import { Keyboard } from '@capacitor/keyboard';
 import { Capacitor } from '@capacitor/core';
 
+const onboardingSlides = [
+  {
+    image: 'https://img.freepik.com/free-vector/safe-food-delivery-concept_23-2148559600.jpg',
+    title: "Convenient & Fast Delivery",
+    description: "Order on Arimart & get it delivered by 4 hours"
+  },
+  {
+    image: 'https://img.freepik.com/free-vector/flat-world-vegetarian-day-background_23-2149623819.jpg',
+    title: "Healthy & Fresh",
+    description: "Hygienically managed from farmland to your doorstep delivery, farm to your door in less than 12 hours"
+  },
+  {
+    image: 'https://img.freepik.com/free-vector/people-shopping-with-bags_24908-56774.jpg',
+    title: "Purchase Together, Save More Together",
+    description: "Purchase together in group with your friends & get up to 80% off, extra discount!"
+  }
+];
+// Replace your OnboardingSlider component with this version:
+
+const OnboardingSlider = () => {
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [direction, setDirection] = useState(1);
+
+  // Auto-slide effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDirection(1);
+      setCurrentSlide((prev) => (prev + 1) % onboardingSlides.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="mb-8">
+      {/* Carousel content */}
+      <div className="flex flex-col items-center text-center">
+        <AnimatePresence custom={direction} initial={false} mode="wait">
+          <motion.div
+            key={currentSlide}
+            custom={direction}
+            initial={{ opacity: 0, x: direction > 0 ? 20 : -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: direction > 0 ? -20 : 20 }}
+            transition={{
+              type: "spring",
+              damping: 25,
+              stiffness: 200,
+              duration: 0.4
+            }}
+            className="w-full flex flex-col items-center"
+          >
+            {/* Illustration */}
+            <div className="relative mb-6 w-full max-w-sm mx-auto">
+              <motion.img
+                src={onboardingSlides[currentSlide].image}
+                alt="Onboarding illustration"
+                className="w-full h-48 object-cover rounded-2xl shadow-lg"
+                initial={{ scale: 0.95, opacity: 0.8 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.1, type: "spring", damping: 20 }}
+              />
+              <motion.div
+                className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-20 h-20 bg-green-100 dark:bg-green-900 rounded-full blur-2xl opacity-40 -z-10"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 0.4 }}
+                transition={{ delay: 0.2, duration: 0.6 }}
+              />
+            </div>
+
+            {/* Text */}
+            <div className="h-40">
+            <motion.h3
+              className="text-lg font-bold mb-3 text-gray-900 dark:text-white px-4"
+              initial={{ y: 15, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.4 }}
+            >
+              {onboardingSlides[currentSlide].title}
+            </motion.h3>
+            <motion.p
+              className="text-sm text-gray-600 dark:text-gray-400 max-w-xs leading-relaxed px-4"
+              initial={{ y: 15, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.4 }}
+            >
+              {onboardingSlides[currentSlide].description}
+            </motion.p>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Indicators */}
+        <motion.div
+          className="flex gap-2 justify-center mt-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
+          {onboardingSlides.map((_, index) => (
+            <motion.button
+              key={index}
+              onClick={() => {
+                setDirection(index > currentSlide ? 1 : -1);
+                setCurrentSlide(index);
+              }}
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentSlide
+                  ? 'bg-green-500 dark:bg-green-400 w-6'
+                  : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500'
+                }`}
+              whileHover={{ scale: 1.2 }}
+              whileTap={{ scale: 0.9 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            />
+          ))}
+        </motion.div>
+      </div>
+    </div>
+  );
+};
+
+const DesktopOnboardingSlider = () => {
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [direction, setDirection] = useState(1);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDirection(1);
+      setCurrentSlide((prev) => (prev + 1) % onboardingSlides.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="text-white">
+      <AnimatePresence custom={direction} initial={false} mode="wait">
+        <motion.div
+          key={currentSlide}
+          custom={direction}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{
+            type: "spring",
+            damping: 25,
+            stiffness: 200,
+            duration: 0.5
+          }}
+          className="text-center"
+        >
+          <motion.img
+            src={onboardingSlides[currentSlide].image}
+            alt="Onboarding illustration"
+            className="w-full h-64 object-cover rounded-2xl mb-6 shadow-2xl"
+            initial={{ scale: 0.9, opacity: 0.7 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.1, type: "spring" }}
+          />
+
+          <motion.h3
+            className="text-xl font-bold mb-3 text-white"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            {onboardingSlides[currentSlide].title}
+          </motion.h3>
+
+          <motion.p
+            className="text-green-100 dark:text-green-200 text-sm leading-relaxed"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            {onboardingSlides[currentSlide].description}
+          </motion.p>
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Desktop Indicators */}
+      <div className="flex gap-2 justify-center mt-6">
+        {onboardingSlides.map((_, index) => (
+          <motion.button
+            key={index}
+            onClick={() => {
+              setDirection(index > currentSlide ? 1 : -1);
+              setCurrentSlide(index);
+            }}
+            className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentSlide
+                ? 'bg-white w-6'
+                : 'bg-green-200 hover:bg-green-100'
+              }`}
+            whileHover={{ scale: 1.2 }}
+            whileTap={{ scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export default function AuthFlow() {
   const [step, setStep] = useState(1);
   const [mobile, setMobile] = useState('');
@@ -167,7 +368,7 @@ export default function AuthFlow() {
   //     : 'auto';
 
   return (
-    <div className="max-w-6xl mx-auto bg-white dark:bg-gray-900 min-h-screen md:min-h-[600px] md:rounded-2xl md:shadow-xl dark:md:shadow-gray-800/30 md:px-5 relative overflow-hidden">
+    <div className="max-w-7xl mx-auto bg-white dark:bg-gray-900 md:min-h-screen md:min-h-[600px] md:rounded-2xl md:px-5 relative overflow-hidden">
 
       {/* Back Button */}
       <button
@@ -189,14 +390,13 @@ export default function AuthFlow() {
                 <img src={logo} alt="Logo" className="w-12 h-12 object-contain" />
               </div>
               <h1 className="text-3xl font-bold mb-4">Arimart</h1>
-              <p className="text-green-100 dark:text-green-200 mb-8">Experience lightning fast shopping</p>
-              <ProductGrid />
+              <DesktopOnboardingSlider />
             </div>
           </div>
         )}
 
         {/* Right Side - Auth Flow */}
-        <div className="md:w-1/2 p-6 pb-32 md:pb-6 relative">
+        <div className="md:w-1/2 p-6 md:pb-6 relative">
           {/* Header */}
           <div className="mb-4">
             {step === 2 && (
@@ -210,16 +410,16 @@ export default function AuthFlow() {
           </div>
 
           {/* Content */}
-          <div className="pb-20 md:pb-0">
-            {isMobile && step === 1 && <ProductGrid />}
+          <div className="pb-5 md:pb-0">
+            {isMobile && step === 1 && <OnboardingSlider />}
 
             <div className="text-center mb-8">
-              <div className={`${isMobile ? 'w-16 h-16' : 'w-20 h-20'} bg-green-500 dark:bg-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg`}>
-                <img src={logo} alt="Logo" className="w-12 h-12 object-contain" />
-              </div>
+              {/* <div className={`${isMobile ? 'w-16 h-16' : 'w-20 h-20'} bg-green-500 dark:bg-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg`}>
+               
+              </div> */}
 
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Welcome to AriMart
+                Welcome to  <img src={logo} alt="Logo" className="w-40 h-12 object-contain inline-block" />
               </h1>
               <p className="text-gray-600 dark:text-gray-400 mb-8 whitespace-pre-line">
                 {step === 1 && (isMobile ? 'Log in or sign up' : 'Enter your phone number to get started')}
@@ -341,10 +541,10 @@ export default function AuthFlow() {
                             }
                           })}
                           className={`w-full px-4 py-4 border-2 rounded-xl focus:outline-none transition-colors dark:bg-gray-800 dark:text-white text-lg ${form.fullName.length > 0
-                              ? form.fullName.length >= 3
-                                ? 'border-green-500 focus:ring-green-200 dark:focus:ring-green-800'
-                                : 'border-red-500 focus:ring-red-200 dark:focus:ring-red-800'
-                              : 'border-gray-200 dark:border-gray-700 focus:border-green-500'
+                            ? form.fullName.length >= 3
+                              ? 'border-green-500 focus:ring-green-200 dark:focus:ring-green-800'
+                              : 'border-red-500 focus:ring-red-200 dark:focus:ring-red-800'
+                            : 'border-gray-200 dark:border-gray-700 focus:border-green-500'
                             }`}
                           placeholder="John Doe"
                           value={form.fullName}
@@ -375,10 +575,10 @@ export default function AuthFlow() {
                             }
                           })}
                           className={`w-full px-4 py-4 border-2 rounded-xl focus:outline-none transition-colors dark:bg-gray-800 dark:text-white text-lg ${form.email.length > 0
-                              ? /^\S+@\S+\.\S+$/.test(form.email)
-                                ? 'border-green-500 focus:ring-green-200 dark:focus:ring-green-800'
-                                : 'border-red-500 focus:ring-red-200 dark:focus:ring-red-800'
-                              : 'border-gray-200 dark:border-gray-700 focus:border-green-500'
+                            ? /^\S+@\S+\.\S+$/.test(form.email)
+                              ? 'border-green-500 focus:ring-green-200 dark:focus:ring-green-800'
+                              : 'border-red-500 focus:ring-red-200 dark:focus:ring-red-800'
+                            : 'border-gray-200 dark:border-gray-700 focus:border-green-500'
                             }`}
                           placeholder="example@mail.com"
                           value={form.email}
@@ -420,7 +620,7 @@ export default function AuthFlow() {
           </div>
 
           {/* Fixed Action Buttons */}
-          <div 
+          <div
             className={`${isMobile ? 'fixed' : 'absolute'} bottom-0 left-0 right-0 p-6 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700`}
           >
             {step === 1 && (
@@ -445,8 +645,8 @@ export default function AuthFlow() {
                 }}
                 disabled={!isValid}
                 className={`w-full py-4 rounded-2xl font-semibold text-white text-lg transition-all ${isValid
-                    ? 'bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 active:scale-95'
-                    : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
+                  ? 'bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 active:scale-95'
+                  : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
                   }`}
               >
                 Continue
@@ -490,8 +690,8 @@ export default function AuthFlow() {
                 }}
                 disabled={otp.join('').length < 6}
                 className={`w-full py-4 rounded-2xl font-semibold text-white text-lg transition-all ${otp.join('').length === 6
-                    ? 'bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 active:scale-95'
-                    : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
+                  ? 'bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 active:scale-95'
+                  : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
                   }`}
               >
                 Verify
@@ -502,8 +702,8 @@ export default function AuthFlow() {
                 onClick={handleContinue}
                 disabled={form.fullName.length < 3 || !/^\S+@\S+\.\S+$/.test(form.email)}
                 className={`w-full py-4 rounded-2xl font-semibold text-white text-lg transition-all ${form.fullName.length >= 3 && /^\S+@\S+\.\S+$/.test(form.email)
-                    ? 'bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 active:scale-95'
-                    : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
+                  ? 'bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 active:scale-95'
+                  : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
                   }`}
               >
                 Complete Registration

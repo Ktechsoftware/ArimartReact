@@ -133,7 +133,8 @@ export default function CompactProductCarousel() {
   const quantity = getItemQuantity(currentProduct.id);
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-0 md:px-4">
+    <div className='border border-gray-300 shadow-xl rounded-xl m-2'>
+    <div className="container max-w-6xl my-2 mx-auto px-0 md:px-4">
       {/* Header */}
       <div className="flex justify-between items-center mb-4 px-4 md:px-0">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white">Today's Hot Deals 🔥</h2>
@@ -283,6 +284,7 @@ export default function CompactProductCarousel() {
           ))}
         </div>
       </div>
+    </div>
     </div>
   );
 }

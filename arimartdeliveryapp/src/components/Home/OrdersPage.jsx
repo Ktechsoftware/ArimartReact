@@ -13,7 +13,7 @@ export const OrdersPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="bg-gray-50 pb-24">
       {/* Tab Filter */}
       {/* <motion.div
         initial={{ opacity: 0, y: -10 }}

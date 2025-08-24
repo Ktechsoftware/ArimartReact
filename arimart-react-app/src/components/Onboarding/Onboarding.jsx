@@ -9,19 +9,19 @@ import { Preferences } from '@capacitor/preferences';
 
 const onboardingSlides = [
   {
-    image: onboarding1,
-    title: "Arimart",
-    description: "We help small businesses grow through word-of-mouth recommendations from happy customers"
+    image: 'https://img.freepik.com/free-vector/safe-food-delivery-concept_23-2148559600.jpg',
+    title: "Convenient & Fast Delivery",
+    description: "Order on Arimart & get it delivered by 4 hours"
   },
   {
-    image: onboarding2,
-    title: "Discover Local Favorites",
-    description: "Find hidden gems in your neighborhood recommended by people you trust"
+    image: 'https://img.freepik.com/free-vector/flat-world-vegetarian-day-background_23-2149623819.jpg',
+    title: "Healthy & Fresh",
+    description: "Hygienically managed from farmland to your doorstep delivery, farm to your door in less than 12 hours"
   },
   {
-    image: onboarding3,
-    title: "Earn Rewards",
-    description: "Get exclusive perks for sharing your favorite spots with friends"
+    image: 'https://img.freepik.com/free-vector/people-shopping-with-bags_24908-56774.jpg',
+    title: "Purchase Together, Save More Together",
+    description: "Purchase together in group with your friends & get up to 80% off, extra discount!"
   }
 ];
 
@@ -41,26 +41,22 @@ const Onboarding = () => {
   const navigate = useNavigate();
 
   const handleContinue = async () => {
-    if (currentSlide < onboardingSlides.length - 1) {
-      setDirection(1);
-      setCurrentSlide((prev) => prev + 1);
-    } else {
-      await Preferences.set({ key: 'hasOnboarded', value: 'true' });
-      navigate("/auth");
-    }
+    await Preferences.set({ key: 'hasOnboarded', value: 'true' });
+    navigate("/auth");
   };
 
   return (
     <div className="min-h-screen max-w-md mx-auto bg-white dark:bg-gray-950 text-gray-800 dark:text-gray-100 flex flex-col justify-between overflow-hidden">
       {/* Top nav */}
       <div className="flex justify-between items-center p-6">
-        <button className="text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+        <Link to='/'
+        className="text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
           Skip
-        </button>
+        </Link>
       </div>
 
       {/* Carousel content */}
-      <div className="flex-1 flex flex-col items-center px-6 text-center overflow-hidden">
+      <div className="flex-1 flex flex-col items-center text-center overflow-hidden">
         <AnimatePresence custom={direction} initial={false}>
           <motion.div
             key={currentSlide}
@@ -71,11 +67,11 @@ const Onboarding = () => {
             className="w-full flex flex-col items-center"
           >
             {/* Illustration */}
-            <div className="relative mb-8 w-full max-w-md mx-auto h-[300px]">
+            <div className="relative mb-8 w-full max-w-md mx-auto">
               <motion.img
                 src={onboardingSlides[currentSlide].image}
                 alt="Onboarding illustration"
-                className="w-full h-full object-cover"
+                className="w-full h-full"
                 initial={{ scale: 0.9 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, type: "spring" }}
@@ -134,7 +130,7 @@ const Onboarding = () => {
           whileTap={{ scale: 0.98 }}
           className="w-full max-w-md mx-auto py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2"
         >
-          {currentSlide < onboardingSlides.length - 1 ? 'Continue' : 'Get Started'}
+          Get Started
           <ChevronRight className="w-4 h-4" />
         </motion.button>
 

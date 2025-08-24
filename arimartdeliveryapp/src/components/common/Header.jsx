@@ -10,7 +10,7 @@ export const Header = ({ title, showBack }) => {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-gray-100 shadow-sm h-16 flex items-center px-4 sm:px-6"
+      className="sticky top-0 z-60 bg-white/80 backdrop-blur-md border-b border-gray-100 shadow-sm h-16 flex items-center px-4 sm:px-6"
     >
       <div className="flex items-center gap-2">
         <motion.button

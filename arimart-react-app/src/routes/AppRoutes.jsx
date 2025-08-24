@@ -48,6 +48,7 @@ import TopPriceProducts from '../pages/TopStores/TopPriceProducts';
 import ArimartPayscreen from '../pages/PaymentScreen/ArimartPayscreen';
 import SplashScreen from '../components/Onboarding/SplashScreen';
 import AffiliateProgram from '../components/AffiliateProgram/AffiliateProgram';
+import HotDeals from '../components/Home/HotDeals';
 
 const publicRoutes = [
   "/", "/home", "/onboard", "/auth", "/about", "/contactus", "/faq", "/privacypolicy",
@@ -95,10 +96,10 @@ export default function AppRoutes() {
     const handleRouting = async () => {
       const onboarded = await Preferences.get({ key: 'hasOnboarded' });
 
-      if (location.pathname === '/onboard' && !Capacitor.isNativePlatform()) {
-        navigate("/", { replace: true });
-        return;
-      }
+      // if (location.pathname === '/onboard' && !Capacitor.isNativePlatform()) {
+      //   navigate("/", { replace: true });
+      //   return;
+      // }
 
       if (location.pathname === '/' && onboarded.value !== 'true' && Capacitor.isNativePlatform()) {
         navigate("/onboard", { replace: true });
@@ -111,9 +112,9 @@ export default function AppRoutes() {
         return;
       }
 
-      if (isAuthenticated && ['/', '/auth', '/onboard'].includes(location.pathname)) {
-        navigate("/home", { replace: true });
-      }
+      // if (isAuthenticated && ['/', '/auth', '/onboard'].includes(location.pathname)) {
+      //   navigate("/home", { replace: true });
+      // }
     };
 
     handleRouting();
@@ -165,7 +166,8 @@ export default function AppRoutes() {
         >
           <Routes>
             <Route path="/" element={<Home />} />
-            {Capacitor.isNativePlatform() && <Route path="/onboard" element={<Onboarding />} />}
+            {/* {Capacitor.isNativePlatform() && <Route path="/onboard" element={<Onboarding />} />} */}
+            <Route path="/onboard" element={<Onboarding />} />
             <Route path="/auth" element={<AuthFlow />} />
             <Route path="/about" element={<AboutScreen />} />
             <Route path="/contactus" element={<Contactusscreen />} />
@@ -191,6 +193,7 @@ export default function AppRoutes() {
             <Route path="/orders/track/:trackId" element={<Trackorders />} />
             <Route path="/checkout/payment" element={<PaymentOrder />} />
             <Route path="/affiliate" element={<AffiliateProgram />} />
+            <Route path="/category/deals" element={<HotDeals />} />
             <Route path="/category">
               <Route index element={<Categoryindex />} />
               <Route path=":market/:categoryid" element={<Marketplace />} />

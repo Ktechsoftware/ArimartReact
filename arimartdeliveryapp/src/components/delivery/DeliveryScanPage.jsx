@@ -14,9 +14,11 @@ import {
   selectScanResult,
   selectDeliveryPartner
 } from '../../Store/deliveryOrderSlice'
+import { useAuth } from "../../hooks/useAuth";
 
 export const DeliveryScanPage = () => {
   const dispatch = useDispatch();
+  const { user, userId } = useAuth();
   
   // Redux state
   const isLoading = useSelector(selectIsLoading);
@@ -32,7 +34,7 @@ export const DeliveryScanPage = () => {
   const [scannerActive, setScannerActive] = useState(false);
 
   // Mock delivery partner ID (in real app, get from auth/login)
-  const deliveryPartnerId = deliveryPartner?.id || 1;
+  const deliveryPartnerId = userId;
 
   // Initialize QR Scanner
   useEffect(() => {

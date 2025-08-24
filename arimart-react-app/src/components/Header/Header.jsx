@@ -21,6 +21,7 @@ export default function Header({
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
+  const onmainPage = pathname === "/";
   const onHomePage = pathname === "/home";
   const onsearchPage = pathname === "/explore";
 
@@ -77,7 +78,7 @@ export default function Header({
 
           {/* Right Section — Notifications + Cart */}
           <div className="flex items-center gap-4">
-            {!onHomePage && !onsearchPage ? (
+            {!onHomePage && !onsearchPage && !onmainPage ? (
               <Link to="/explore" key={uuidv4()}>
                 <Search className="w-5 h-5 text-blue-600 dark:text-blue-300" />
               </Link>

@@ -30,6 +30,7 @@ export const routeConfig = {
   "/category/:market/:categoryid": { title: "Products" },
   "/category/:market/subcategory/:subcategoryid": { title: "Products" },
   "/category/:market/:subcategory/product/:id": {  },
+  "/category/deals": {  },
   "/search": { title: "Search" },
   "/term&condition": { title: "Terms & Conditions" },
   "/categories": { title: "Categories" },

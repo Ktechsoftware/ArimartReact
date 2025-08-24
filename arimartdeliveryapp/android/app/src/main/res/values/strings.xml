@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Arimart Delivery Partner</string>
+    <string name="title_activity_main">Arimart Delivery Partner</string>
+    <string name="package_name">com.arimart.deliverypartner</string>
+    <string name="custom_url_scheme">com.arimart.deliverypartner</string>
+</resources>

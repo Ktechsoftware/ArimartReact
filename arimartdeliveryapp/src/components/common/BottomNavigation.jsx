@@ -43,7 +43,7 @@ export const BottomNavigation = () => {
         {/* Center Scan Button (replaces Add) */}
         <motion.button
           whileTap={{ scale: 0.95 }}
-          onClick={() => navigate('/order/deliveryorderscan')}
+          onClick={() => navigate('/order/scan')}
           className="absolute left-1/2 transform -translate-x-1/2 -top-6 z-40"
         >
           <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
