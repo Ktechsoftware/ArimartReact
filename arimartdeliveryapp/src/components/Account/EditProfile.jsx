@@ -1,22 +1,30 @@
 import React, { useState } from 'react';
 import { Upload, Calendar, ChevronDown, User, Phone, Mail, MapPin, Users, Globe, Camera } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { updateDeliveryUserAsync } from '../../Store/authSlice'
+
 
 export default function EditProfile() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  const { user } = useSelector(state => state.deliveryAuth);
+  const dispatch = useDispatch();
+  const { loading } = useSelector(state => state.deliveryAuth);
+  const [isUpdating, setIsUpdating] = useState(false);
+
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    fatherName: '',
-    dateOfBirth: '',
-    primaryMobile: '',
-    whatsappNumber: '',
-    secondaryMobile: '',
-    bloodGroup: '',
-    city: '',
-    address: '',
-    language: '',
-    profilePicture: null
+    firstName: user?.name?.split(' ')[0] || '',
+    lastName: user?.name?.split(' ').slice(1).join(' ') || '',
+    fatherName: user?.fatherName || '',
+    dateOfBirth: user?.dateOfBirth || '',
+    primaryMobile: user?.phone || '',
+    whatsappNumber: user?.whatsappNumber || '',
+    secondaryMobile: user?.secondaryMobile || '',
+    bloodGroup: user?.bloodGroup || '',
+    city: user?.city || '',
+    address: user?.address || '',
+    language: user?.language || '',
+    profilePicture: user?.profilePicture || null
   });
 
   const [focusedField, setFocusedField] = useState('');
@@ -25,9 +33,47 @@ export default function EditProfile() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = () => {
-    console.log('Form submitted:', formData);
-    navigate('/info/docs')
+  const handleProfilePictureUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, profilePicture: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  const handleSubmit = async () => {
+    if (!user?.id) return;
+
+    setIsUpdating(true);
+    try {
+      const updateData = {
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
+        fatherName: formData.fatherName,
+        dateOfBirth: formData.dateOfBirth,
+        phone: formData.primaryMobile,
+        whatsappNumber: formData.whatsappNumber,
+        secondaryMobile: formData.secondaryMobile,
+        bloodGroup: formData.bloodGroup,
+        city: formData.city,
+        address: formData.address,
+        language: formData.language,
+      };
+
+      await dispatch(updateDeliveryUserAsync({
+        userId: user.id,
+        updateData
+      })).unwrap();
+
+      // Success feedback
+      navigate('/info/docs');
+    } catch (error) {
+      console.error('Update failed:', error);
+      // Handle error - show toast/alert
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -54,12 +100,19 @@ export default function EditProfile() {
                     <Camera className="w-12 h-12 text-white" />
                   )}
                 </div>
-                <button
-                  type="button"
-                  className="absolute bottom-2 right-2 bg-white rounded-full p-2 shadow-lg border-4 border-white hover:bg-gray-50 transition-colors"
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleProfilePictureUpload}
+                  className="hidden"
+                  id="profile-upload"
+                />
+                <label
+                  htmlFor="profile-upload"
+                  className="absolute bottom-2 right-2 bg-white rounded-full p-2 shadow-lg border-4 border-white hover:bg-gray-50 transition-colors cursor-pointer"
                 >
                   <Upload className="w-4 h-4 text-gray-600" />
-                </button>
+                </label>
               </div>
             </div>
 
@@ -77,11 +130,10 @@ export default function EditProfile() {
                   onFocus={() => setFocusedField('firstName')}
                   onBlur={() => setFocusedField('')}
                   placeholder="Please enter first name"
-                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm ${
-                    focusedField === 'firstName' 
-                      ? 'border-blue-500 shadow-lg shadow-blue-500/20' 
+                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm ${focusedField === 'firstName'
+                      ? 'border-blue-500 shadow-lg shadow-blue-500/20'
                       : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                    }`}
                 />
               </div>
 
@@ -94,11 +146,10 @@ export default function EditProfile() {
                   onFocus={() => setFocusedField('lastName')}
                   onBlur={() => setFocusedField('')}
                   placeholder="Please enter last name"
-                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm ${
-                    focusedField === 'lastName' 
-                      ? 'border-blue-500 shadow-lg shadow-blue-500/20' 
+                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm ${focusedField === 'lastName'
+                      ? 'border-blue-500 shadow-lg shadow-blue-500/20'
                       : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                    }`}
                 />
               </div>
             </div>
@@ -113,11 +164,10 @@ export default function EditProfile() {
                 onFocus={() => setFocusedField('fatherName')}
                 onBlur={() => setFocusedField('')}
                 placeholder="Please enter father's name"
-                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm ${
-                  focusedField === 'fatherName' 
-                    ? 'border-blue-500 shadow-lg shadow-blue-500/20' 
+                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm ${focusedField === 'fatherName'
+                    ? 'border-blue-500 shadow-lg shadow-blue-500/20'
                     : 'border-gray-200 hover:border-gray-300'
-                }`}
+                  }`}
               />
             </div>
 
@@ -133,11 +183,10 @@ export default function EditProfile() {
                 onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
                 onFocus={() => setFocusedField('dateOfBirth')}
                 onBlur={() => setFocusedField('')}
-                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm ${
-                  focusedField === 'dateOfBirth' 
-                    ? 'border-blue-500 shadow-lg shadow-blue-500/20' 
+                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm ${focusedField === 'dateOfBirth'
+                    ? 'border-blue-500 shadow-lg shadow-blue-500/20'
                     : 'border-gray-200 hover:border-gray-300'
-                }`}
+                  }`}
               />
             </div>
 
@@ -155,11 +204,11 @@ export default function EditProfile() {
                   onFocus={() => setFocusedField('primaryMobile')}
                   onBlur={() => setFocusedField('')}
                   placeholder="+91 9999999999"
-                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm ${
-                    focusedField === 'primaryMobile' 
-                      ? 'border-blue-500 shadow-lg shadow-blue-500/20' 
+                  disabled
+                  className={`w-full px-4 py-3 disabled rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm ${focusedField === 'primaryMobile'
+                      ? 'border-blue-500 shadow-lg shadow-blue-500/20'
                       : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                    }`}
                 />
               </div>
 
@@ -172,11 +221,10 @@ export default function EditProfile() {
                   onFocus={() => setFocusedField('whatsappNumber')}
                   onBlur={() => setFocusedField('')}
                   placeholder="+91 9999999999"
-                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm ${
-                    focusedField === 'whatsappNumber' 
-                      ? 'border-blue-500 shadow-lg shadow-blue-500/20' 
+                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm ${focusedField === 'whatsappNumber'
+                      ? 'border-blue-500 shadow-lg shadow-blue-500/20'
                       : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                    }`}
                 />
               </div>
             </div>
@@ -191,11 +239,10 @@ export default function EditProfile() {
                 onFocus={() => setFocusedField('secondaryMobile')}
                 onBlur={() => setFocusedField('')}
                 placeholder="+91 9999999999"
-                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm ${
-                  focusedField === 'secondaryMobile' 
-                    ? 'border-blue-500 shadow-lg shadow-blue-500/20' 
+                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm ${focusedField === 'secondaryMobile'
+                    ? 'border-blue-500 shadow-lg shadow-blue-500/20'
                     : 'border-gray-200 hover:border-gray-300'
-                }`}
+                  }`}
               />
             </div>
 
@@ -211,11 +258,10 @@ export default function EditProfile() {
                   onChange={(e) => handleInputChange('bloodGroup', e.target.value)}
                   onFocus={() => setFocusedField('bloodGroup')}
                   onBlur={() => setFocusedField('')}
-                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm appearance-none ${
-                    focusedField === 'bloodGroup' 
-                      ? 'border-blue-500 shadow-lg shadow-blue-500/20' 
+                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm appearance-none ${focusedField === 'bloodGroup'
+                      ? 'border-blue-500 shadow-lg shadow-blue-500/20'
                       : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                    }`}
                 >
                   <option value="">Select blood group here</option>
                   {bloodGroups.map(group => (
@@ -239,11 +285,10 @@ export default function EditProfile() {
                 onFocus={() => setFocusedField('city')}
                 onBlur={() => setFocusedField('')}
                 placeholder="e.g. Bangalore"
-                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm ${
-                  focusedField === 'city' 
-                    ? 'border-blue-500 shadow-lg shadow-blue-500/20' 
+                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm ${focusedField === 'city'
+                    ? 'border-blue-500 shadow-lg shadow-blue-500/20'
                     : 'border-gray-200 hover:border-gray-300'
-                }`}
+                  }`}
               />
             </div>
 
@@ -257,11 +302,10 @@ export default function EditProfile() {
                 onBlur={() => setFocusedField('')}
                 placeholder="Search address..."
                 rows="3"
-                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm resize-none ${
-                  focusedField === 'address' 
-                    ? 'border-blue-500 shadow-lg shadow-blue-500/20' 
+                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm resize-none ${focusedField === 'address'
+                    ? 'border-blue-500 shadow-lg shadow-blue-500/20'
                     : 'border-gray-200 hover:border-gray-300'
-                }`}
+                  }`}
               />
             </div>
 
@@ -277,11 +321,10 @@ export default function EditProfile() {
                   onChange={(e) => handleInputChange('language', e.target.value)}
                   onFocus={() => setFocusedField('language')}
                   onBlur={() => setFocusedField('')}
-                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm appearance-none ${
-                    focusedField === 'language' 
-                      ? 'border-blue-500 shadow-lg shadow-blue-500/20' 
+                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 bg-white/50 backdrop-blur-sm appearance-none ${focusedField === 'language'
+                      ? 'border-blue-500 shadow-lg shadow-blue-500/20'
                       : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                    }`}
                 >
                   <option value="">Select your language</option>
                   {languages.map(lang => (
@@ -296,9 +339,11 @@ export default function EditProfile() {
             <button
               type="button"
               onClick={handleSubmit}
-              className="w-full bg-gradient-to-r from-[#FF6B74] to-[#FF9A6B] text-white py-3 rounded-full font-medium mt-6 shadow-md py-4 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+              disabled={isUpdating || loading}
+              className={`w-full bg-gradient-to-r from-[#FF6B74] to-[#FF9A6B] text-white py-4 px-8 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 ${(isUpdating || loading) ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
             >
-              Update
+              {isUpdating ? 'Updating...' : 'Update'}
             </button>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 
 // Existing pages
 import Onboard from '../pages/Onboard';
@@ -35,51 +35,63 @@ import { Privacy } from '../components/Account/Privacy';
 import { SettingsPage } from '../components/Account/SettingsPage';
 import { OTPDeliveryScreen } from '../components/delivery/OTPDeliveryScreen';
 import { DeliverySearchPage } from '../components/delivery/DeliverySearchPage';
+import { useAuth } from '../hooks/useAuth';
 
 export default function AppRoutes() {
-  // Splash Screen State - Only for Capacitor (Native)
   const [showSplash, setShowSplash] = useState(Capacitor.isNativePlatform());
   const [isAppReady, setIsAppReady] = useState(false);
   const isNativeApp = Capacitor.isNativePlatform();
   const [isLoading, setIsLoading] = useState(false);
+  const { user, isAuthenticated, userId } = useAuth();
+  const location = useLocation();
 
-   // Handle splash screen timing
+  // Handle splash screen
   useEffect(() => {
     if (isNativeApp && showSplash) {
       const splashTimer = setTimeout(() => {
         setShowSplash(false);
         setIsAppReady(true);
-      }, 3000); // 3 seconds splash duration
-
+      }, 3000);
       return () => clearTimeout(splashTimer);
     } else if (!isNativeApp) {
       setIsAppReady(true);
     }
   }, [isNativeApp, showSplash]);
 
-    // Page loading animation
+  // Page loading animation
   useEffect(() => {
     if (!isAppReady) return;
-    
     setIsLoading(true);
     const timer = setTimeout(() => setIsLoading(false), 800);
     return () => clearTimeout(timer);
   }, [location.key, isAppReady]);
 
-  // Show splash screen only on native platforms
-  if (isNativeApp && showSplash) {
-    return <SplashScreen />;
-  }
+  // Show splash screen
+  if (isNativeApp && showSplash) return <SplashScreen />;
+  if (!isAppReady) return null;
 
-  // Don't render anything until app is ready
-  if (!isAppReady) {
-    return null;
+  // 🚨 Auth & Native Redirect Logic
+  if (isAuthenticated || userId) {
+    // Already logged in → redirect away from onboarding routes
+    if (
+      location.pathname === "/" ||
+      location.pathname.startsWith("/delivery") ||
+      location.pathname.startsWith("/otp") ||
+      location.pathname.startsWith("/info")
+    ) {
+      return <Navigate to="/home" replace />;
+    }
+  } else {
+    // Not logged in on Native App → skip landing page
+    if (isNativeApp && location.pathname === "/") {
+      return <Navigate to="/delivery" replace />;
+    }
   }
 
   return (
     <Routes>
       {/* Landing & Onboarding */}
-      <Route path="/" element={<ArimartDeliveryLanding />} />
+      {!isNativeApp && <Route path="/" element={<ArimartDeliveryLanding />} />}
       <Route path="/delivery" element={<Onboard />} />
       <Route path="/otp" element={<Otp />} />
       <Route path="/info" element={<PersonalInfomation />} />
@@ -113,7 +125,10 @@ export default function AppRoutes() {
       <Route path="/order/navigate" element={<DeliveryNavigation />} />
       <Route path="/order/scan" element={<DeliveryScanPage />} />
       <Route path="/order/deliveryorderscan" element={<DeliveryScanner />} />
-      <Route path="/order/deliveryotp" element={<OTPDeliveryScreen/>} />
+      <Route path="/order/deliveryotp" element={<OTPDeliveryScreen />} />
+
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to={isAuthenticated ? "/home" : "/delivery"} replace />} />
     </Routes>
   );
 }

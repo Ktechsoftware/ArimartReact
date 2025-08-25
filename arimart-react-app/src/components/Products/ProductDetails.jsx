@@ -2,11 +2,10 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Heart, Star, Plus, Minus, ShoppingCart, LoaderCircle, Trash2, Users, ChevronsUp, Trash2Icon, Share2, UserCheckIcon, Truck, Lock, RefreshCcw, CheckCircle, CheckCircle2 } from "lucide-react";
-import ProductCard from "./ProductCard";
+import { ArrowLeft, Heart, Star, Plus, Minus, ShoppingCart, LoaderCircle, Trash2, Users, ChevronsUp, Trash2Icon, Share2, UserCheckIcon, Truck, Lock, RefreshCcw, CheckCircle, CheckCircle2, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { fetchProductById } from "../../Store/productDetailSlice";
 import { addToWishlist } from "../../Store/wishlistSlice";
-import { fetchGroupBuysByProductId } from "../../Store/productsSlice";
+import { fetchGroupBuysByProductId, fetchProductImageUrls } from "../../Store/productsSlice";
 import { useCart } from "../../context/CartContext";
 import { GroupBuySection } from "../../pages/GroupBuy/GroupBuySection";
 import { createGroup, fetchMyJoinedGroups } from "../../Store/groupBuySlice";
@@ -36,11 +35,15 @@ export default function ProductDetails({ cartIconRef }) {
     referCodesByGid,
     myJoinedGroups,
   } = useSelector(state => state.group);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null)
 
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [isFullScreenOpen, setIsFullScreenOpen] = useState(false);
+  const [fullScreenImageIndex, setFullScreenImageIndex] = useState(0);
   const [optimisticInCart, setOptimisticInCart] = useState(false);
   const [useWalletAmount, setUseWalletAmount] = useState(0);
   const walletBalance = useSelector((state) => state.wallet.balance);
@@ -63,12 +66,6 @@ export default function ProductDetails({ cartIconRef }) {
   const cartItem = product ? getCartItemInfo(product.pdid) : null;
   const itemInCart = !!cartItem;
   const itemQuantity = cartItem ? cartItem.quantity : 1;
-
-  const demoImages = [
-    "https://apiari.kuldeepchaurasia.in/Uploads/" + product?.image || '/placeholder-image.jpg',
-    "https://m.media-amazon.com/images/S/aplus-media-library-service-media/f4258821-4583-407e-9882-650d32b364af.__CR0,0,300,300_PT0_SX300_V1___.jpg",
-    "https://m.media-amazon.com/images/S/aplus-media-library-service-media/94c5ccbd-5093-4b45-a9dd-55fb709761fd.__CR0,0,300,300_PT0_SX300_V1___.jpg"
-  ];
   const productId = String(id);
   const emptyGroupBuys = useMemo(() => [], []);
   const groupBuys = useSelector((state) => {
@@ -76,9 +73,9 @@ export default function ProductDetails({ cartIconRef }) {
     const result = state.products.groupBuys?.[productId] || emptyGroupBuys;
     return result;
   });
+
   const handleGroupReady = useCallback((groupData) => {
     setCurrentGroupData(groupData);
-    console.log('Received from GroupBuySection:', groupData); // gid, refercode, isGroupOwner
   }, []);
   useEffect(() => {
     if (userData?.id) {
@@ -92,6 +89,113 @@ export default function ProductDetails({ cartIconRef }) {
     }
   }, [dispatch, productId]);
 
+  const fetchedProductImages = useSelector((state) =>
+    state.products.productImages?.[product?.id] || []
+  );
+
+  // Add this helper function to get all product images
+  const getProductImages = useCallback(() => {
+    const images = [];
+
+    // First, try to use fetched images from Redux store
+    if (fetchedProductImages && Array.isArray(fetchedProductImages) && fetchedProductImages.length > 0) {
+      fetchedProductImages.forEach((imageUrl, index) => {
+        // Filter out invalid files like .crdownload and .tmp
+        if (imageUrl &&
+          !imageUrl.includes('.crdownload') &&
+          !imageUrl.includes('.tmp') &&
+          imageUrl.trim() !== '') {
+          images.push({
+            url: imageUrl, // URL is already complete from API
+            alt: `${product?.productName || product?.name} - Image ${index + 1}`
+          });
+        }
+      });
+    }
+
+    // Fallback to product.image if no fetched images
+    if (images.length === 0 && product?.image) {
+      images.push({
+        url: `https://apiari.kuldeepchaurasia.in/Uploads/${product.image}`,
+        alt: product.productName || product.name
+      });
+    }
+
+    // Final fallback: placeholder image
+    if (images.length === 0) {
+      images.push({
+        url: 'https://as1.ftcdn.net/jpg/04/34/72/82/1000_F_434728286_OWQQvAFoXZLdGHlObozsolNeuSxhpr84.jpg',
+        alt: 'Product Image'
+      });
+    }
+
+    return images;
+  }, [product, fetchedProductImages]);
+
+  const productImages = getProductImages();
+
+  // Add these handler functions
+  const handleImageClick = (index) => {
+    setFullScreenImageIndex(index);
+    setIsFullScreenOpen(true);
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeFullScreen = () => {
+    setIsFullScreenOpen(false);
+    setFullScreenImageIndex(0);
+    // Re-enable body scroll
+    document.body.style.overflow = 'unset';
+  };
+
+  const navigateImage = (direction) => {
+    if (direction === 'next') {
+      setFullScreenImageIndex((prev) =>
+        prev === productImages.length - 1 ? 0 : prev + 1
+      );
+    } else {
+      setFullScreenImageIndex((prev) =>
+        prev === 0 ? productImages.length - 1 : prev - 1
+      );
+    }
+  };
+
+  const handleThumbnailClick = (index) => {
+    setSelectedImage(index);
+  };
+
+  // Cleanup effect for body scroll
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
+  const handleTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe) {
+      // Next image
+      setSelectedImage(prev => prev === productImages.length - 1 ? 0 : prev + 1);
+    }
+    if (isRightSwipe) {
+      // Previous image  
+      setSelectedImage(prev => prev === 0 ? productImages.length - 1 : prev - 1);
+    }
+  };
   useEffect(() => {
 
     if (groupBuys?.length > 0) {
@@ -118,8 +222,11 @@ export default function ProductDetails({ cartIconRef }) {
   useEffect(() => {
     if (id) {
       dispatch(fetchProductById(id));
+      // Fetch product images when component mounts
+      dispatch(fetchProductImageUrls(id));
     }
   }, [dispatch, id]);
+
   useEffect(() => {
     if (product) {
       // Update SEO meta tags
@@ -514,7 +621,11 @@ export default function ProductDetails({ cartIconRef }) {
         <div className="max-w-6xl mx-auto md:mt-10 lg:flex lg:items-start lg:gap-8 px-2 lg:px-6">
           {/* Sticky Wrapper for Image on Large Screens */}
           <div className="lg:sticky lg:top-20 lg:flex-1">
-            <div className="relative h-64 w-full overflow-hidden rounded-xl lg:h-[450px] lg:flex-1">
+            <div
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              className="relative h-80 w-full overflow-hidden rounded-xl lg:h-[500px]">
               <div className="absolute top-3 right-3 z-[5] flex gap-2">
                 {/* Share Button */}
                 <motion.button
@@ -560,34 +671,185 @@ export default function ProductDetails({ cartIconRef }) {
                 </motion.button>
               </div>
 
-              <AnimatePresence>
+              <AnimatePresence mode="wait">
                 <motion.img
-                  key={product.image}
-                  src={"https://apiari.kuldeepchaurasia.in/Uploads/" + product.image}
-                  alt={product.name}
-                  className="absolute inset-0 w-full h-64 object-cover"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.5 }}
+                  key={selectedImage}
+                  src={productImages[selectedImage]?.url}
+                  alt={productImages[selectedImage]?.alt}
+                  className="absolute inset-0 w-full h-full object-cover cursor-pointer"
+                  initial={{ opacity: 0, scale: 1.05 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3 }}
+                  onClick={() => handleImageClick(selectedImage)}
                   onError={(e) => {
-                    e.target.src = '/placeholder-image.jpg';
+                    e.target.src = 'https://as1.ftcdn.net/jpg/04/34/72/82/1000_F_434728286_OWQQvAFoXZLdGHlObozsolNeuSxhpr84.jpg';
                   }}
                 />
               </AnimatePresence>
 
-              <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
-                {product.images?.map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className={`w-2 h-2 rounded-full cursor-pointer ${i === selectedImage ? "bg-white" : "bg-white/50"}`}
-                    whileHover={{ scale: 1.2 }}
-                    onClick={() => setSelectedImage(i)}
-                  />
-                ))}
+              {productImages.length > 1 && (
+                <>
+                  <button
+                    onClick={() => setSelectedImage(prev =>
+                      prev === 0 ? productImages.length - 1 : prev - 1
+                    )}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors z-10"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <button
+                    onClick={() => setSelectedImage(prev =>
+                      prev === productImages.length - 1 ? 0 : prev + 1
+                    )}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors z-10"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </>
+              )}
+
+              <div className="absolute bottom-4 right-4 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+                {selectedImage + 1} / {productImages.length}
               </div>
             </div>
+            <div className="flex justify-center gap-2 mt-2">
+              {productImages.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedImage(index)}
+                  className={`w-2 h-2 rounded-full transition-colors ${selectedImage === index ? 'bg-purple-500' : 'bg-gray-300'
+                    }`}
+                />
+              ))}
+            </div>
+            {/* Thumbnail Strip */}
+            {productImages.length > 1 && (
+              <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
+                {productImages.map((image, index) => (
+                  <motion.div
+                    key={index}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleThumbnailClick(index)}
+                    className={`flex-shrink-0 w-16 h-16 lg:w-20 lg:h-20 rounded-lg overflow-hidden cursor-pointer border-2 transition-colors ${selectedImage === index
+                      ? 'border-purple-500'
+                      : 'border-transparent hover:border-gray-300'
+                      }`}
+                  >
+                    <img
+                      src={image.url}
+                      alt={image.alt}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.src = 'https://as1.ftcdn.net/jpg/04/34/72/82/1000_F_434728286_OWQQvAFoXZLdGHlObozsolNeuSxhpr84.jpg';
+                      }}
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </div>
+
+          {/* Full-Screen Image Modal */}
+          <AnimatePresence>
+            {isFullScreenOpen && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-lg"
+                onClick={closeFullScreen}
+              >
+                {/* Header */}
+                <div className="absolute top-0 left-0 right-0 z-10 flex justify-between items-center p-4 bg-gradient-to-b from-black/50 to-transparent">
+                  <button
+                    onClick={closeFullScreen}
+                    className="text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors"
+                  >
+                    <X size={24} />
+                  </button>
+                  <div className="text-white text-sm bg-black/50 px-3 py-1 rounded-full">
+                    {fullScreenImageIndex + 1} of {productImages.length}
+                  </div>
+                </div>
+
+                {/* Main Full Screen Image */}
+                <div className="w-full h-full flex items-center justify-center p-4">
+                  <motion.img
+                    key={fullScreenImageIndex}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.3 }}
+                    src={productImages[fullScreenImageIndex]?.url}
+                    alt={productImages[fullScreenImageIndex]?.alt}
+                    className="max-w-full max-h-full object-contain"
+                    onClick={(e) => e.stopPropagation()}
+                    onError={(e) => {
+                      e.target.src = 'https://as1.ftcdn.net/jpg/04/34/72/82/1000_F_434728286_OWQQvAFoXZLdGHlObozsolNeuSxhpr84.jpg';
+                    }}
+                  />
+                </div>
+
+                {/* Navigation Arrows */}
+                {productImages.length > 1 && (
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigateImage('prev');
+                      }}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-black/50 hover:bg-black/70 rounded-full p-3 transition-colors"
+                    >
+                      <ChevronLeft size={28} />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigateImage('next');
+                      }}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white bg-black/50 hover:bg-black/70 rounded-full p-3 transition-colors"
+                    >
+                      <ChevronRight size={28} />
+                    </button>
+                  </>
+                )}
+
+                {/* Bottom Thumbnail Strip */}
+                {productImages.length > 1 && (
+                  <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent">
+                    <div className="flex gap-2 justify-center overflow-x-auto pb-2">
+                      {productImages.map((image, index) => (
+                        <motion.div
+                          key={index}
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFullScreenImageIndex(index);
+                          }}
+                          className={`flex-shrink-0 w-12 h-12 lg:w-16 lg:h-16 rounded-lg overflow-hidden cursor-pointer border-2 transition-colors ${fullScreenImageIndex === index
+                            ? 'border-white'
+                            : 'border-transparent hover:border-gray-300'
+                            }`}
+                        >
+                          <img
+                            src={image.url}
+                            alt={image.alt}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.src = 'https://as1.ftcdn.net/jpg/04/34/72/82/1000_F_434728286_OWQQvAFoXZLdGHlObozsolNeuSxhpr84.jpg';
+                            }}
+                          />
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Right: Product Info */}
           <div className="lg:flex-1 mt-4 lg:mt-0">

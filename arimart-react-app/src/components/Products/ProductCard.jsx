@@ -9,7 +9,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import { addToWishlist } from '../../Store/wishlistSlice';
 import { useCart } from '../../context/CartContext';
-import { fetchProductImageUrl } from '../../Store/productsSlice';
+import { fetchProductImageUrls } from '../../Store/productsSlice';
 
 const ProductCard = ({ key, product }) => {
   const { market } = useParams();

@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import { addToWishlist } from '../../Store/wishlistSlice';
 import { useCart } from '../../context/CartContext';
-import { fetchProductImageUrl } from '../../Store/productsSlice';
+import { fetchProductImageUrls } from '../../Store/productsSlice';
 
 const DProductCard = ({ product }) => {
   const { market, subcategory, id } = useParams();
@@ -44,7 +44,7 @@ const DProductCard = ({ product }) => {
 
   useEffect(() => {
     if (productId && !imageUrls?.[productId] && !imageLoading?.[productId]) {
-      dispatch(fetchProductImageUrl(productId));
+      dispatch(fetchProductImageUrls(productId));
     }
   }, [dispatch, productId, imageUrls, imageLoading]);
 

@@ -1,14 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const  SplashScreen = ({ onComplete, appName = "AriMart" }) => {
+const SplashScreen = ({ onComplete, appName = "AriMart Delivery Partner" }) => {
   const [showContent, setShowContent] = useState(false);
+  const [scooterPosition, setScooterPosition] = useState(-100);
 
   useEffect(() => {
     // Show content after initial delay
     const contentTimer = setTimeout(() => {
       setShowContent(true);
     }, 500);
+
+    // Animate scooter
+    const scooterInterval = setInterval(() => {
+      setScooterPosition(prev => {
+        if (prev >= 100) return -100;
+        return prev + 2;
+      });
+    }, 50);
 
     // Complete splash after animation
     const completeTimer = setTimeout(() => {
@@ -18,6 +27,7 @@ const  SplashScreen = ({ onComplete, appName = "AriMart" }) => {
     return () => {
       clearTimeout(contentTimer);
       clearTimeout(completeTimer);
+      clearInterval(scooterInterval);
     };
   }, [onComplete]);
 
@@ -68,7 +78,7 @@ const  SplashScreen = ({ onComplete, appName = "AriMart" }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-green-400 via-green-500 to-green-600">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-green-400 via-green-500 to-green-600 overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-10 left-10 w-20 h-20 bg-white rounded-full blur-xl"></div>
@@ -76,6 +86,54 @@ const  SplashScreen = ({ onComplete, appName = "AriMart" }) => {
         <div className="absolute bottom-20 left-20 w-24 h-24 bg-white rounded-full blur-xl"></div>
         <div className="absolute bottom-32 right-10 w-12 h-12 bg-white rounded-full blur-lg"></div>
       </div>
+
+      {/* Road for scooter */}
+      <div className="absolute bottom-0 w-full h-16 bg-gray-800 opacity-80"></div>
+      <div className="absolute bottom-8 w-full h-1 bg-yellow-300 opacity-90">
+        <div className="absolute w-20 h-1 bg-yellow-300 opacity-90 dash-animation"></div>
+      </div>
+
+      {/* Scooter Animation */}
+      <motion.div 
+        className="absolute bottom-16 z-20 scooter-container"
+        style={{ left: `${scooterPosition}%` }}
+        transition={{ type: "linear" }}
+      >
+        {/* Scooter body */}
+        <div className="relative w-16 h-8 bg-red-500 rounded-lg">
+          {/* Handlebar */}
+          <div className="absolute -top-4 left-4 w-8 h-6 bg-gray-800 rounded-t-full">
+            <div className="absolute -left-2 top-2 w-6 h-1 bg-gray-800 rounded-full"></div>
+            <div className="absolute -right-2 top-2 w-6 h-1 bg-gray-800 rounded-full"></div>
+          </div>
+          
+          {/* Delivery person */}
+          <div className="absolute -top-10 left-5 w-6 h-10">
+            {/* Head */}
+            <div className="absolute top-0 left-1 w-4 h-4 bg-yellow-200 rounded-full"></div>
+            {/* Body */}
+            <div className="absolute top-4 w-6 h-6 bg-blue-500 rounded-sm"></div>
+            {/* Arms */}
+            <div className="absolute top-4 -left-2 w-2 h-6 bg-blue-500 rounded-full"></div>
+            <div className="absolute top-4 right-0 w-2 h-4 bg-blue-500 rounded-full"></div>
+          </div>
+          
+          {/* Delivery box */}
+          <div className="absolute -top-6 -right-2 w-6 h-5 bg-brown-600 rounded-sm">
+            <div className="absolute top-0.5 left-1 w-4 h-0.5 bg-brown-800"></div>
+          </div>
+        </div>
+        
+        {/* Front wheel */}
+        <div className="absolute bottom-0 left-4 w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center">
+          <div className="w-4 h-4 bg-gray-700 rounded-full"></div>
+        </div>
+        
+        {/* Back wheel */}
+        <div className="absolute bottom-0 right-2 w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center">
+          <div className="w-4 h-4 bg-gray-700 rounded-full"></div>
+        </div>
+      </motion.div>
 
       <div className="relative z-10 flex flex-col items-center">
         {/* Logo Container */}
@@ -113,7 +171,7 @@ const  SplashScreen = ({ onComplete, appName = "AriMart" }) => {
             {appName}
           </h1>
           <p className="text-green-100 text-lg font-medium opacity-90">
-            Your Smart Shopping Companion
+            Your Route to Earnings, Our Way to Service
           </p>
         </motion.div>
 
@@ -141,6 +199,21 @@ const  SplashScreen = ({ onComplete, appName = "AriMart" }) => {
           ))}
         </motion.div>
       </div>
+
+      <style jsx>{`
+        .dash-animation {
+          animation: dash-move 1s linear infinite;
+        }
+        
+        @keyframes dash-move {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(40px); }
+        }
+        
+        .scooter-container {
+          transition: left 0.1s linear;
+        }
+      `}</style>
     </div>
   );
 };

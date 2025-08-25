@@ -27,7 +27,8 @@
     "react-leaflet": "^5.0.0",
     "react-map-gl": "^8.0.4",
     "react-redux": "^9.2.0",
-    "react-router-dom": "^7.7.1"
+    "react-router-dom": "^7.7.1",
+    "redux-persist": "^6.0.0"
   },
   "devDependencies": {
     "@capacitor/cli": "^7.4.3",

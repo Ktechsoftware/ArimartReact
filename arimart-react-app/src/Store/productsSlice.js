@@ -47,16 +47,16 @@ export const fetchProductById = createAsyncThunk(
   }
 );
 
-// ✅ Fetch product image URL
-export const fetchProductImageUrl = createAsyncThunk(
-  'products/fetchProductImageUrl',
+// ✅ Fetch product image URLs - Updated to handle multiple images
+export const fetchProductImageUrls = createAsyncThunk(
+  'products/fetchProductImageUrls',
   async (productId, { rejectWithValue }) => {
     try {
-      const response = await API.get(`products/${productId}/image-url`);
-      // console.log('Product Image URL:', response.data);
+      const response = await API.get(`products/${productId}/image-urls`);
+
       return {
         productId,
-        imageUrl: response.data
+        imageUrls: response.data // This should be an array of URLs
       };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
@@ -64,21 +64,9 @@ export const fetchProductImageUrl = createAsyncThunk(
   }
 );
 
-// ✅ Fetch multiple product image URLs
-export const fetchProductImageUrls = createAsyncThunk(
-  'products/fetchProductImageUrls',
-  async (productIds, { rejectWithValue }) => {
-    try {
-      const queryString = productIds.map(id => `ids=${id}`).join('&');
-      const response = await API.get(`products/image-urls?${queryString}`);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message);
-    }
-  }
-);
+// ... rest of your existing async thunks remain the same ...
 
-// fetch product from subcateogroy
+// fetch product from subcategory
 export const fetchSubcategoryproducts = createAsyncThunk(
   'products/fetchSubcategoryproducts',
   async ({ subcategoryId, page = 1, limit = 10 }, { rejectWithValue }) => {
@@ -89,8 +77,6 @@ export const fetchSubcategoryproducts = createAsyncThunk(
       });
 
       const response = await API.get(`products/by-subcategory/${subcategoryId}?${queryParams}`);
-      console.log('Subcategory products:', response.data);
-
       return {
         subcategoryId,
         subcategoryProducts: response.data.products || response.data,
@@ -137,7 +123,7 @@ export const loadMoreSubcategoryProducts = createAsyncThunk(
   }
 );
 
-// ✅ Fetch group buys for product (gid, pid, pdid only)
+// ✅ Fetch group buys for product
 export const fetchGroupBuysByProductId = createAsyncThunk(
   'products/fetchGroupBuysByProductId',
   async (productId, { rejectWithValue }) => {
@@ -221,11 +207,12 @@ const productsSlice = createSlice({
     loadingMore: false,
     error: null,
     imageUrls: {},
+    productImages: {}, // ✅ NEW: Store multiple images per product
     subcategoryProducts: {},
-    subcategoryPagination: {}, // Add pagination for each subcategory
-    subcategoryHasMore: {}, // Track hasMore for each subcategory
+    subcategoryPagination: {},
+    subcategoryHasMore: {},
     subcategoryLoadingMore: {},
-    recommendations: {}, // Store recommendations by productId
+    recommendations: {},
     recommendationsLoading: {},
     imageLoading: {},
     groupBuys: {},
@@ -268,6 +255,10 @@ const productsSlice = createSlice({
     clearImageUrls: (state) => {
       state.imageUrls = {};
       state.imageLoading = {};
+    },
+    // ✅ NEW: Clear product images
+    clearProductImages: (state) => {
+      state.productImages = {};
     },
     resetProducts: (state) => {
       state.items = [];
@@ -338,33 +329,26 @@ const productsSlice = createSlice({
         state.error = action.payload;
       })
 
-      // 🔄 Fetch Product Image URL
-      .addCase(fetchProductImageUrl.pending, (state, action) => {
+      // 🔄 Fetch Product Image URLs - ✅ UPDATED for multiple images
+      .addCase(fetchProductImageUrls.pending, (state, action) => {
         const productId = action.meta.arg;
         state.imageLoading[productId] = true;
-      })
-      .addCase(fetchProductImageUrl.fulfilled, (state, action) => {
-        const { productId, imageUrl } = action.payload;
-        state.imageLoading[productId] = false;
-        state.imageUrls[productId] = imageUrl;
-      })
-      .addCase(fetchProductImageUrl.rejected, (state, action) => {
-        const productId = action.meta.arg;
-        state.imageLoading[productId] = false;
-        state.error = action.payload;
-      })
-
-      // 🔄 Fetch Multiple Image URLs
-      .addCase(fetchProductImageUrls.pending, (state) => {
-        state.loading = true;
+        state.error = null;
       })
       .addCase(fetchProductImageUrls.fulfilled, (state, action) => {
-        state.loading = false;
-        state.imageUrls = { ...state.imageUrls, ...action.payload };
+        const { productId, imageUrls } = action.payload;
+        state.imageLoading[productId] = false;
+        
+        // ✅ Store the array of image URLs under productId
+        state.productImages[productId] = imageUrls;
+        
+        // ✅ Also maintain backward compatibility with single imageUrls
+        state.imageUrls[productId] = imageUrls && imageUrls.length > 0 ? imageUrls[0] : null;
       })
       .addCase(fetchProductImageUrls.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
+        const productId = action.meta.arg;
+        state.imageLoading[productId] = false;
+        state.error = action.payload || 'Failed to fetch product images';
       })
 
       // 🔄 Fetch Group Buys
@@ -378,6 +362,7 @@ const productsSlice = createSlice({
       .addCase(fetchGroupBuysByProductId.rejected, (state, action) => {
         state.error = action.payload;
       })
+
       // 🔄 Fetch Subcategory product
       .addCase(fetchSubcategoryproducts.pending, (state, action) => {
         const { subcategoryId } = action.meta.arg;
@@ -387,7 +372,6 @@ const productsSlice = createSlice({
       })
       .addCase(fetchSubcategoryproducts.fulfilled, (state, action) => {
         const { subcategoryId, subcategoryProducts, pagination } = action.payload;
-        console.log('Storing in state:', subcategoryId, subcategoryProducts);
 
         // Replace products for fresh load
         state.subcategoryProducts[subcategoryId] = subcategoryProducts;
@@ -403,7 +387,7 @@ const productsSlice = createSlice({
         state.subcategoryLoadingMore[subcategoryId] = false;
       })
 
-      // Add cases for load more
+      // Add cases for load more subcategory products
       .addCase(loadMoreSubcategoryProducts.pending, (state, action) => {
         const { subcategoryId } = action.meta.arg;
         state.subcategoryLoadingMore[subcategoryId] = true;
@@ -472,11 +456,13 @@ const productsSlice = createSlice({
         }
         delete state.imageUrls[action.payload];
         delete state.imageLoading[action.payload];
+        delete state.productImages[action.payload]; // ✅ NEW: Clean up product images
       })
       .addCase(deleteProduct.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
+
       // 🔄 Fetch Product Recommendations
       .addCase(fetchProductRecommendations.pending, (state, action) => {
         const { productId } = action.meta.arg;
@@ -492,7 +478,7 @@ const productsSlice = createSlice({
         const { productId } = action.meta.arg;
         state.recommendationsLoading[productId] = false;
         state.error = action.payload;
-      })
+      });
   },
 });
 
@@ -504,6 +490,7 @@ export const {
   setPagination,
   clearProductsError,
   clearImageUrls,
+  clearProductImages, // ✅ NEW: Export new action
   resetProducts,
 } = productsSlice.actions;
 

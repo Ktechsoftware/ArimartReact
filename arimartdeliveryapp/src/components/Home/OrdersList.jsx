@@ -12,7 +12,8 @@ import {
   BarChart3,
   QrCode,
   RefreshCw,
-  ChevronDown
+  ChevronDown,
+  Loader2
 } from 'lucide-react';
 import {
   fetchActiveDeliveries,
@@ -27,6 +28,74 @@ import {
 } from '../../Store/deliveryOrderSlice';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+
+// Loading Skeleton Components
+const OrderCardSkeleton = () => (
+  <div className="bg-white rounded-3xl border-2 border-gray-100 p-3 animate-pulse">
+    <div className="flex justify-between">
+      <div className="flex items-center space-x-4">
+        <div className="w-12 h-12 bg-gray-200 rounded-2xl"></div>
+        <div className="flex-1">
+          <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+          <div className="h-3 bg-gray-200 rounded w-32 mb-1"></div>
+          <div className="h-3 bg-gray-200 rounded w-20"></div>
+        </div>
+      </div>
+      <div className="text-right space-y-1">
+        <div className="h-6 bg-gray-200 rounded-full w-16 mb-2"></div>
+        <div className="h-5 bg-gray-200 rounded w-12 mb-1"></div>
+        <div className="h-3 bg-gray-200 rounded w-10"></div>
+      </div>
+    </div>
+  </div>
+);
+
+const StatsCardSkeleton = () => (
+  <div className="bg-white rounded-2xl p-3 shadow-sm animate-pulse">
+    <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+        <div>
+          <div className="h-3 bg-gray-200 rounded w-20 mb-1"></div>
+          <div className="h-2 bg-gray-200 rounded w-16"></div>
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="flex flex-col items-center">
+          <div className="h-4 bg-gray-200 rounded w-6 mb-1"></div>
+          <div className="h-2 bg-gray-200 rounded w-8"></div>
+        </div>
+        <div className="flex flex-col items-center">
+          <div className="h-4 bg-gray-200 rounded w-6 mb-1"></div>
+          <div className="h-2 bg-gray-200 rounded w-10"></div>
+        </div>
+        <div className="flex flex-col items-center">
+          <div className="h-4 bg-gray-200 rounded w-6 mb-1"></div>
+          <div className="h-2 bg-gray-200 rounded w-8"></div>
+        </div>
+      </div>
+      <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+    </div>
+  </div>
+);
+
+// Button Loading Component
+const LoadingButton = ({ children, isLoading, ...props }) => (
+  <button
+    {...props}
+    disabled={isLoading || props.disabled}
+    className={`${props.className} ${isLoading ? 'opacity-75 cursor-not-allowed' : ''}`}
+  >
+    {isLoading ? (
+      <div className="flex items-center justify-center space-x-2">
+        <Loader2 className="w-5 h-5 animate-spin" />
+        <span>Loading...</span>
+      </div>
+    ) : (
+      children
+    )}
+  </button>
+);
 
 export const OrdersList = () => {
   const dispatch = useDispatch();
@@ -44,7 +113,8 @@ export const OrdersList = () => {
   // Local state
   const [activeTab, setActiveTab] = useState('active');
   const [expandedOrder, setExpandedOrder] = useState(null);
-  const [activeorderdata, setactiveorderdata] = useState([]);
+  const [actionLoading, setActionLoading] = useState({});
+  const [refreshing, setRefreshing] = useState(false);
 
   // Fetch active deliveries on component mount
   useEffect(() => {
@@ -53,19 +123,27 @@ export const OrdersList = () => {
     }
   }, [dispatch, userId]);
 
-  const refreshDeliveries = () => {
+  const refreshDeliveries = async () => {
     if (userId) {
-      dispatch(fetchActiveDeliveries(userId));
+      setRefreshing(true);
+      try {
+        await dispatch(fetchActiveDeliveries(userId)).unwrap();
+      } catch (error) {
+        console.error('Failed to refresh deliveries:', error);
+      } finally {
+        setRefreshing(false);
+      }
     }
   };
 
   const handleMarkAsDelivered = (trackId) => {
-  navigate("/order/deliveryotp", { 
-    state: { trackId, userId } 
-  });
-};
+    navigate("/order/deliveryotp", { 
+      state: { trackId, userId } 
+    });
+  };
 
   const handleMarkAsShipped = async (trackId) => {
+    setActionLoading(prev => ({ ...prev, [trackId]: 'shipping' }));
     try {
       await dispatch(updateDeliveryStatus({
         TrackId: trackId,
@@ -76,6 +154,8 @@ export const OrdersList = () => {
       dispatch(updateOrderStatusLocal({ trackId, status: 'In Transit' }));
     } catch (error) {
       console.error('Failed to update delivery status:', error);
+    } finally {
+      setActionLoading(prev => ({ ...prev, [trackId]: null }));
     }
   };
 
@@ -118,46 +198,49 @@ export const OrdersList = () => {
       {/* Header with Stats */}
       <div className="bg-white shadow-sm border-b border-gray-200 sticky top-16 z-40">
         <div className="px-4 py-4">
-          <div className="bg-white rounded-2xl p-3 shadow-sm flex items-center justify-between gap-4 mb-3">
-            {/* Left: Title + Name */}
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <Truck className="w-4 h-4 text-blue-600" />
+          {isLoading && !activeDeliveries.length ? (
+            <StatsCardSkeleton />
+          ) : (
+            <div className="bg-white rounded-2xl p-3 shadow-sm flex items-center justify-between gap-4 mb-3">
+              {/* Left: Title + Name */}
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Truck className="w-4 h-4 text-blue-600" />
+                </div>
+                <div>
+                  <h1 className="font-bold text-gray-900 text-sm leading-tight">My Deliveries</h1>
+                  <p className="text-[11px] text-gray-500">
+                    {deliveryPartner?.name || user?.name || 'Delivery Partner'}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h1 className="font-bold text-gray-900 text-sm leading-tight">My Deliveries</h1>
-                <p className="text-[11px] text-gray-500">
-                  {deliveryPartner?.name || user?.name || 'Delivery Partner'}
-                </p>
+
+              {/* Middle: Stats inline */}
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col items-center">
+                  <span className="text-sm font-bold text-blue-700">{stats.totalPending}</span>
+                  <span className="text-[10px] text-blue-600">Pending</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <span className="text-sm font-bold text-green-700">{stats.totalDelivered}</span>
+                  <span className="text-[10px] text-green-600">Delivered</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <span className="text-sm font-bold text-purple-700">{stats.todayDeliveries}</span>
+                  <span className="text-[10px] text-purple-600">Today</span>
+                </div>
               </div>
+
+              {/* Right: Refresh Button */}
+              <button
+                onClick={refreshDeliveries}
+                disabled={refreshing || isLoading}
+                className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`w-4 h-4 text-gray-600 ${refreshing || isLoading ? 'animate-spin' : ''}`} />
+              </button>
             </div>
-
-            {/* Middle: Stats inline */}
-            <div className="flex items-center gap-3">
-              <div className="flex flex-col items-center">
-                <span className="text-sm font-bold text-blue-700">{stats.totalPending}</span>
-                <span className="text-[10px] text-blue-600">Pending</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="text-sm font-bold text-green-700">{stats.totalDelivered}</span>
-                <span className="text-[10px] text-green-600">Delivered</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="text-sm font-bold text-purple-700">{stats.todayDeliveries}</span>
-                <span className="text-[10px] text-purple-600">Today</span>
-              </div>
-            </div>
-
-            {/* Right: Refresh Button */}
-            <button
-              onClick={refreshDeliveries}
-              disabled={isLoading}
-              className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
-            >
-              <RefreshCw className={`w-4 h-4 text-gray-600 ${isLoading ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
-
+          )}
 
           {/* Tab Navigation */}
           <div className="flex bg-gray-100 p-1 rounded-2xl">
@@ -168,7 +251,7 @@ export const OrdersList = () => {
                 : 'text-gray-600 hover:text-gray-900'
                 }`}
             >
-              Active ({activeDeliveries.length})
+              Active ({isLoading && !activeDeliveries.length ? '...' : activeDeliveries.length})
             </button>
             <button
               onClick={() => setActiveTab('completed')}
@@ -177,7 +260,7 @@ export const OrdersList = () => {
                 : 'text-gray-600 hover:text-gray-900'
                 }`}
             >
-              Completed ({completedDeliveries.length})
+              Completed ({isLoading && !completedDeliveries.length ? '...' : completedDeliveries.length})
             </button>
           </div>
         </div>
@@ -202,6 +285,8 @@ export const OrdersList = () => {
             openNavigation={openNavigation}
             getStatusColor={getStatusColor}
             navigate={navigate}
+            isLoading={isLoading}
+            actionLoading={actionLoading}
           />
         )}
 
@@ -209,6 +294,7 @@ export const OrdersList = () => {
           <CompletedDeliveriesTab
             orders={completedDeliveries}
             getStatusColor={getStatusColor}
+            isLoading={isLoading}
           />
         )}
       </div>
@@ -225,8 +311,21 @@ const ActiveDeliveriesTab = ({
   handleMarkAsShipped,
   openNavigation,
   getStatusColor,
-  navigate
+  navigate,
+  isLoading,
+  actionLoading
 }) => {
+  // Show loading skeletons while data is loading
+  if (isLoading && !orders.length) {
+    return (
+      <div className="space-y-3">
+        {[...Array(3)].map((_, index) => (
+          <OrderCardSkeleton key={index} />
+        ))}
+      </div>
+    );
+  }
+
   // Check if orders is an array and has length
   if (!Array.isArray(orders) || orders.length === 0) {
     return (
@@ -258,6 +357,7 @@ const ActiveDeliveriesTab = ({
           onMarkAsShipped={() => handleMarkAsShipped(order.trackId)}
           onNavigate={() => openNavigation(order)}
           getStatusColor={getStatusColor}
+          actionLoading={actionLoading[order.trackId]}
         />
       ))}
     </div>
@@ -265,7 +365,18 @@ const ActiveDeliveriesTab = ({
 };
 
 // Completed Deliveries Tab Component
-const CompletedDeliveriesTab = ({ orders, getStatusColor }) => {
+const CompletedDeliveriesTab = ({ orders, getStatusColor, isLoading }) => {
+  // Show loading skeletons while data is loading
+  if (isLoading && !orders.length) {
+    return (
+      <div className="space-y-3">
+        {[...Array(2)].map((_, index) => (
+          <OrderCardSkeleton key={index} />
+        ))}
+      </div>
+    );
+  }
+
   if (!Array.isArray(orders) || orders.length === 0) {
     return (
       <div className="text-center py-12">
@@ -308,8 +419,7 @@ const CompletedDeliveriesTab = ({ orders, getStatusColor }) => {
   );
 };
 
-// Order Card Component (rest remains the same)
-// Enhanced Order Card Component with all API data
+// Enhanced Order Card Component with loading states
 const OrderCard = ({
   order,
   isExpanded,
@@ -317,7 +427,8 @@ const OrderCard = ({
   onMarkAsDelivered,
   onMarkAsShipped,
   onNavigate,
-  getStatusColor
+  getStatusColor,
+  actionLoading
 }) => {
   // Format date helper
   const formatDate = (dateString) => {
@@ -372,7 +483,6 @@ const OrderCard = ({
                 </span>
               )}
             </div>
-            {/* <p className="text-gray-600 font-medium">{order.customer?.name || 'Unknown Customer'}</p> */}
             <div className="flex flex-col space-x-3 mt-1">
               <p className="text-xs text-gray-500">
                 Ordered: {formatDate(order.orderDate)}
@@ -445,10 +555,6 @@ const OrderCard = ({
                     <span className="text-gray-500">Weight:</span>
                     <span className="ml-2 font-semibold">{order.product?.weight || 'N/A'}</span>
                   </div>
-                  {/* <div>
-                    <span className="text-gray-500">Category:</span>
-                    <span className="ml-2 font-semibold">{order.product?.category || 'N/A'}</span>
-                  </div> */}
                 </div>
                 {order.product?.description && (
                   <p className="text-xs text-gray-600 mt-2 line-clamp-2">
@@ -609,13 +715,14 @@ const OrderCard = ({
           <div className="space-y-3">
             {order.status === 'Picked Up' && (
               <>
-                <button
+                <LoadingButton
                   onClick={onMarkAsShipped}
+                  isLoading={actionLoading === 'shipping'}
                   className="w-full py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold rounded-2xl transition-all shadow-sm hover:shadow-md flex items-center justify-center space-x-2"
                 >
                   <Truck className="w-5 h-5" />
                   <span>Mark as In Transit</span>
-                </button>
+                </LoadingButton>
                 <button
                   onClick={onNavigate}
                   className="w-full py-4 bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-bold rounded-2xl transition-all shadow-sm hover:shadow-md flex items-center justify-center space-x-2"
@@ -644,7 +751,6 @@ const OrderCard = ({
                 </button>
               </>
             )}
-
           </div>
         </div>
       )}
